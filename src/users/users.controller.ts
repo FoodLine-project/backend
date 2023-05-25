@@ -2,12 +2,14 @@ import {
   Body,
   Controller,
   Post,
-  // UseGuards,
+  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { SignupDto, LoginDto } from './dto/auth-credential.dto';
-// import { AuthGuard } from '@nestjs/passport';
+import { GetUser } from './get-user.decorator';
+import { Users } from './user.entity';
+import { AuthGuard } from '@nestjs/passport';
 // import { GetUser } from './get-user.decorator';
 // import { User } from './user.entity';
 

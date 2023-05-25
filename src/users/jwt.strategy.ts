@@ -14,14 +14,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     @InjectRepository(UsersRepository) private usersRepository: UsersRepository,
   ) {
     super({
-      secretOrKey: 'jwt-secret',
+      secretOrKey: '22-project-secret',
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     });
   }
   async validate(payload) {
-    const { nickname } = payload;
+    const { email } = payload;
     const user: Users = await this.usersRepository.findOne({
-      where: { nickname },
+      where: { email },
     });
     if (!user) {
       throw new UnauthorizedException();

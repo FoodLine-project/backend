@@ -1,8 +1,11 @@
+import { Users } from 'src/users/user.entity';
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -29,4 +32,8 @@ export class Reviews extends BaseEntity {
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
+
+  @ManyToOne(() => Users, (user) => user.reviews)
+  @JoinColumn({ name: 'UserId' })
+  user: Users;
 }
