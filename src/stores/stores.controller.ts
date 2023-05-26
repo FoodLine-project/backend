@@ -17,3 +17,5 @@ export class PlacesController {
     return result;
   }
 }
+
+//로직추가해버려
