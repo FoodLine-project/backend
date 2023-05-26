@@ -3,11 +3,21 @@ import axios from 'axios';
 
 @Injectable()
 export class LocationService {
-  async getPublicIpAddress(): Promise<string> {
+  // async getCurrentLocation() {
+  //   try {
+  //     const response = await axios.get("http://ip-api.com/json");
+  //     const { city, regionName, country } = response.data;
+  //     console.log()
+  //   }
+  // }
+  async getPublicIpAddress(): Promise<{ lat: number; lon: number }> {
     try {
       const response = await axios.get('http://ip-api.com/json/');
-      const { query } = response.data;
-      return query;
+      const { lat, lon } = response.data;
+
+      return { lat, lon };
+      // const { query } = response.data;
+      // return query;
     } catch (error) {
       console.error('Error retrieving public IP address:', error);
       throw error;
