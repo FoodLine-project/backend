@@ -1,12 +1,16 @@
+import { Users } from './../users/users.entity';
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { WaitingStatus } from './waitingStatus.enum';
+import { Stores } from 'src/stores/stores.entity';
 
 @Entity()
 export class Waitings extends BaseEntity {
@@ -30,4 +34,12 @@ export class Waitings extends BaseEntity {
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
+
+  @ManyToOne(() => Users, (user) => user.waitings)
+  @JoinColumn({ name: 'UserId' })
+  user: Users;
+
+  @ManyToOne(() => Stores, (store) => store.waitings)
+  @JoinColumn({ name: 'StoreId' })
+  store: Stores;
 }

@@ -1,8 +1,11 @@
+import { Stores } from 'src/stores/stores.entity';
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -26,4 +29,8 @@ export class Tables extends BaseEntity {
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
+
+  @OneToOne(() => Stores, (stores) => stores.tables)
+  @JoinColumn({ name: 'StoreId' })
+  store: Stores;
 }
