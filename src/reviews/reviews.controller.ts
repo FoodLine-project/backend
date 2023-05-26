@@ -13,13 +13,13 @@ import {
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { Reviews } from './reviews.entity';
-import { Users } from 'src/users/user.entity';
+import { Users } from 'src/users/users.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { GetUser } from 'src/users/get-user.decorator';
 
 @Controller('stores/:storeId/reviews')
 export class ReviewsController {
-  constructor(private reviewsService: ReviewsService) {}
+  constructor(private reviewsService: ReviewsService) { }
 
   @Get('/')
   getAllReviews(@Param('storeId') storeId: number): Promise<Reviews[]> {

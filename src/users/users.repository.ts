@@ -1,5 +1,5 @@
 import { DataSource, Repository } from 'typeorm';
-import { Users } from './user.entity';
+import { Users } from './users.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SignupDto } from './dto/auth-credential.dto';
 import {
