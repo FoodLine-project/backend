@@ -24,4 +24,4 @@ import { LocationService } from 'src/location/location.service';
   providers: [UsersService, UsersRepository, LocationService, JwtStrategy],
   exports: [JwtStrategy, PassportModule],
 })
-export class UsersModule { }
+export class UsersModule {}

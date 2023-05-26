@@ -6,7 +6,7 @@ import { Reviews } from './reviews.entity';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private reviewsRepository: ReviewsRepository) { }
+  constructor(private reviewsRepository: ReviewsRepository) {}
 
   async getAllReviews(storeId: number): Promise<Reviews[]> {
     return await this.reviewsRepository.findAllReviews(storeId);
