@@ -1,5 +1,4 @@
 import { Reviews } from 'src/reviews/reviews.entity';
-import { Waitings } from './../waitings/waitings.entity';
 import {
   BaseEntity,
   Column,
@@ -38,9 +37,6 @@ export class Users extends BaseEntity {
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
-
-  @OneToMany(() => Waitings, (waiting) => waiting.user)
-  waitings: Waitings[];
 
   @OneToMany(() => Reviews, (review) => review.user)
   reviews: Reviews[];
