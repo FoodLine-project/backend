@@ -1,14 +1,15 @@
 import { Body, Controller, Post, ValidationPipe } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { SignupDto, LoginDto } from './dto/auth-credential.dto';
-import { LocationService } from 'src/location/location.service';
+import { GetUser } from './get-user.decorator';
+import { Users } from './users.entity';
+import { AuthGuard } from '@nestjs/passport';
+// import { GetUser } from './get-user.decorator';
+// import { User } from './user.entity';
 
 @Controller('auth')
 export class UsersController {
-  constructor(
-    private usersService: UsersService,
-    private locationService: LocationService,
-  ) {}
+  constructor(private usersService: UsersService) {}
 
   @Post('/signup')
   signUp(@Body(ValidationPipe) signupDto: SignupDto): Promise<void> {

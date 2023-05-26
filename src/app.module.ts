@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
 import { LocationService } from './location/location.service';
 
+
 @Module({
   imports: [
     TypeOrmModule.forRoot(typeORMConfig),
@@ -18,5 +19,6 @@ import { LocationService } from './location/location.service';
     TablesModule,
   ],
   providers: [LocationService],
+  ]
 })
-export class AppModule {}
+export class AppModule { }
