@@ -2,7 +2,7 @@ import { DataSource, DeleteResult, Repository } from 'typeorm';
 import { Reviews } from './reviews.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateReviewDto } from './dto/create-review.dto';
-import { Users } from 'src/users/user.entity';
+import { Users } from 'src/users/users.entity';
 import { NotFoundException } from '@nestjs/common';
 
 export class ReviewsRepository extends Repository<Reviews> {

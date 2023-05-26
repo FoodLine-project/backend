@@ -5,8 +5,9 @@ import { Module } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Users } from './user.entity';
+import { Users } from './users.entity';
 import { JwtStrategy } from './jwt.strategy';
+import { LocationService } from 'src/location/location.service';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { JwtStrategy } from './jwt.strategy';
     TypeOrmModule.forFeature([Users]),
   ],
   controllers: [UsersController],
-  providers: [UsersService, UsersRepository, JwtStrategy],
+  providers: [UsersService, UsersRepository, LocationService, JwtStrategy],
   exports: [JwtStrategy, PassportModule],
 })
 export class UsersModule {}

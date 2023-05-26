@@ -6,6 +6,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { TablesModule } from './tables/tables.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
+import { LocationService } from './location/location.service';
 
 @Module({
   imports: [
@@ -16,5 +17,6 @@ import { typeORMConfig } from './configs/typeorm.config';
     ReviewsModule,
     TablesModule,
   ],
+  providers: [LocationService],
 })
 export class AppModule {}

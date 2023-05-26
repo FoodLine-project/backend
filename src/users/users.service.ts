@@ -22,7 +22,7 @@ export class UsersService {
 
     if (user && (await bcrypt.compare(password, user.password))) {
       const payload = { email };
-      const accessToken = await this.jwtService.sign(payload);
+      const accessToken = this.jwtService.sign(payload);
 
       return { accessToken };
     } else {
