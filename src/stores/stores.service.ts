@@ -21,7 +21,6 @@ export class StoresService {
     userLocation: { latitude: number; longitude: number },
   ): Promise<any> {
     const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${query}&y=${userLocation.latitude}&x=${userLocation.longitude}&radius=3000`;
-    console.log(url);
     const response = await axios.get(url, {
       headers: {
         Authorization: 'KakaoAK ' + this.API_KEY,
