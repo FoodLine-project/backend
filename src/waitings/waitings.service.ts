@@ -42,31 +42,34 @@ export class WaitingsService {
       storeId,
     );
 
-    const peopleWhoWaiting: Waitings[] =
+    const waitingPeople: Waitings[] =
       await this.waitingsRepository.getWaitingsStatusWaiting(storeId);
-    const waitingIdArr = peopleWhoWaiting.map((e) => e.waitingId);
+    const waitingIdsArr = waitingPeople.map((e) => e.waitingId);
 
-    const myTurn = waitingIdArr.indexOf(Number(waitingId)) + 1;
+    const myTurn = waitingIdsArr.indexOf(Number(waitingId)) + 1;
 
-    const peopleWhoEntered =
+    const enteredPeople =
       await this.waitingsRepository.getWaitingsStatusEntered(storeId);
 
-    const bigCycle = Math.ceil(myTurn / peopleWhoEntered.length); // 기다리는 사람들을 매장에 있는 사람들로 나눈 몫
-    const left = myTurn % peopleWhoEntered.length; // 그 나머지
-    let leftCnt: number;
-    if (left == 0) leftCnt = peopleWhoEntered.length;
-    else leftCnt = left;
+    const bigCycle = Math.ceil(myTurn / enteredPeople.length); // 기다리는 사람들을 매장에 있는 사람들로 나눈 몫
+    const left = myTurn % enteredPeople.length; // 그 나머지
+
+    const leftCnt: number = left === 0 ? enteredPeople.length : left;
 
     console.log(bigCycle, leftCnt);
 
-    const currnetTime = new Date();
-    const updatedTime = peopleWhoEntered[leftCnt - 1].updatedAt;
+    const currentTime = new Date();
+    const updatedTime = enteredPeople[leftCnt - 1].updatedAt;
 
-    const passTimeOfWhoEnteredInMyTurn = Math.floor(
-      (currnetTime.getTime() - updatedTime.getTime()) / 1000 / 60,
+    // 내가 앉을 테이블에 앉은 사람이 먹은지 몇분 됐는지
+    const prePersonEatingTime = Math.floor(
+      (currentTime.getTime() - updatedTime.getTime()) / 1000 / 60,
     );
 
-    if (storesTotalTableCnt > peopleWhoEntered.length) return 0;
-    else return bigCycle * 60 - passTimeOfWhoEnteredInMyTurn;
+    if (storesTotalTableCnt > enteredPeople.length) {
+      return 0;
+    } else {
+      return bigCycle * 60 - prePersonEatingTime;
+    }
   }
 }
