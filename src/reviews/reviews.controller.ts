@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { Reviews } from './reviews.entity';
-import { Users } from 'src/users/user.entity';
+import { Users } from 'src/users/users.entity';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { GetUser } from 'src/users/get-user.decorator';
 

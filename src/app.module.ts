@@ -6,7 +6,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { TablesModule } from './tables/tables.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
-import { MapController } from './stores/stores.controller';
+
 
 @Module({
   imports: [
@@ -16,8 +16,6 @@ import { MapController } from './stores/stores.controller';
     WaitingsModule,
     ReviewsModule,
     TablesModule,
-  ],
-  controllers: [MapController],
-  providers: [{ provide: APP_RENDER_ENGINE, useValue: '.hbs' }],
+  ]
 })
-export class AppModule {}
+export class AppModule { }
