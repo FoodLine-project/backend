@@ -1,8 +1,15 @@
+import { table } from 'console';
+import { Reviews } from 'src/reviews/reviews.entity';
+import { Tables } from 'src/tables/tables.entity';
+import { Waitings } from 'src/waitings/waitings.entity';
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -47,4 +54,13 @@ export class Stores extends BaseEntity {
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
+
+  @OneToMany(() => Waitings, (waiting) => waiting.store)
+  waitings: Waitings[];
+
+  @OneToMany(() => Reviews, (review) => review.store)
+  reviews: Reviews[];
+
+  @OneToOne(() => Tables, (table) => table.store)
+  tables: Tables;
 }
