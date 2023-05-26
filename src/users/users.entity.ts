@@ -27,12 +27,6 @@ export class Users extends BaseEntity {
   @Column()
   phoneNumber: string;
 
-  @Column({ default: 0 })
-  La: number;
-
-  @Column({ default: 0 })
-  Ma: number;
-
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
