@@ -1,5 +1,6 @@
 import { Stores } from 'src/stores/stores.entity';
 import { Users } from 'src/users/users.entity';
+
 import {
   BaseEntity,
   Column,
@@ -33,6 +34,7 @@ export class Reviews extends BaseEntity {
 
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
+
 
   @ManyToOne(() => Stores, (store) => store.reviews)
   @JoinColumn({ name: 'StoreId' })
