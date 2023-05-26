@@ -19,7 +19,7 @@ import { GetUser } from 'src/users/get-user.decorator';
 
 @Controller('stores/:storeId/reviews')
 export class ReviewsController {
-  constructor(private reviewsService: ReviewsService) { }
+  constructor(private reviewsService: ReviewsService) {}
 
   @Get('/')
   getAllReviews(@Param('storeId') storeId: number): Promise<Reviews[]> {
