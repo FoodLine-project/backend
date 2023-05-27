@@ -46,9 +46,10 @@ export class WaitingsService {
       await this.waitingsRepository.getWaitingsStatusWaiting(storeId);
     const waitingIdsArr = waitingPeople.map((e) => e.waitingId);
 
+    // status 가 WAITING 인 사람 중에서 내가 몇등인지
     const myTurn = waitingIdsArr.indexOf(Number(waitingId)) + 1;
 
-    const enteredPeople =
+    const enteredPeople: Waitings[] =
       await this.waitingsRepository.getWaitingsStatusEntered(storeId);
 
     const bigCycle = Math.ceil(myTurn / enteredPeople.length); // 기다리는 사람들을 매장에 있는 사람들로 나눈 몫
