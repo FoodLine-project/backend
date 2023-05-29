@@ -5,10 +5,16 @@ import { WaitingsRepository } from './waitings.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Waitings } from './waitings.entity';
 import { UsersModule } from 'src/users/users.module';
+import { StoresRepository } from 'src/stores/stores.repository';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Waitings]), UsersModule],
+  imports: [
+    TypeOrmModule.forFeature([Waitings]),
+    UsersModule,
+    ScheduleModule.forRoot(),
+  ],
   controllers: [WaitingsController],
-  providers: [WaitingsService, WaitingsRepository],
+  providers: [WaitingsService, WaitingsRepository, StoresRepository],
 })
 export class WaitingsModule {}
