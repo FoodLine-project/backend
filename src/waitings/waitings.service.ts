@@ -1,4 +1,4 @@
-import { Users } from 'src/users/users.entity';
+import { Users } from 'src/auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
 import { Waitings } from './waitings.entity';
 import { WaitingsRepository } from './waitings.repository';
