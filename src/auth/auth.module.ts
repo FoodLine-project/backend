@@ -2,8 +2,8 @@ import { UsersRepository } from './users.repository';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { Module } from '@nestjs/common';
-import { UsersController } from './auth.controller';
-import { UsersService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Users } from './users.entity';
 import { LocationService } from 'src/location/location.service';
@@ -16,9 +16,9 @@ import { RefreshTokenStrategy } from './strategies';
     JwtModule.register({}),
     TypeOrmModule.forFeature([Users]),
   ],
-  controllers: [UsersController],
+  controllers: [AuthController],
   providers: [
-    UsersService,
+    AuthService,
     UsersRepository,
     LocationService,
     AccessTokenStrategy,
@@ -26,4 +26,4 @@ import { RefreshTokenStrategy } from './strategies';
   ],
   exports: [PassportModule],
 })
-export class UsersModule {}
+export class AuthModule {}

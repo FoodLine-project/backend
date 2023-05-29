@@ -12,7 +12,7 @@ import { Tokens } from './types';
 import { jwtConstants } from './constants';
 
 @Injectable()
-export class UsersService {
+export class AuthService {
   constructor(
     @InjectRepository(UsersRepository) private usersRepository: UsersRepository,
     private jwtService: JwtService,
@@ -32,8 +32,8 @@ export class UsersService {
         email,
       },
       {
-        secret: jwtConstants.at_secret,
-        expiresIn: '15m',
+        secret: jwtConstants.atSecret,
+        expiresIn: jwtConstants.atExpiresIn,
       },
     );
   }
@@ -45,8 +45,8 @@ export class UsersService {
         email,
       },
       {
-        secret: jwtConstants.rt_secret,
-        expiresIn: '7d',
+        secret: jwtConstants.rtSecret,
+        expiresIn: jwtConstants.rtExpiresIn,
       },
     );
   }
@@ -102,7 +102,10 @@ export class UsersService {
     await this.usersRepository.updateRefreshToken(userId, null);
   }
 
-  async refreshTokens(userId: number, refreshToken: string): Promise<Tokens> {
+  async refreshAccessToken(
+    userId: number,
+    refreshToken: string,
+  ): Promise<{ accessToken: string }> {
     const user = await this.usersRepository.findUserById(userId);
 
     if (!user) {
@@ -117,13 +120,17 @@ export class UsersService {
       throw new UnauthorizedException(`Refresh token does not match`);
     }
 
-    const tokens = await this.getTokens(user.userId, user.email);
-    const hashedRefreshToken = await this.hash(tokens.refreshToken);
-    await this.usersRepository.updateRefreshToken(
-      user.userId,
-      hashedRefreshToken,
-    );
+    const accessToken = await this.getAccessToken(user.userId, user.email);
 
-    return tokens;
+    return { accessToken };
+
+    // const tokens = await this.getTokens(user.userId, user.email);
+    // const hashedRefreshToken = await this.hash(tokens.refreshToken);
+    // await this.usersRepository.updateRefreshToken(
+    //   user.userId,
+    //   hashedRefreshToken,
+    // );
+
+    // return tokens;
   }
 }

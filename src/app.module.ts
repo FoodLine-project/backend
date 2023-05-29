@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UsersModule } from './auth/auth.module';
+import { AuthModule } from './auth/auth.module';
 import { StoresModule } from './stores/stores.module';
 import { WaitingsModule } from './waitings/waitings.module';
 import { ReviewsModule } from './reviews/reviews.module';
@@ -13,7 +13,7 @@ import { AccessTokenGuard } from './auth/guards';
 @Module({
   imports: [
     TypeOrmModule.forRoot(typeORMConfig),
-    UsersModule,
+    AuthModule,
     StoresModule,
     WaitingsModule,
     ReviewsModule,

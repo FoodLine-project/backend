@@ -16,7 +16,7 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
       // 헤더에서 Bearer 스킴을 사용하여 jwt 추출
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       // jwt의 시크릿 키 검증
-      secretOrKey: jwtConstants.at_secret,
+      secretOrKey: jwtConstants.atSecret,
     });
   }
 

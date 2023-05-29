@@ -1,47 +1,58 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './auth.service';
+import { AuthService } from './auth.service';
 import { SignupDto, LoginDto } from './dto';
 import { Tokens } from './types';
 import { GetCurrentUser, GetCurrentUserId, Public } from './common/decorators';
+import { RefreshTokenGuard } from './guards';
+import { Users } from './users.entity';
 
 @Controller('auth')
-export class UsersController {
-  constructor(private usersService: UsersService) {}
+export class AuthController {
+  constructor(private authService: AuthService) {}
 
   @Public() // 회원가입 시에는 인증 절차를 거칠 필요 x
   @Post('/signup')
   @HttpCode(HttpStatus.CREATED) // 상태코드 설정
   signUp(@Body() signupDto: SignupDto): Promise<void> {
-    return this.usersService.signUp(signupDto);
+    return this.authService.signUp(signupDto);
   }
 
   @Public()
   @Post('/login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto): Promise<Tokens> {
-    return this.usersService.login(loginDto);
+    return this.authService.login(loginDto);
   }
 
   @Patch('/logout')
   @HttpCode(HttpStatus.OK)
   logout(@GetCurrentUserId() userId: number): Promise<void> {
-    return this.usersService.logout(userId);
+    return this.authService.logout(userId);
   }
 
   @Public()
+  @UseGuards(RefreshTokenGuard)
   @Post('/refresh')
   @HttpCode(HttpStatus.OK)
-  refreshTokens(
+  refreshAccessToken(
     @GetCurrentUserId() userId: number,
     @GetCurrentUser('refreshToken') refreshToken: string,
-  ): Promise<Tokens> {
-    return this.usersService.refreshTokens(userId, refreshToken);
+  ): Promise<{ accessToken: string }> {
+    return this.authService.refreshAccessToken(userId, refreshToken);
+  }
+
+  @Get('/test')
+  getMyProfile(@GetCurrentUser() user: Users): Promise<void> {
+    console.log(user);
+    return;
   }
 }
