@@ -25,30 +25,38 @@ export class UsersService {
     return await bcrypt.hash(target, salt);
   }
 
+  async getAccessToken(userId: number, email: string): Promise<string> {
+    return await this.jwtService.signAsync(
+      {
+        sub: userId,
+        email,
+      },
+      {
+        secret: jwtConstants.at_secret,
+        expiresIn: '15m',
+      },
+    );
+  }
+
+  async getRefreshToken(userId: number, email: string): Promise<string> {
+    return await this.jwtService.signAsync(
+      {
+        sub: userId,
+        email,
+      },
+      {
+        secret: jwtConstants.rt_secret,
+        expiresIn: '7d',
+      },
+    );
+  }
+
   // 액세스 토큰과 리프레시 토큰을 발급받아 반환하는 메소드
   async getTokens(userId: number, email: string): Promise<Tokens> {
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(
-        {
-          sub: userId,
-          email,
-        },
-        {
-          secret: jwtConstants.at_secret,
-          expiresIn: '15m',
-        },
-      ),
-      this.jwtService.signAsync(
-        {
-          sub: userId,
-          email,
-        },
-        {
-          secret: jwtConstants.rt_secret,
-          expiresIn: '7d',
-        },
-      ),
-    ]);
+    const [accessToken, refreshToken] = [
+      await this.getAccessToken(userId, email),
+      await this.getRefreshToken(userId, email),
+    ];
 
     return {
       accessToken,
