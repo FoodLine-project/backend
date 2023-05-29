@@ -34,11 +34,14 @@ export class Stores extends BaseEntity {
   @Column()
   currentWaitingCnt: number;
 
-  @Column()
+  @Column('numeric')
   La: number;
 
-  @Column()
+  @Column('numeric')
   Ma: number;
+
+  @Column()
+  address: string;
 
   @Column({ default: 60 })
   cycleTime: number;
