@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ReviewsRepository } from './reviews.repository';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { Users } from 'src/users/users.entity';
+import { CreateReviewDto } from './dto';
+import { Users } from 'src/auth/users.entity';
 import { Reviews } from './reviews.entity';
 
 @Injectable()
@@ -50,7 +50,7 @@ export class ReviewsService {
     );
 
     if (!result.affected) {
-      throw new NotFoundException(`Can't find review with id ${reviewId}`);
+      throw new NotFoundException(`Review does not exist`);
     }
   }
 }

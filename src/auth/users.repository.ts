@@ -1,31 +1,29 @@
 import { DataSource, Repository } from 'typeorm';
 import { Users } from './users.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SignupDto } from './dto/auth-credential.dto';
+import { SignupDto } from './dto';
 import {
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcryptjs';
 
 export class UsersRepository extends Repository<Users> {
   constructor(@InjectRepository(Users) private dataSource: DataSource) {
     super(Users, dataSource.manager);
   }
 
-  async createUser(authCredentialsDto: SignupDto): Promise<void> {
-    const { email, nickname, password, phoneNumber } = authCredentialsDto;
-
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const user = this.create({
-      email,
-      nickname,
-      password: hashedPassword,
-      phoneNumber,
-    });
-
+  async createUser(
+    signupDto: SignupDto,
+    hashedPassword: string,
+  ): Promise<void> {
     try {
+      const user = this.create({
+        email: signupDto.email,
+        nickname: signupDto.nickname,
+        password: hashedPassword,
+        phoneNumber: signupDto.phoneNumber,
+      });
+
       await this.save(user);
     } catch (e) {
       if (e.code === '23505') {
@@ -38,7 +36,18 @@ export class UsersRepository extends Repository<Users> {
     }
   }
 
+  async updateRefreshToken(
+    userId: number,
+    refreshToken: string,
+  ): Promise<void> {
+    await this.update({ userId }, { refreshToken });
+  }
+
   async findUserByEmail(email: string): Promise<Users> {
     return await this.findOne({ where: { email } });
+  }
+
+  async findUserById(userId: number): Promise<Users> {
+    return await this.findOne({ where: { userId } });
   }
 }

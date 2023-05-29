@@ -1,4 +1,3 @@
-import { GetUser } from 'src/users/get-user.decorator';
 import {
   Controller,
   Get,
@@ -12,8 +11,9 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { WaitingsService } from './waitings.service';
-import { Users } from 'src/users/users.entity';
+import { Users } from 'src/auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
+import { GetCurrentUser } from 'src/auth/common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.pipe';
 
@@ -21,6 +21,7 @@ import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.p
 export class WaitingsController {
   constructor(private waitingsService: WaitingsService) {}
 
+  @UseGuards(AuthGuard())
   @Get('/:storeId/waitings')
   getCurrentWaitingsCnt(
     @Param('storeId', ParseIntPipe) storeId,
@@ -28,24 +29,22 @@ export class WaitingsController {
     return this.waitingsService.getCurrentWaitingsCnt(storeId);
   }
 
-  @UseGuards(AuthGuard())
   @Post('/:storeId/waitings')
   postWaitings(
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Body('peopleCnt', ValidationPipe) peopleCnt: number,
-    @GetUser() user: Users,
+    @Body('peopleCnt') peopleCnt: number,
+    @GetCurrentUser() user: Users,
   ): string {
     this.waitingsService.postWaitings(storeId, peopleCnt, user);
     return `${peopleCnt}명의 웨이팅을 등록하였습니다`;
   }
 
-  @UseGuards(AuthGuard())
   @Patch('/:storeId/waitings/:waitingId/')
   patchStatusOfWaitings(
-    @Param('storeId', ValidationPipe) storeId: number,
-    @Param('waitingId', ValidationPipe) waitingId: number,
+    @Param('storeId') storeId: number,
+    @Param('waitingId') waitingId: number,
     @Query('status', WaitingStatusValidationPipe) status: WaitingStatus,
-    @GetUser() user: Users,
+    @GetCurrentUser() user: Users,
   ): { message: string } {
     this.waitingsService.patchStatusOfWaitings(
       storeId,
@@ -60,12 +59,11 @@ export class WaitingsController {
     }
   }
 
-  @UseGuards(AuthGuard())
   @Get('/:storeId/waitings/:waitingId/time')
   getWaitingTime(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('waitingId', ParseIntPipe) waitingId: number,
-    @GetUser() user: Users,
+    @GetCurrentUser() user: Users,
   ): Promise<number> {
     const time = this.waitingsService.getWaitingTime(storeId, waitingId, user);
     return time;

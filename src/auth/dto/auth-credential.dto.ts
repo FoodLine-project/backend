@@ -1,14 +1,23 @@
-import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class SignupDto {
+  @IsNotEmpty()
   @IsString()
   email: string;
 
+  @IsNotEmpty()
   @IsString()
   @MinLength(6)
   @MaxLength(20)
   nickname: string;
 
+  @IsNotEmpty()
   @IsString()
   @MinLength(8)
   @MaxLength(20)
@@ -17,6 +26,7 @@ export class SignupDto {
   })
   password: string;
 
+  @IsNotEmpty()
   @IsString()
   @MinLength(8)
   @MaxLength(20)
@@ -25,6 +35,7 @@ export class SignupDto {
   })
   confirm: string;
 
+  @IsNotEmpty()
   @IsString()
   @Matches(/^[0-9-]*$/, {
     message: 'phone number can contain only numbers and a hyphen',
@@ -33,9 +44,11 @@ export class SignupDto {
 }
 
 export class LoginDto {
+  @IsNotEmpty()
   @IsString()
   email: string;
 
+  @IsNotEmpty()
   @IsString()
   @MinLength(8)
   @MaxLength(20)

@@ -1,4 +1,3 @@
-import { AuthGuard } from '@nestjs/passport';
 import {
   Body,
   Controller,
@@ -7,15 +6,12 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
-  UsePipes,
-  ValidationPipe,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { Reviews } from './reviews.entity';
-import { Users } from 'src/users/users.entity';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { GetUser } from 'src/users/get-user.decorator';
+import { Users } from 'src/auth/users.entity';
+import { CreateReviewDto } from './dto';
+import { GetCurrentUser } from 'src/auth/common/decorators';
 
 @Controller('stores/:storeId/reviews')
 export class ReviewsController {
@@ -26,24 +22,23 @@ export class ReviewsController {
     return this.reviewsService.getAllReviews(storeId);
   }
 
-  @UseGuards(AuthGuard())
   @Post('/')
-  @UsePipes(ValidationPipe)
   createReview(
     @Param('storeId') storeId: number,
-    @GetUser() user: Users,
-    @Body(ValidationPipe) createReviewDto: CreateReviewDto,
+    @GetCurrentUser() user: Users,
+    // @GetUser() user: Users,
+    @Body()
+    createReviewDto: CreateReviewDto,
   ): Promise<Reviews> {
     return this.reviewsService.createReview(storeId, createReviewDto, user);
   }
 
-  @UseGuards(AuthGuard())
   @Patch('/:reviewId')
   updateReview(
     @Param('storeId') storeId: number,
     @Param('reviewId') reviewId: number,
-    @GetUser() user: Users,
-    @Body(ValidationPipe) createReviewDto: CreateReviewDto,
+    @GetCurrentUser() user: Users,
+    @Body() createReviewDto: CreateReviewDto,
   ): Promise<Reviews> {
     return this.reviewsService.updateReview(
       storeId,
@@ -53,16 +48,12 @@ export class ReviewsController {
     );
   }
 
-  @UseGuards(AuthGuard())
   @Delete('/:reviewId')
   deleteReview(
     @Param('storeId') storeId: number,
     @Param('reviewId') reviewId: number,
-    @GetUser() user: Users,
+    @GetCurrentUser() user: Users,
   ): Promise<void> {
     return this.reviewsService.deleteReview(storeId, reviewId, user);
   }
 }
-
-// @Patch, @Delete
-// /api/stores/:storeId/reviews/:reviewId
