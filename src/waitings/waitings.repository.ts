@@ -20,19 +20,33 @@ export class WaitingsRepository extends Repository<Waitings> {
     return waitingCounts;
   }
 
-  // user:Users
+  async getWaitingListById(storeId: number): Promise<Waitings[]> {
+    return await this.find({ where: { StoreId: storeId } });
+  }
+
+  async getWaitingByUser(user: Users): Promise<Waitings> {
+    return await this.findOne({
+      where: {
+        UserId: user.userId,
+        status:
+          WaitingStatus.WAITING ||
+          WaitingStatus.CALLED ||
+          WaitingStatus.DELAYED,
+      },
+    });
+  }
+
   async postWaitings(
     storeId: number,
     peopleCnt: number,
     user: Users,
-  ): Promise<void> {
+  ): Promise<Waitings> {
     const waiting = this.create({
       StoreId: storeId,
       UserId: user.userId,
       peopleCnt,
     });
-    await this.save(waiting);
-    return;
+    return await this.save(waiting);
   }
 
   async postEntered(
@@ -49,23 +63,6 @@ export class WaitingsRepository extends Repository<Waitings> {
     await this.save(waiting);
     return;
   }
-
-  // async patchStatusOfWaitings(
-  //   storeId: number,
-  //   waitingId: number,
-  //   status: WaitingStatus,
-  //   user: Users,
-  // ): Promise<void> {
-  //   const waiting = await this.findOne({
-  //     where: { waitingId, StoreId: storeId, UserId: user.userId },
-  //   });
-  //   if (!waiting) {
-  //     throw new NotFoundException(`Can't find waiting with id`);
-  //   }
-  //   waiting.status = status;
-  //   await this.save(waiting);
-  //   return;
-  // }
 
   async patchToEXITED(storeId: number, waitingId: number): Promise<void> {
     const exited = await this.findOne({
@@ -142,6 +139,19 @@ export class WaitingsRepository extends Repository<Waitings> {
       where: { waitingId },
     });
     entered.status = status;
+    await this.save(entered);
+    return;
+  }
+
+  async patchStatusToCanceled(
+    storeId: number,
+    waitingId: number,
+  ): Promise<void> {
+    const canceled = await this.findOne({
+      where: { waitingId, StoreId: storeId },
+    });
+    canceled.status = WaitingStatus.CANCELED;
+    await this.save(canceled);
     return;
   }
 
@@ -200,6 +210,9 @@ export class WaitingsRepository extends Repository<Waitings> {
           status: WaitingStatus.ENTERED,
           peopleCnt,
         })),
+        order: {
+          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+        },
       });
     } else {
       const peopleCntOption = [3, 4];
@@ -209,6 +222,9 @@ export class WaitingsRepository extends Repository<Waitings> {
           status: WaitingStatus.ENTERED,
           peopleCnt,
         })),
+        order: {
+          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+        },
       });
     }
   }

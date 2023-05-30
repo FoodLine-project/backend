@@ -7,6 +7,9 @@ export class WaitingStatusValidationPipe implements PipeTransform {
     WaitingStatus.CANCELED,
     WaitingStatus.ENTERED,
     WaitingStatus.EXITED,
+    WaitingStatus.CALLED,
+    WaitingStatus.DELAYED,
+    WaitingStatus.NOSHOW,
   ];
 
   transform(value: any) {

@@ -3,7 +3,7 @@ import { Users } from 'src/users/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
 import { Waitings } from './waitings.entity';
 import { WaitingsRepository } from './waitings.repository';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class WaitingsService {
@@ -16,15 +16,33 @@ export class WaitingsService {
     return this.waitingsRepository.getCurrentWaitingCnt(storeId);
   }
 
+  getWaitingList(storeId: number, user: Users): Promise<Waitings[]> {
+    if (!user.isAdmin || user.StoreId !== storeId) {
+      throw new NotFoundException('권한이 없습니다');
+    }
+    return this.waitingsRepository.getWaitingListById(storeId);
+  }
+
   // 가게가 꽉 차있는 경우 웨이팅 신청
   postWaitings(storeId: number, peopleCnt: number, user: Users): Promise<void> {
-    this.waitingsRepository.postWaitings(storeId, peopleCnt, user); // ,user:Users
+    const existsUser = this.waitingsRepository.getWaitingByUser(user);
+    if (!existsUser) {
+      throw new NotFoundException('이미 웨이팅을 신청하셨습니다');
+    }
+    this.waitingsRepository.postWaitings(storeId, peopleCnt, user);
     return;
   }
 
   // 가게에 자리가 있어 바로
   postEntered(storeId: number, peopleCnt: number, user: Users): Promise<void> {
-    this.waitingsRepository.postEntered(storeId, peopleCnt, user); // ,user:Users
+    if (!user.isAdmin || user.StoreId !== storeId) {
+      throw new NotFoundException('권한이 없습니다');
+    }
+    const existsUser = this.waitingsRepository.getWaitingByUser(user);
+    if (!existsUser) {
+      throw new NotFoundException('이미 웨이팅을 신청하셨습니다');
+    }
+    this.waitingsRepository.postEntered(storeId, peopleCnt, user);
     return;
   }
 
@@ -32,14 +50,12 @@ export class WaitingsService {
     storeId: number,
     waitingId: number,
     status: WaitingStatus,
+    user: Users,
   ): Promise<void> {
-    // this.waitingsRepository.patchStatusOfWaitings(
-    //   storeId,
-    //   waitingId,
-    //   status,
-    //   user,
-    // );
-    // return;
+    if (!user.isAdmin || user.StoreId !== storeId) {
+      throw new NotFoundException('권한이 없습니다');
+    }
+
     if (status === 'EXITED') {
       this.waitingsRepository.patchToEXITED(storeId, waitingId);
       return;
@@ -54,11 +70,11 @@ export class WaitingsService {
       this.waitingsRepository.patchStatus(storeId, waitingId, status);
       return;
     } // DELAYED, CALLED, WAITING 을 ENTERED 로 바꾸고 입장시킨다 => 매장용
+  }
 
-    if (status === 'CANCELED') {
-      this.waitingsRepository.patchStatus(storeId, waitingId, status);
-      return;
-    } // 손님이 웨이팅을 취소한다 => 손님용
+  patchStatusToCanceled(storeId: number, waitingId: number): Promise<void> {
+    this.waitingsRepository.patchStatusToCanceled(storeId, waitingId);
+    return;
   }
 
   async checkAndPatchNoshow(): Promise<void> {
