@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Waitings } from './waitings.entity';
 import { DataSource, Repository } from 'typeorm';
@@ -19,8 +20,36 @@ export class WaitingsRepository extends Repository<Waitings> {
     return waitingCounts;
   }
 
-  // user:Users
+  async getWaitingListById(storeId: number): Promise<Waitings[]> {
+    return await this.find({ where: { StoreId: storeId } });
+  }
+
+  async getWaitingByUser(user: Users): Promise<Waitings> {
+    return await this.findOne({
+      where: {
+        UserId: user.userId,
+        status:
+          WaitingStatus.WAITING ||
+          WaitingStatus.CALLED ||
+          WaitingStatus.DELAYED,
+      },
+    });
+  }
+
   async postWaitings(
+    storeId: number,
+    peopleCnt: number,
+    user: Users,
+  ): Promise<Waitings> {
+    const waiting = this.create({
+      StoreId: storeId,
+      UserId: user.userId,
+      peopleCnt,
+    });
+    return await this.save(waiting);
+  }
+
+  async postEntered(
     storeId: number,
     peopleCnt: number,
     user: Users,
@@ -29,42 +58,206 @@ export class WaitingsRepository extends Repository<Waitings> {
       StoreId: storeId,
       UserId: user.userId,
       peopleCnt,
+      status: WaitingStatus.ENTERED,
     });
     await this.save(waiting);
     return;
   }
 
-  async patchStatusOfWaitings(
+  async patchToEXITED(storeId: number, waitingId: number): Promise<void> {
+    const exited = await this.findOne({
+      where: { waitingId },
+    });
+    exited.status = WaitingStatus.EXITED;
+    await this.save(exited);
+    if (exited.peopleCnt === 1 || 2) {
+      const peopleCntOption = [1, 2];
+      const called = await this.findOne({
+        where: peopleCntOption.map((peopleCnt) => ({
+          StoreId: storeId,
+          status: WaitingStatus.WAITING,
+          peopleCnt,
+        })),
+      });
+      called.status = WaitingStatus.CALLED;
+      await this.save(called);
+      return;
+    } else {
+      const peopleCntOption = [3, 4];
+      const called = await this.findOne({
+        where: peopleCntOption.map((peopleCnt) => ({
+          StoreId: storeId,
+          status: WaitingStatus.WAITING,
+          peopleCnt,
+        })),
+      });
+      called.status = WaitingStatus.CALLED;
+      await this.save(called);
+      return;
+    }
+  }
+
+  async patchToDELAYED(storeId: number, waitingId: number): Promise<void> {
+    const delayed = await this.findOne({
+      where: { waitingId },
+    });
+    delayed.status = WaitingStatus.DELAYED;
+    await this.save(delayed);
+    if (delayed.peopleCnt === 1 || 2) {
+      const peopleCntOption = [1, 2];
+      const called = await this.findOne({
+        where: peopleCntOption.map((peopleCnt) => ({
+          StoreId: storeId,
+          status: WaitingStatus.WAITING,
+          peopleCnt,
+        })),
+      });
+      called.status = WaitingStatus.CALLED;
+      await this.save(called);
+      return;
+    } else {
+      const peopleCntOption = [3, 4];
+      const called = await this.findOne({
+        where: peopleCntOption.map((peopleCnt) => ({
+          StoreId: storeId,
+          status: WaitingStatus.WAITING,
+          peopleCnt,
+        })),
+      });
+      called.status = WaitingStatus.CALLED;
+      await this.save(called);
+      return;
+    }
+  }
+
+  async patchStatus(
     storeId: number,
     waitingId: number,
     status: WaitingStatus,
-    user: Users,
   ): Promise<void> {
-    const waiting = await this.findOne({
-      where: { waitingId, StoreId: storeId, UserId: user.userId },
+    const entered = await this.findOne({
+      where: { waitingId },
     });
-
-    waiting.status = status;
-    await this.save(waiting);
+    entered.status = status;
+    await this.save(entered);
     return;
   }
 
-  async getWaitingsStatusEntered(storeId: number): Promise<Waitings[]> {
-    return this.find({
-      where: { StoreId: storeId, status: WaitingStatus.ENTERED },
+  async patchStatusToCanceled(
+    storeId: number,
+    waitingId: number,
+  ): Promise<void> {
+    const canceled = await this.findOne({
+      where: { waitingId, StoreId: storeId },
     });
+    canceled.status = WaitingStatus.CANCELED;
+    await this.save(canceled);
+    return;
   }
-  async getWaitingsStatusWaiting(storeId: number): Promise<Waitings[]> {
+
+  async getAllDelayed(): Promise<Waitings[]> {
     return this.find({
-      where: { StoreId: storeId, status: WaitingStatus.WAITING },
+      where: { status: WaitingStatus.DELAYED },
     });
   }
 
-  async getTableTotalCnt(storeId: number): Promise<number> {
+  async getWaitingsStatusWaiting(
+    storeId: number,
+    peopleCnt: number,
+  ): Promise<Waitings[]> {
+    if (peopleCnt === 2) {
+      const peopleCntOption = [1, 2];
+      return this.find({
+        where: peopleCntOption.map((peopleCnt) => ({
+          StoreId: storeId,
+          status:
+            WaitingStatus.WAITING ||
+            WaitingStatus.CALLED ||
+            WaitingStatus.DELAYED,
+          peopleCnt,
+        })),
+        order: {
+          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+        },
+      });
+    } else {
+      const peopleCntOption = [3, 4];
+      return this.find({
+        where: peopleCntOption.map((peopleCnt) => ({
+          StoreId: storeId,
+          status:
+            WaitingStatus.WAITING ||
+            WaitingStatus.CALLED ||
+            WaitingStatus.DELAYED,
+          peopleCnt,
+        })),
+        order: {
+          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+        },
+      });
+    }
+  }
+
+  async getWaitingsStatusEntered(
+    storeId: number,
+    peopleCnt: number,
+  ): Promise<Waitings[]> {
+    if (peopleCnt === 2) {
+      const peopleCntOption = [1, 2];
+      return this.find({
+        where: peopleCntOption.map((peopleCnt) => ({
+          StoreId: storeId,
+          status: WaitingStatus.ENTERED,
+          peopleCnt,
+        })),
+        order: {
+          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+        },
+      });
+    } else {
+      const peopleCntOption = [3, 4];
+      return this.find({
+        where: peopleCntOption.map((peopleCnt) => ({
+          StoreId: storeId,
+          status: WaitingStatus.ENTERED,
+          peopleCnt,
+        })),
+        order: {
+          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+        },
+      });
+    }
+  }
+
+  async getTableTotalCnt(
+    storeId: number,
+    getPeopleCnt: number,
+  ): Promise<number> {
     const stores = await this.findOne({
       where: { store: { storeId: storeId } },
       relations: ['store'],
     });
-    return stores.store.tableForTwo + stores.store.tableForFour;
+    if (getPeopleCnt === 2) {
+      return stores.store.tableForTwo;
+    } else {
+      return stores.store.tableForFour;
+    }
+  }
+
+  async getPeopleCnt(
+    storeId: number,
+    waitingId: number,
+    user: Users,
+  ): Promise<number> {
+    const findWaitingById = await this.findOne({
+      where: { waitingId, StoreId: storeId, UserId: user.userId },
+    });
+    if (!findWaitingById) {
+      throw new NotFoundException(`Can't find waiting with id`);
+    } else if (findWaitingById.status !== 'WAITING') {
+      throw new NotFoundException('이미 입장한 상태입니다.');
+    }
+    if (findWaitingById.peopleCnt > 2) return 4;
+    else return 2;
   }
 }
