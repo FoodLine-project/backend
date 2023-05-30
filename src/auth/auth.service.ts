@@ -10,6 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { Tokens } from './types';
 import { jwtConstants } from './constants';
+import { Users } from './users.entity';
 
 @Injectable()
 export class AuthService {
@@ -123,14 +124,9 @@ export class AuthService {
     const accessToken = await this.getAccessToken(user.userId, user.email);
 
     return { accessToken };
+  }
 
-    // const tokens = await this.getTokens(user.userId, user.email);
-    // const hashedRefreshToken = await this.hash(tokens.refreshToken);
-    // await this.usersRepository.updateRefreshToken(
-    //   user.userId,
-    //   hashedRefreshToken,
-    // );
-
-    // return tokens;
+  async getUserInfo(userId: number): Promise<Users> {
+    return await this.usersRepository.findUserById(userId);
   }
 }

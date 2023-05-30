@@ -22,7 +22,7 @@ export class SignupDto {
   @MinLength(8)
   @MaxLength(20)
   @Matches(/^[a-zA-Z0-9]*$/, {
-    message: 'password only accepts alphabetical characters and numbers',
+    message: 'Password only accepts alphabetical characters and numbers',
   })
   password: string;
 
@@ -41,6 +41,10 @@ export class SignupDto {
     message: 'phone number can contain only numbers and a hyphen',
   })
   phoneNumber: string;
+
+  isAdmin?: boolean;
+
+  StoreId?: number;
 }
 
 export class LoginDto {
