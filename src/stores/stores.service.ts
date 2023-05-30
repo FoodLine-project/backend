@@ -5,7 +5,7 @@ import { Stores } from './stores.entity';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import { StoresRepository } from './stores.repository';
-import axios from 'axios';
+// import axios from 'axios';
 import { createReadStream } from 'fs';
 import * as csvParser from 'csv-parser';
 
@@ -16,57 +16,27 @@ export class StoresService {
     private storesRepository: StoresRepository,
   ) {}
 
-  private readonly API_KEY = 'e84edcba09907dc19727de566a994a88';
-
-  async searchPlaces(
-    query: string,
-    userLocation: { latitude: number; longitude: number },
-  ): Promise<any> {
-    const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${query}&y=${userLocation.latitude}&x=${userLocation.longitude}&radius=3000`;
-    const response = await axios.get(url, {
-      headers: {
-        Authorization: 'KakaoAK ' + this.API_KEY,
-      },
+  //사용자 위치 기반 반경 1km내의 식당 조회
+  async findRestaurantsWithinRadius(
+    southWestLatitude: number,
+    southWestLongitude: number,
+    northEastLatitude: number,
+    northEastLongitude: number,
+  ): Promise<{ 근처식당목록: Stores[] }> {
+    const restaurants = await this.storesRepository.findAll();
+    const restaurantsWithinRadius = restaurants.filter((restaurant) => {
+      const withinLatitudeRange =
+        restaurant.La >= southWestLatitude &&
+        restaurant.La <= northEastLatitude;
+      const withinLongitudeRange =
+        restaurant.Ma >= southWestLongitude &&
+        restaurant.Ma <= northEastLongitude;
+      return withinLatitudeRange && withinLongitudeRange;
     });
-
-    const filteredResults = response.data.documents
-      .filter((place: any) => place.category_group_name === '음식점')
-      .map((place: any) => {
-        const {
-          id,
-          category_group_name,
-          place_name,
-          phone,
-          address_name,
-          road_address_name,
-          distance,
-          place_url,
-          x,
-          y,
-        } = place;
-        return {
-          storeId: id,
-          category_name: category_group_name,
-          place_name,
-          phone,
-          address_name,
-          road_address_name,
-          distance: `${distance}m`,
-          place_url,
-          x,
-          y,
-        };
-      })
-      .sort((a: any, b: any) => {
-        const distanceA = parseInt(a.distance.replace('m', ''));
-        const distanceB = parseInt(b.distance.replace('m', ''));
-        return distanceA - distanceB;
-      });
-
-    return filteredResults;
+    return { 근처식당목록: restaurantsWithinRadius };
   }
 
-  //검색부분
+  //키워드로 검색부분
   async searchStores(keyword: string): Promise<StoresSearchDto[]> {
     const searchStores = await this.storesRepository.searchStores(keyword);
     return searchStores;
@@ -179,3 +149,53 @@ export class StoresService {
     }
   }
 }
+
+// private readonly API_KEY = 'e84edcba09907dc19727de566a994a88';
+
+// async searchPlaces(
+//   query: string,
+//   userLocation: { latitude: number; longitude: number },
+// ): Promise<any> {
+//   const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${query}&y=${userLocation.latitude}&x=${userLocation.longitude}&radius=3000`;
+//   const response = await axios.get(url, {
+//     headers: {
+//       Authorization: 'KakaoAK ' + this.API_KEY,
+//     },
+//   });
+
+//   const filteredResults = response.data.documents
+//     .filter((place: any) => place.category_group_name === '음식점')
+//     .map((place: any) => {
+//       const {
+//         id,
+//         category_group_name,
+//         place_name,
+//         phone,
+//         address_name,
+//         road_address_name,
+//         distance,
+//         place_url,
+//         x,
+//         y,
+//       } = place;
+//       return {
+//         storeId: id,
+//         category_name: category_group_name,
+//         place_name,
+//         phone,
+//         address_name,
+//         road_address_name,
+//         distance: `${distance}m`,
+//         place_url,
+//         x,
+//         y,
+//       };
+//     })
+//     .sort((a: any, b: any) => {
+//       const distanceA = parseInt(a.distance.replace('m', ''));
+//       const distanceB = parseInt(b.distance.replace('m', ''));
+//       return distanceA - distanceB;
+//     });
+
+//   return filteredResults;
+// }
