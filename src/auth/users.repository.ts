@@ -31,8 +31,11 @@ export class UsersRepository extends Repository<Users> {
       if (e.code === '23505') {
         if (e.detail.includes('nickname')) {
           throw new ConflictException('nickname already exists');
+        } else if (e.detail.includes('email')) {
+          throw new ConflictException('email already exists');
+        } else if (e.detail.includes('StoreId')) {
+          throw new ConflictException(`StoreId already exists`);
         }
-        throw new ConflictException('email already exists');
       }
       throw new InternalServerErrorException();
     }
