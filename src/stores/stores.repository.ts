@@ -10,6 +10,11 @@ export class StoresRepository extends Repository<Stores> {
     super(Stores, dataSource.createEntityManager());
   }
 
+  //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터와 비교
+  async findAll(): Promise<Stores[]> {
+    return this.find();
+  }
+
   async searchStores(keyword: string): Promise<StoresSearchDto[]> {
     const searchStores = await this.createQueryBuilder('stores')
       .select([
@@ -26,6 +31,12 @@ export class StoresRepository extends Repository<Stores> {
     //ILIKE = case insensitive
     return searchStores;
   }
+
+  async getCycleTimeByStoreId(storeId: number): Promise<number> {
+    const store = await this.findOne({
+      where: { storeId },
+    });
+    return store.cycleTime;
 
   //CSV 저장
   async processCSVFile(rows: any): Promise<void> {

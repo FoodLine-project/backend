@@ -3,4 +3,7 @@ export enum WaitingStatus {
   ENTERED = 'ENTERED',
   EXITED = 'EXITED',
   CANCELED = 'CANCELED',
+  CALLED = 'CALLED',
+  DELAYED = 'DELAYED',
+  NOSHOW = 'NOSHOW',
 }
