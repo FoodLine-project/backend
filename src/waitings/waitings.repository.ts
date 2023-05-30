@@ -21,7 +21,15 @@ export class WaitingsRepository extends Repository<Waitings> {
   }
 
   async getWaitingListById(storeId: number): Promise<Waitings[]> {
-    return await this.find({ where: { StoreId: storeId } });
+    return await this.find({
+      where: {
+        StoreId: storeId,
+        status:
+          WaitingStatus.WAITING ||
+          WaitingStatus.CALLED ||
+          WaitingStatus.DELAYED,
+      },
+    });
   }
 
   async getWaitingByUser(user: Users): Promise<Waitings> {

@@ -1,6 +1,5 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { jwtConstants } from '../constants';
 import { Injectable } from '@nestjs/common';
 
 //  PassportStrategy 클래스를 상속받는 클래스
@@ -16,7 +15,7 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
       // 헤더에서 Bearer 스킴을 사용하여 jwt 추출
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       // jwt의 시크릿 키 검증
-      secretOrKey: jwtConstants.atSecret,
+      secretOrKey: `${process.env.JWT_AT_SECRET_KEY}`,
     });
   }
 

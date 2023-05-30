@@ -7,14 +7,22 @@ import { Waitings } from './waitings.entity';
 import { AuthModule } from 'src/auth/auth.module';
 import { StoresRepository } from 'src/stores/stores.repository';
 import { ScheduleModule } from '@nestjs/schedule';
+import { TablesRepository } from 'src/tables/tables.repository';
+import { Stores } from 'src/stores/stores.entity';
+import { Tables } from 'src/tables/tables.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Waitings]),
+    TypeOrmModule.forFeature([Waitings, Stores, Tables]),
     AuthModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [WaitingsController],
-  providers: [WaitingsService, WaitingsRepository, StoresRepository],
+  providers: [
+    WaitingsService,
+    WaitingsRepository,
+    StoresRepository,
+    TablesRepository,
+  ],
 })
 export class WaitingsModule {}

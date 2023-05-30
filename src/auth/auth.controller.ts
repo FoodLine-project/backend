@@ -30,6 +30,7 @@ export class AuthController {
   @Post('/login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto): Promise<Tokens> {
+    console.log(`${process.env.JWT_AT_SECRET_KEY}`);
     return this.authService.login(loginDto);
   }
 

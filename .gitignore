@@ -36,3 +36,5 @@ lerna-debug.log*
 
 # Stores CSV directory
 /src/stores/csv
+
+.env

@@ -17,9 +17,9 @@ export class WaitingsService {
   }
 
   getWaitingList(storeId: number, user: Users): Promise<Waitings[]> {
-    if (!user.isAdmin || user.StoreId !== storeId) {
-      throw new NotFoundException('권한이 없습니다');
-    }
+    // if (!user.isAdmin || user.StoreId !== storeId) {
+    //   throw new NotFoundException('권한이 없습니다');
+    // }
     return this.waitingsRepository.getWaitingListById(storeId);
   }
 
@@ -52,9 +52,9 @@ export class WaitingsService {
     status: WaitingStatus,
     user: Users,
   ): Promise<void> {
-    if (!user.isAdmin || user.StoreId !== storeId) {
-      throw new NotFoundException('권한이 없습니다');
-    }
+    // if (user.StoreId !== storeId) {
+    //   throw new NotFoundException('권한이 없습니다');
+    // }
 
     if (status === 'EXITED') {
       this.waitingsRepository.patchToEXITED(storeId, waitingId);
