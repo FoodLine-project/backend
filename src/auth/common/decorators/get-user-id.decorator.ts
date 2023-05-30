@@ -6,10 +6,10 @@ import { ExecutionContext, createParamDecorator } from '@nestjs/common';
 // - sub: 일반적으로 사용자의 고유한 식별자를 담는다 (jwt 표준 클레임)
 // - 클레임: jwt의 내용(payload)에 포함되는 정보를 나타내는 단위
 
-export const GetCurrentUserId = createParamDecorator(
+export const GetUserId = createParamDecorator(
   (data: undefined, context: ExecutionContext): number => {
     const request = context.switchToHttp().getRequest();
 
-    return request.user['sub'];
+    return request.user['userId'];
   },
 );

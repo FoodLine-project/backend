@@ -44,7 +44,7 @@ export class WaitingsController {
   postWaitings(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Body('peopleCnt') peopleCnt: number,
-    @GetCurrentUser() user: Users,
+    @GetUser() user: Users,
   ): string {
     this.waitingsService.postWaitings(storeId, peopleCnt, user);
     return `${peopleCnt}명의 웨이팅을 등록하였습니다`;
@@ -65,7 +65,7 @@ export class WaitingsController {
     @Param('storeId') storeId: number,
     @Param('waitingId') waitingId: number,
     @Query('status', WaitingStatusValidationPipe) status: WaitingStatus,
-    @GetCurrentUser() user: Users,
+    @GetUser() user: Users,
   ): { message: string } {
     this.waitingsService.patchStatusOfWaitings(
       storeId,
