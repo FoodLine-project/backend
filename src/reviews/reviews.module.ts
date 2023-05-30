@@ -4,11 +4,19 @@ import { ReviewsService } from './reviews.service';
 import { ReviewsRepository } from './reviews.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Reviews } from './reviews.entity';
-import { UsersModule } from 'src/users/users.module';
+import { AuthModule } from 'src/auth/auth.module';
+import { Users } from 'src/auth/users.entity';
+import { UsersRepository } from 'src/auth/users.repository';
+import { StoresRepository } from 'src/stores/stores.repository';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Reviews]), UsersModule],
+  imports: [TypeOrmModule.forFeature([Reviews, Users]), AuthModule],
   controllers: [ReviewsController],
-  providers: [ReviewsService, ReviewsRepository],
+  providers: [
+    ReviewsService,
+    ReviewsRepository,
+    UsersRepository,
+    StoresRepository,
+  ],
 })
 export class ReviewsModule {}

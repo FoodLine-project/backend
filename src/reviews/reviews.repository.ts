@@ -1,13 +1,15 @@
 import { DataSource, DeleteResult, Repository } from 'typeorm';
 import { Reviews } from './reviews.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { Users } from 'src/users/users.entity';
-import { NotFoundException } from '@nestjs/common';
+import { ReviewDto } from './dto';
 
 export class ReviewsRepository extends Repository<Reviews> {
   constructor(@InjectRepository(Reviews) private dataSource: DataSource) {
     super(Reviews, dataSource.manager);
+  }
+
+  async findReviewById(reviewId: number): Promise<Reviews> {
+    return await this.findOne({ where: { reviewId } });
   }
 
   async findAllReviews(storeId: number): Promise<Reviews[]> {
@@ -15,15 +17,15 @@ export class ReviewsRepository extends Repository<Reviews> {
   }
 
   async createReview(
-    storeId: number,
-    createReviewDto: CreateReviewDto,
-    user: Users,
+    UserId: number,
+    StoreId: number,
+    reviewDto: ReviewDto,
   ): Promise<Reviews> {
-    const { review, rating } = createReviewDto;
+    const { review, rating } = reviewDto;
 
     const newReview = this.create({
-      StoreId: storeId,
-      UserId: user.userId,
+      StoreId,
+      UserId,
       review,
       rating,
     });
@@ -33,37 +35,28 @@ export class ReviewsRepository extends Repository<Reviews> {
   }
 
   async updateReview(
-    storeId: number,
-    reviewId: number,
-    createReviewDto: CreateReviewDto,
-    user: Users,
+    updatedReview: Reviews,
+    reviewDto: ReviewDto,
   ): Promise<Reviews> {
-    const { review, rating } = createReviewDto;
+    const { review, rating } = reviewDto;
 
-    const updateReview = await this.findOne({
-      where: { reviewId, StoreId: storeId, UserId: user.userId },
-    });
+    updatedReview.review = review;
+    updatedReview.rating = rating;
 
-    if (!updateReview) {
-      throw new NotFoundException(`Can't find review with id ${reviewId}`);
-    }
+    await this.save(updatedReview);
 
-    updateReview.review = review;
-    updateReview.rating = rating;
-
-    await this.save(updateReview);
-    return updateReview;
+    return updatedReview;
   }
 
   async deleteReview(
-    storeId: number,
+    UserId: number,
+    StoreId: number,
     reviewId: number,
-    user: Users,
   ): Promise<DeleteResult> {
     return await this.delete({
+      UserId,
+      StoreId,
       reviewId,
-      StoreId: storeId,
-      UserId: user.userId,
     });
   }
 }

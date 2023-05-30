@@ -1,6 +1,6 @@
 import { IsNotEmpty } from "class-validator";
-//임시
 
+//임시
 export class CreateStoresDto {
     @IsNotEmpty()
     storeName: string;

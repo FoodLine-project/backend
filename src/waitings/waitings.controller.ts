@@ -1,4 +1,3 @@
-import { GetUser } from 'src/users/get-user.decorator';
 import {
   Controller,
   Get,
@@ -11,8 +10,9 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { WaitingsService } from './waitings.service';
-import { Users } from 'src/users/users.entity';
+import { Users } from 'src/auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
+import { GetUser } from 'src/auth/common/decorators';
 import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.pipe';
 import { Cron } from '@nestjs/schedule';
 import { Waitings } from './waitings.entity';
@@ -43,8 +43,8 @@ export class WaitingsController {
   @Post('/:storeId/waitings')
   postWaitings(
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Body('peopleCnt', ValidationPipe) peopleCnt: number,
-    @GetUser() user: Users,
+    @Body('peopleCnt') peopleCnt: number,
+    @GetCurrentUser() user: Users,
   ): string {
     this.waitingsService.postWaitings(storeId, peopleCnt, user);
     return `${peopleCnt}명의 웨이팅을 등록하였습니다`;
@@ -62,10 +62,10 @@ export class WaitingsController {
 
   @Patch('/:storeId/waitings/:waitingId/')
   patchStatusOfWaitings(
-    @Param('storeId', ValidationPipe) storeId: number,
-    @Param('waitingId', ValidationPipe) waitingId: number,
+    @Param('storeId') storeId: number,
+    @Param('waitingId') waitingId: number,
     @Query('status', WaitingStatusValidationPipe) status: WaitingStatus,
-    @GetUser() user: Users,
+    @GetCurrentUser() user: Users,
   ): { message: string } {
     this.waitingsService.patchStatusOfWaitings(
       storeId,
