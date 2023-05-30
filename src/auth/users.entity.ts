@@ -2,13 +2,18 @@ import { Reviews } from 'src/reviews/reviews.entity';
 import { Waitings } from '../waitings/waitings.entity';
 import {
   BaseEntity,
+  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Stores } from 'src/stores/stores.entity';
+import { UnauthorizedException } from '@nestjs/common';
 
 @Entity()
 export class Users extends BaseEntity {
@@ -30,6 +35,21 @@ export class Users extends BaseEntity {
   @Column({ nullable: true, default: null })
   refreshToken: string;
 
+  @Column({ default: false })
+  isAdmin: boolean;
+
+  @Column({ nullable: true })
+  StoreId: number;
+
+  @BeforeInsert()
+  checkStoreId() {
+    if (this.isAdmin && !this.StoreId) {
+      throw new UnauthorizedException(
+        `StoreId must be provided for admin users`,
+      );
+    }
+  }
+
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
@@ -41,4 +61,8 @@ export class Users extends BaseEntity {
 
   @OneToMany(() => Reviews, (review) => review.user)
   reviews: Reviews[];
+
+  @OneToOne(() => Stores, (store) => store.user)
+  @JoinColumn({ name: 'storeId' })
+  store: Stores;
 }

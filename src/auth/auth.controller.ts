@@ -51,8 +51,7 @@ export class AuthController {
   }
 
   @Get('/test')
-  getMyProfile(@GetCurrentUser() user: Users): Promise<void> {
-    console.log(user);
-    return;
+  getMyProfile(@GetCurrentUserId() userId: number): Promise<Users> {
+    return this.authService.getUserInfo(userId);
   }
 }

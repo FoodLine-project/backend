@@ -1,4 +1,4 @@
-import { table } from 'console';
+import { Users } from 'src/auth/users.entity';
 import { Reviews } from 'src/reviews/reviews.entity';
 import { Tables } from 'src/tables/tables.entity';
 import { Waitings } from 'src/waitings/waitings.entity';
@@ -7,7 +7,6 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -66,4 +65,7 @@ export class Stores extends BaseEntity {
 
   @OneToOne(() => Tables, (table) => table.store)
   tables: Tables;
+
+  @OneToOne(() => Users, (user) => user.store)
+  user: Users;
 }
