@@ -22,6 +22,8 @@ export class UsersRepository extends Repository<Users> {
         nickname: signupDto.nickname,
         password: hashedPassword,
         phoneNumber: signupDto.phoneNumber,
+        isAdmin: signupDto.isAdmin,
+        StoreId: signupDto.StoreId,
       });
 
       await this.save(user);
