@@ -102,4 +102,8 @@ export class StoresRepository extends Repository<Stores> {
   async updateCoord(La: number, Ma: number, storeId: number): Promise<any> {
     await this.update(storeId, { La, Ma });
   }
+
+  async findStoreById(storeId: number): Promise<Stores> {
+    return await this.findOne({ where: { storeId } });
+  }
 }

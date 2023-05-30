@@ -1,1 +1,1 @@
-export * from './create-review.dto';
+export * from './review.dto';
