@@ -4,10 +4,10 @@ import { WaitingsService } from './waitings.service';
 import { WaitingsRepository } from './waitings.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Waitings } from './waitings.entity';
-import { UsersModule } from 'src/users/users.module';
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Waitings]), UsersModule],
+  imports: [TypeOrmModule.forFeature([Waitings]), AuthModule],
   controllers: [WaitingsController],
   providers: [WaitingsService, WaitingsRepository],
 })
