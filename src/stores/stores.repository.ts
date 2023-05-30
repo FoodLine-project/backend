@@ -66,12 +66,13 @@ export class StoresRepository extends Repository<Stores> {
   }
   //좌표를 위한 주소와 아이디
   async getStoreAddressId() {
-    return await this.find({ select: ['storeId', 'address'] })
+    return await this.find({ select: ['storeId', 'address'] });
   }
   //주소 넣고 좌표
   async getCoordinate(address: string): Promise<any> {
     const url =
-      'https://dapi.kakao.com/v2/local/search/address.json?query=' + encodeURIComponent(address);
+      'https://dapi.kakao.com/v2/local/search/address.json?query=' +
+      encodeURIComponent(address);
     const restApiKey = '800b8fe2427efbffbef3bc6fe96a5464';
     const headers = { Authorization: 'KakaoAK ' + restApiKey };
 
@@ -87,11 +88,17 @@ export class StoresRepository extends Repository<Stores> {
         return null;
       }
     } catch (error) {
-      throw new Error('Error fetching coordinates from Kakao API: ' + error.message);
+      throw new Error(
+        'Error fetching coordinates from Kakao API: ' + error.message,
+      );
     }
   }
   //저장
   async updateCoord(La: number, Ma: number, storeId: number): Promise<any> {
     await this.update(storeId, { La, Ma });
+  }
+
+  async findStoreById(storeId: number): Promise<Stores> {
+    return await this.findOne({ where: { storeId } });
   }
 }

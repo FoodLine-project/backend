@@ -9,51 +9,58 @@ import {
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { Reviews } from './reviews.entity';
-import { Users } from 'src/auth/users.entity';
-import { CreateReviewDto } from './dto';
-import { GetCurrentUser } from 'src/auth/common/decorators';
+import { ReviewDto } from './dto';
+import { GetCurrentUserId, Public } from 'src/auth/common/decorators';
 
 @Controller('stores/:storeId/reviews')
 export class ReviewsController {
   constructor(private reviewsService: ReviewsService) {}
 
+  @Public()
   @Get('/')
-  getAllReviews(@Param('storeId') storeId: number): Promise<Reviews[]> {
-    return this.reviewsService.getAllReviews(storeId);
+  getAllReviews(@Param('storeId') storeId: string): Promise<Reviews[]> {
+    return this.reviewsService.getAllReviews(parseInt(storeId));
   }
 
   @Post('/')
   createReview(
-    @Param('storeId') storeId: number,
-    @GetCurrentUser() user: Users,
-    // @GetUser() user: Users,
+    @GetCurrentUserId() userId: number,
+    @Param('storeId') storeId: string,
     @Body()
-    createReviewDto: CreateReviewDto,
+    reviewDto: ReviewDto,
   ): Promise<Reviews> {
-    return this.reviewsService.createReview(storeId, createReviewDto, user);
+    return this.reviewsService.createReview(
+      userId,
+      parseInt(storeId),
+      reviewDto,
+    );
   }
 
   @Patch('/:reviewId')
   updateReview(
-    @Param('storeId') storeId: number,
-    @Param('reviewId') reviewId: number,
-    @GetCurrentUser() user: Users,
-    @Body() createReviewDto: CreateReviewDto,
+    @GetCurrentUserId() userId: number,
+    @Param('storeId') storeId: string,
+    @Param('reviewId') reviewId: string,
+    @Body() reviewDto: ReviewDto,
   ): Promise<Reviews> {
     return this.reviewsService.updateReview(
-      storeId,
-      reviewId,
-      createReviewDto,
-      user,
+      userId,
+      parseInt(storeId),
+      parseInt(reviewId),
+      reviewDto,
     );
   }
 
   @Delete('/:reviewId')
   deleteReview(
-    @Param('storeId') storeId: number,
-    @Param('reviewId') reviewId: number,
-    @GetCurrentUser() user: Users,
+    @GetCurrentUserId() userId: number,
+    @Param('storeId') storeId: string,
+    @Param('reviewId') reviewId: string,
   ): Promise<void> {
-    return this.reviewsService.deleteReview(storeId, reviewId, user);
+    return this.reviewsService.deleteReview(
+      userId,
+      parseInt(storeId),
+      parseInt(reviewId),
+    );
   }
 }

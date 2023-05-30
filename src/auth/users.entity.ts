@@ -38,7 +38,7 @@ export class Users extends BaseEntity {
   @Column({ default: false })
   isAdmin: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'StoreId' })
   StoreId: number;
 
   @BeforeInsert()
@@ -63,6 +63,6 @@ export class Users extends BaseEntity {
   reviews: Reviews[];
 
   @OneToOne(() => Stores, (store) => store.user)
-  @JoinColumn({ name: 'storeId' })
+  @JoinColumn({ name: 'StoreId' })
   store: Stores;
 }
