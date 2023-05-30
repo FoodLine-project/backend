@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query, Post, Body, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  Post,
+  Body,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import { StoresService } from './stores.service';
 import { LocationService } from 'src/location/location.service';
@@ -11,7 +20,7 @@ export class StoresController {
   constructor(
     private storesService: StoresService,
     private locationService: LocationService,
-  ) { }
+  ) {}
 
   @Get('/:query')
   async searchPlaces(@Param('query') query: string): Promise<any> {
@@ -33,7 +42,7 @@ export class StoresController {
     await this.storesService.processCSVFile(inputFile);
   }
 
-  //주소로 카카오에서 좌표 받아서 postgres업데이트 
+  //주소로 카카오에서 좌표 받아서 postgres업데이트
   @Post('update-coordinates')
   async updateCoordinates(): Promise<string> {
     await this.storesService.updateCoordinates();
@@ -42,14 +51,13 @@ export class StoresController {
   //상세조회 (정보+댓글)
   @Get('/:storeId')
   getOneStore(@Param('storeId') storeId: number): Promise<Stores> {
-    return this.storesService.getOneStore(storeId)
+    return this.storesService.getOneStore(storeId);
   }
 
   //(임시) 만약 추가요청이 들어올시// 추후 수정 예정
   @Post('/')
   @UsePipes(ValidationPipe)
   createStore(@Body() createStoreDto: CreateStoresDto): Promise<Stores> {
-    return this.storesService.createStore(createStoreDto)
+    return this.storesService.createStore(createStoreDto);
   }
-
 }

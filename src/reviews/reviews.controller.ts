@@ -10,7 +10,7 @@ import {
 import { ReviewsService } from './reviews.service';
 import { Reviews } from './reviews.entity';
 import { ReviewDto } from './dto';
-import { GetCurrentUserId, Public } from 'src/auth/common/decorators';
+import { GetUserId, Public } from 'src/auth/common/decorators';
 
 @Controller('stores/:storeId/reviews')
 export class ReviewsController {
@@ -24,7 +24,7 @@ export class ReviewsController {
 
   @Post('/')
   createReview(
-    @GetCurrentUserId() userId: number,
+    @GetUserId() userId: number,
     @Param('storeId') storeId: string,
     @Body()
     reviewDto: ReviewDto,
@@ -38,7 +38,7 @@ export class ReviewsController {
 
   @Patch('/:reviewId')
   updateReview(
-    @GetCurrentUserId() userId: number,
+    @GetUserId() userId: number,
     @Param('storeId') storeId: string,
     @Param('reviewId') reviewId: string,
     @Body() reviewDto: ReviewDto,
@@ -53,7 +53,7 @@ export class ReviewsController {
 
   @Delete('/:reviewId')
   deleteReview(
-    @GetCurrentUserId() userId: number,
+    @GetUserId() userId: number,
     @Param('storeId') storeId: string,
     @Param('reviewId') reviewId: string,
   ): Promise<void> {
