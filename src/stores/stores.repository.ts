@@ -10,6 +10,11 @@ export class StoresRepository extends Repository<Stores> {
     super(Stores, dataSource.createEntityManager());
   }
 
+  //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터와 비교
+  async findAll(): Promise<Stores[]> {
+    return this.find();
+  }
+
   async searchStores(keyword: string): Promise<StoresSearchDto[]> {
     const searchStores = await this.createQueryBuilder('stores')
       .select([
@@ -66,12 +71,13 @@ export class StoresRepository extends Repository<Stores> {
   }
   //좌표를 위한 주소와 아이디
   async getStoreAddressId() {
-    return await this.find({ select: ['storeId', 'address'] })
+    return await this.find({ select: ['storeId', 'address'] });
   }
   //주소 넣고 좌표
   async getCoordinate(address: string): Promise<any> {
     const url =
-      'https://dapi.kakao.com/v2/local/search/address.json?query=' + encodeURIComponent(address);
+      'https://dapi.kakao.com/v2/local/search/address.json?query=' +
+      encodeURIComponent(address);
     const restApiKey = '800b8fe2427efbffbef3bc6fe96a5464';
     const headers = { Authorization: 'KakaoAK ' + restApiKey };
 
@@ -87,7 +93,9 @@ export class StoresRepository extends Repository<Stores> {
         return null;
       }
     } catch (error) {
-      throw new Error('Error fetching coordinates from Kakao API: ' + error.message);
+      throw new Error(
+        'Error fetching coordinates from Kakao API: ' + error.message,
+      );
     }
   }
   //저장
