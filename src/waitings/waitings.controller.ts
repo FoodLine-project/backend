@@ -13,7 +13,7 @@ import {
 import { WaitingsService } from './waitings.service';
 import { Users } from 'src/auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
-import { GetCurrentUser } from 'src/auth/common/decorators';
+import { GetUser } from 'src/auth/common/decorators';
 import { AuthGuard } from '@nestjs/passport';
 import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.pipe';
 
@@ -33,7 +33,7 @@ export class WaitingsController {
   postWaitings(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Body('peopleCnt') peopleCnt: number,
-    @GetCurrentUser() user: Users,
+    @GetUser() user: Users,
   ): string {
     this.waitingsService.postWaitings(storeId, peopleCnt, user);
     return `${peopleCnt}명의 웨이팅을 등록하였습니다`;
@@ -44,7 +44,7 @@ export class WaitingsController {
     @Param('storeId') storeId: number,
     @Param('waitingId') waitingId: number,
     @Query('status', WaitingStatusValidationPipe) status: WaitingStatus,
-    @GetCurrentUser() user: Users,
+    @GetUser() user: Users,
   ): { message: string } {
     this.waitingsService.patchStatusOfWaitings(
       storeId,
@@ -63,7 +63,7 @@ export class WaitingsController {
   getWaitingTime(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('waitingId', ParseIntPipe) waitingId: number,
-    @GetCurrentUser() user: Users,
+    @GetUser() user: Users,
   ): Promise<number> {
     const time = this.waitingsService.getWaitingTime(storeId, waitingId, user);
     return time;

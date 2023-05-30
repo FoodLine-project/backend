@@ -11,7 +11,7 @@ import {
 import { AuthService } from './auth.service';
 import { SignupDto, LoginDto } from './dto';
 import { Tokens } from './types';
-import { GetCurrentUser, GetCurrentUserId, Public } from './common/decorators';
+import { GetUser, GetUserId, Public } from './common/decorators';
 import { RefreshTokenGuard } from './guards';
 import { Users } from './users.entity';
 
@@ -35,7 +35,7 @@ export class AuthController {
 
   @Patch('/logout')
   @HttpCode(HttpStatus.OK)
-  logout(@GetCurrentUserId() userId: number): Promise<void> {
+  logout(@GetUserId() userId: number): Promise<void> {
     return this.authService.logout(userId);
   }
 
@@ -44,14 +44,14 @@ export class AuthController {
   @Post('/refresh')
   @HttpCode(HttpStatus.OK)
   refreshAccessToken(
-    @GetCurrentUserId() userId: number,
-    @GetCurrentUser('refreshToken') refreshToken: string,
+    @GetUserId() userId: number,
+    @GetUser('refreshToken') refreshToken: string,
   ): Promise<{ accessToken: string }> {
     return this.authService.refreshAccessToken(userId, refreshToken);
   }
 
   @Get('/test')
-  getMyProfile(@GetCurrentUserId() userId: number): Promise<Users> {
-    return this.authService.getUserInfo(userId);
+  getMyProfile(@GetUser() user: Users): Users {
+    return user;
   }
 }
