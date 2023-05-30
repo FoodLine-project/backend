@@ -1,12 +1,33 @@
+import { TablesRepository } from './../tables/tables.repository';
 import { Injectable } from '@nestjs/common';
 import { Repository, DataSource } from 'typeorm';
 import { Stores } from './stores.entity';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import axios from 'axios';
+import { InjectRepository } from '@nestjs/typeorm';
+
+// @Injectable()
+// export class StoresRepository extends Repository<Stores, Tables> {
+//   // constructor(dataSource: DataSource) {
+//   //   super(Stores, dataSource.createEntityManager());
+//   // }
+//   constructor(
+//     @InjectRepository(Stores) private storesDataSource: DataSource,
+//     @InjectRepository(Tables) private tablesDataSource: DataSource,
+//   ) {
+//     super(
+//       [Stores, Tables],
+//       [storesDataSource.manager, tablesDataSource.manager],
+//     );
+//   }
 
 @Injectable()
 export class StoresRepository extends Repository<Stores> {
-  constructor(dataSource: DataSource) {
+  constructor(
+    @InjectRepository(TablesRepository)
+    private tablesRepository: TablesRepository,
+    dataSource: DataSource,
+  ) {
     super(Stores, dataSource.createEntityManager());
   }
 
@@ -37,6 +58,7 @@ export class StoresRepository extends Repository<Stores> {
       where: { storeId },
     });
     return store.cycleTime;
+  }
 
   //CSV 저장
   async processCSVFile(rows: any): Promise<void> {
@@ -68,6 +90,7 @@ export class StoresRepository extends Repository<Stores> {
 
         try {
           const result = await this.save(store);
+          this.tablesRepository.createTable(result);
           console.log('Inserted', result, 'row:', store);
         } catch (error) {
           console.error('Error occurred during insert:', error);
@@ -84,7 +107,8 @@ export class StoresRepository extends Repository<Stores> {
     const url =
       'https://dapi.kakao.com/v2/local/search/address.json?query=' +
       encodeURIComponent(address);
-    const restApiKey = '800b8fe2427efbffbef3bc6fe96a5464';
+    // const restApiKey = '800b8fe2427efbffbef3bc6fe96a5464';
+    const restApiKey = `${process.env.KAKAO_REST_API_KEY}`;
     const headers = { Authorization: 'KakaoAK ' + restApiKey };
 
     try {

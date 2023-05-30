@@ -9,7 +9,6 @@ import { SignupDto, LoginDto } from './dto';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { Tokens } from './types';
-import { jwtConstants } from './constants';
 import { Users } from './users.entity';
 
 @Injectable()
@@ -37,8 +36,8 @@ export class AuthService {
         StoreId,
       },
       {
-        secret: jwtConstants.atSecret,
-        expiresIn: jwtConstants.atExpiresIn,
+        secret: `${process.env.JWT_AT_SECRET_KEY}`,
+        expiresIn: '2h',
       },
     );
   }
@@ -54,8 +53,8 @@ export class AuthService {
         StoreId,
       },
       {
-        secret: jwtConstants.rtSecret,
-        expiresIn: jwtConstants.rtExpiresIn,
+        secret: `${process.env.JWT_RT_SECRET_KEY}`,
+        expiresIn: '7d',
       },
     );
   }

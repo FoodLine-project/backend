@@ -6,7 +6,6 @@ import {
   Param,
   Body,
   Query,
-  ValidationPipe,
   ParseIntPipe,
 } from '@nestjs/common';
 import { WaitingsService } from './waitings.service';
@@ -53,7 +52,7 @@ export class WaitingsController {
   @Post('/:storeId/entered')
   postEntered(
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Body('peopleCnt', ValidationPipe) peopleCnt: number,
+    @Body('peopleCnt') peopleCnt: number,
     @GetUser() user: Users,
   ): string {
     this.waitingsService.postEntered(storeId, peopleCnt, user);
@@ -80,8 +79,8 @@ export class WaitingsController {
 
   @Patch('/:storeId/waitings/:waitingId/canceled')
   patchStatusToCanceled(
-    @Param('storeId', ValidationPipe) storeId: number,
-    @Param('waitingId', ValidationPipe) waitingId: number,
+    @Param('storeId') storeId: number,
+    @Param('waitingId') waitingId: number,
   ): { message: string } {
     this.waitingsService.patchStatusToCanceled(storeId, waitingId);
     return { message: '웨이팅을 취소하였습니다' };

@@ -1,5 +1,5 @@
 import { TablesService } from './tables.service';
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 
 @Controller('tables')
 export class TablesController {

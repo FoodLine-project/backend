@@ -28,19 +28,19 @@ export class StoresController {
   @Public()
   @Post('/coordinates')
   async findRestaurantsWithinRadius(
-    @Body() coordinatesData: any)
-    : Promise<{ 근처식당목록: Stores[] }> {
-    console.log(coordinatesData)
+    @Body() coordinatesData: any,
+  ): Promise<{ 근처식당목록: Stores[] }> {
+    console.log(coordinatesData);
     const { swLatlng, neLatlng } = coordinatesData;
     return this.storesService.findRestaurantsWithinRadius(
-      // latitudeSW, 
+      // latitudeSW,
       // longitudeSW,
       // latitudeNE,
       // longitudeNE,
       swLatlng.Ma,
       swLatlng.La,
       neLatlng.Ma,
-      neLatlng.La
+      neLatlng.La,
       //La Ma 다시 정리해보기
       // swLatlng: { La: 126.7863104768037, Ma: 37.751676049306454 },
       // neLatlng: { La: 126.79999791927987, Ma: 37.7548534512587 }

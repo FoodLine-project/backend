@@ -14,7 +14,7 @@ export class StoresService {
   constructor(
     @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
-  ) { }
+  ) {}
 
   //사용자 위치 기반 반경 1km내의 식당 조회
   async findRestaurantsWithinRadius(
@@ -33,7 +33,7 @@ export class StoresService {
         restaurant.Ma <= northEastLongitude;
       return withinLatitudeRange && withinLongitudeRange;
     });
-    console.log(restaurantsWithinRadius)
+    console.log(restaurantsWithinRadius);
     return { 근처식당목록: restaurantsWithinRadius };
   }
 

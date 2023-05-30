@@ -1,6 +1,5 @@
 import { Stores } from 'src/stores/stores.entity';
 import {
-  AfterInsert,
   BaseEntity,
   Column,
   CreateDateColumn,
@@ -19,10 +18,10 @@ export class Tables extends BaseEntity {
   @Column()
   StoreId: number;
 
-  @Column({ default: () => '0' })
+  @Column({ default: 0 })
   availableTableForTwo: number;
 
-  @Column({ default: () => '0' })
+  @Column({ default: 0 })
   availableTableForFour: number;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
@@ -35,15 +34,15 @@ export class Tables extends BaseEntity {
   @JoinColumn({ name: 'StoreId' })
   store: Stores;
 
-  @AfterInsert()
-  async setDefaultAvailableTableForTwo(): Promise<void> {
-    const store = await Stores.findOne({
-      where: { storeId: this.StoreId },
-    });
-    if (store) {
-      this.availableTableForTwo = store.tableForTwo;
-      this.availableTableForFour = store.tableForFour;
-      await this.save();
-    }
-  }
+  // @AfterInsert()
+  // async setDefaultAvailableTableForTwo(): Promise<void> {
+  //   const store = await Stores.findOne({
+  //     where: { storeId: this.StoreId },
+  //   });
+  //   if (store) {
+  //     this.availableTableForTwo = store.tableForTwo;
+  //     this.availableTableForFour = store.tableForFour;
+  //     await this.save();
+  //   }
+  // }
 }

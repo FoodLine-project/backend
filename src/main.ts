@@ -1,8 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+// import { config } from 'dotenv';
 
 async function bootstrap() {
+  // const result = config();
+  // if (result.error) {
+  //   throw result.error;
+  // }
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe()); // ValidationPipe를 전역에서 사용
   await app.listen(3000, () => {
