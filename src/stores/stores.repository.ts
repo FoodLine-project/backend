@@ -32,6 +32,12 @@ export class StoresRepository extends Repository<Stores> {
     return searchStores;
   }
 
+  async getCycleTimeByStoreId(storeId: number): Promise<number> {
+    const store = await this.findOne({
+      where: { storeId },
+    });
+    return store.cycleTime;
+
   //CSV 저장
   async processCSVFile(rows: any): Promise<void> {
     for (const rowData of rows) {
