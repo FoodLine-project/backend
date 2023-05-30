@@ -1,8 +1,8 @@
 import { DataSource, DeleteResult, Repository } from 'typeorm';
 import { Reviews } from './reviews.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateReviewDto } from './dto/create-review.dto';
-import { Users } from 'src/users/users.entity';
+import { CreateReviewDto } from './dto';
+import { Users } from 'src/auth/users.entity';
 import { NotFoundException } from '@nestjs/common';
 
 export class ReviewsRepository extends Repository<Reviews> {
@@ -45,13 +45,14 @@ export class ReviewsRepository extends Repository<Reviews> {
     });
 
     if (!updateReview) {
-      throw new NotFoundException(`Can't find review with id ${reviewId}`);
+      throw new NotFoundException(`Review does not exist`);
     }
 
     updateReview.review = review;
     updateReview.rating = rating;
 
     await this.save(updateReview);
+
     return updateReview;
   }
 

@@ -2,7 +2,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Waitings } from './waitings.entity';
 import { DataSource, Repository } from 'typeorm';
 import { WaitingStatus } from './waitingStatus.enum';
-import { Users } from 'src/users/users.entity';
+import { Users } from 'src/auth/users.entity';
 
 export class WaitingsRepository extends Repository<Waitings> {
   constructor(@InjectRepository(Waitings) private dataSource: DataSource) {

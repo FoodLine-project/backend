@@ -1,5 +1,5 @@
 import { Reviews } from 'src/reviews/reviews.entity';
-import { Waitings } from './../waitings/waitings.entity';
+import { Waitings } from '../waitings/waitings.entity';
 import {
   BaseEntity,
   Column,
@@ -26,6 +26,9 @@ export class Users extends BaseEntity {
 
   @Column()
   phoneNumber: string;
+
+  @Column({ nullable: true, default: null })
+  refreshToken: string;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
