@@ -30,11 +30,11 @@ export class UsersRepository extends Repository<Users> {
     } catch (e) {
       if (e.code === '23505') {
         if (e.detail.includes('nickname')) {
-          throw new ConflictException('nickname already exists');
+          throw new ConflictException('중복된 닉네임입니다.');
         } else if (e.detail.includes('email')) {
-          throw new ConflictException('email already exists');
+          throw new ConflictException('중복된 이메일입니다.');
         } else if (e.detail.includes('StoreId')) {
-          throw new ConflictException(`StoreId already exists`);
+          throw new ConflictException(`중복된 음식점 ID 입니다.`);
         }
       }
       throw new InternalServerErrorException();

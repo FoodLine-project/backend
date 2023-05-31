@@ -8,6 +8,7 @@ import { ReviewDto } from './dto';
 import { Reviews } from './reviews.entity';
 import { UsersRepository } from 'src/auth/users.repository';
 import { StoresRepository } from 'src/stores/stores.repository';
+import { Users } from 'src/auth/users.entity';
 
 @Injectable()
 export class ReviewsService {
@@ -22,29 +23,22 @@ export class ReviewsService {
   }
 
   async createReview(
-    userId: number,
+    user: Users,
     storeId: number,
     reviewDto: ReviewDto,
-  ): Promise<Reviews> {
-    const user = await this.usersRepository.findUserById(userId);
-    if (!user) {
-      throw new NotFoundException(
-        `User with userId" ${userId}" does not exist`,
-      );
-    }
-
+  ): Promise<void> {
     const store = await this.storesRepository.findStoreById(storeId);
     if (!store) {
-      throw new NotFoundException(
-        `Store with storeId "${storeId}" does not exist`,
-      );
+      throw new NotFoundException(`존재하지 않는 음식점입니다.`);
     }
 
     if (user.isAdmin && user.StoreId === store.storeId) {
-      throw new ForbiddenException(`Admin user cannot write a review`);
+      throw new ForbiddenException(
+        `관리자는 자신의 음식점에 리뷰를 남길 수 없습니다.`,
+      );
     }
 
-    return await this.reviewsRepository.createReview(
+    await this.reviewsRepository.createReview(
       user.userId,
       store.storeId,
       reviewDto,
@@ -52,67 +46,45 @@ export class ReviewsService {
   }
 
   async updateReview(
-    userId: number,
+    user: Users,
     storeId: number,
     reviewId: number,
     reviewDto: ReviewDto,
-  ): Promise<Reviews> {
-    const user = await this.usersRepository.findUserById(userId);
-    if (!user) {
-      throw new NotFoundException(
-        `User with userId" ${userId}" does not exist`,
-      );
-    }
-
+  ): Promise<void> {
     const store = await this.storesRepository.findStoreById(storeId);
     if (!store) {
-      throw new NotFoundException(
-        `Store with storeId "${storeId}" does not exist`,
-      );
+      throw new NotFoundException(`존재하지 않는 음식점입니다.`);
     }
 
     const review = await this.reviewsRepository.findReviewById(reviewId);
     if (!review) {
-      throw new NotFoundException(
-        `Review with reviewId "${reviewId}" does not exist`,
-      );
+      throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
     }
 
     if (review.UserId !== user.userId) {
-      throw new ForbiddenException(`User does not have access to this review`);
+      throw new ForbiddenException(`리뷰 수정 권한이 존재하지 않습니다.`);
     }
 
     return await this.reviewsRepository.updateReview(review, reviewDto);
   }
 
   async deleteReview(
-    userId: number,
+    user: Users,
     storeId: number,
     reviewId: number,
   ): Promise<void> {
-    const user = await this.usersRepository.findUserById(userId);
-    if (!user) {
-      throw new NotFoundException(
-        `User with userId" ${userId}" does not exist`,
-      );
-    }
-
     const store = await this.storesRepository.findStoreById(storeId);
     if (!store) {
-      throw new NotFoundException(
-        `Store with storeId "${storeId}" does not exist`,
-      );
+      throw new NotFoundException(`존재하지 않는 음식점입니다.`);
     }
 
     const review = await this.reviewsRepository.findReviewById(reviewId);
     if (!review) {
-      throw new NotFoundException(
-        `Review with reviewId "${reviewId}" does not exist`,
-      );
+      throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
     }
 
     if (review.UserId !== user.userId) {
-      throw new ForbiddenException(`User does not have access to this review`);
+      throw new ForbiddenException(`리뷰 삭제 권한이 존재하지 않습니다.`);
     }
 
     const result = await this.reviewsRepository.deleteReview(
@@ -122,7 +94,7 @@ export class ReviewsService {
     );
 
     if (!result.affected) {
-      throw new NotFoundException(`Review does not exist`);
+      throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
     }
   }
 }

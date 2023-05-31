@@ -20,7 +20,7 @@ export class ReviewsRepository extends Repository<Reviews> {
     UserId: number,
     StoreId: number,
     reviewDto: ReviewDto,
-  ): Promise<Reviews> {
+  ): Promise<void> {
     const { review, rating } = reviewDto;
 
     const newReview = this.create({
@@ -31,21 +31,18 @@ export class ReviewsRepository extends Repository<Reviews> {
     });
 
     await this.save(newReview);
-    return newReview;
   }
 
   async updateReview(
     updatedReview: Reviews,
     reviewDto: ReviewDto,
-  ): Promise<Reviews> {
+  ): Promise<void> {
     const { review, rating } = reviewDto;
 
     updatedReview.review = review;
     updatedReview.rating = rating;
 
     await this.save(updatedReview);
-
-    return updatedReview;
   }
 
   async deleteReview(

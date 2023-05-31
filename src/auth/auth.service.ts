@@ -83,12 +83,12 @@ export class AuthService {
 
     const user = await this.usersRepository.findUserByEmail(email);
     if (!user) {
-      throw new NotFoundException(`User with email "${email}" does not exist`);
+      throw new NotFoundException(`존재하지 않는 이메일입니다.`);
     }
 
     const passwordMatches = await bcrypt.compare(password, user.password);
     if (!passwordMatches) {
-      throw new UnauthorizedException(`Password does not match`);
+      throw new UnauthorizedException(`비밀번호가 일치하지 않습니다.`);
     }
 
     const tokens = await this.getTokens(user);
@@ -102,11 +102,6 @@ export class AuthService {
   }
 
   async logout(userId: number): Promise<void> {
-    const user = this.usersRepository.findUserById(userId);
-    if (!user) {
-      throw new NotFoundException(`User with id "${userId}" does not exist`);
-    }
-
     await this.usersRepository.updateRefreshToken(userId, null);
   }
 
@@ -116,16 +111,12 @@ export class AuthService {
   ): Promise<{ accessToken: string }> {
     const user = await this.usersRepository.findUserById(userId);
 
-    if (!user) {
-      throw new NotFoundException(`User with id "${userId}" does not exist`);
-    }
-
     const refreshTokenMatches = await bcrypt.compare(
       refreshToken,
       user.refreshToken,
     );
     if (!refreshTokenMatches) {
-      throw new UnauthorizedException(`Refresh token does not match`);
+      throw new UnauthorizedException(`로그인이 필요합니다.`);
     }
 
     const accessToken = await this.getAccessToken(user);
