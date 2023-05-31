@@ -72,7 +72,13 @@ export class WaitingsRepository extends Repository<Waitings> {
     return;
   }
 
-  async patchToEXITED(storeId: number, waitingId: number): Promise<void> {
+  async getWaitingById(waitingId: number): Promise<Waitings> {
+    return await this.findOne({
+      where: { waitingId },
+    });
+  }
+
+  async patchToExited(storeId: number, waitingId: number): Promise<void> {
     const exited = await this.findOne({
       where: { waitingId },
     });
@@ -87,6 +93,7 @@ export class WaitingsRepository extends Repository<Waitings> {
           peopleCnt,
         })),
       });
+      if (!called) return;
       called.status = WaitingStatus.CALLED;
       await this.save(called);
       return;
@@ -99,13 +106,14 @@ export class WaitingsRepository extends Repository<Waitings> {
           peopleCnt,
         })),
       });
+      if (!called) return;
       called.status = WaitingStatus.CALLED;
       await this.save(called);
       return;
     }
   }
 
-  async patchToDELAYED(storeId: number, waitingId: number): Promise<void> {
+  async patchToDelayed(storeId: number, waitingId: number): Promise<void> {
     const delayed = await this.findOne({
       where: { waitingId },
     });
@@ -138,7 +146,7 @@ export class WaitingsRepository extends Repository<Waitings> {
     }
   }
 
-  async patchStatus(
+  async patchToEntered(
     storeId: number,
     waitingId: number,
     status: WaitingStatus,
@@ -151,10 +159,7 @@ export class WaitingsRepository extends Repository<Waitings> {
     return;
   }
 
-  async patchStatusToCanceled(
-    storeId: number,
-    waitingId: number,
-  ): Promise<void> {
+  async patchToCanceled(storeId: number, waitingId: number): Promise<void> {
     const canceled = await this.findOne({
       where: { waitingId, StoreId: storeId },
     });
