@@ -12,8 +12,8 @@ export class ReviewsRepository extends Repository<Reviews> {
     return await this.findOne({ where: { reviewId } });
   }
 
-  async findAllReviews(storeId: number): Promise<Reviews[]> {
-    return await this.find({ where: { StoreId: storeId } });
+  async findAllReviews(StoreId: number): Promise<Reviews[]> {
+    return await this.find({ where: { StoreId } });
   }
 
   async createReview(
@@ -55,5 +55,17 @@ export class ReviewsRepository extends Repository<Reviews> {
       StoreId,
       reviewId,
     });
+  }
+
+  async getAverageRating(storeId: number): Promise<number> {
+    const reviews = await this.findAllReviews(storeId);
+
+    const ratings = reviews.map((review) => {
+      return review.rating;
+    });
+
+    const average = ratings.reduce((a, b) => a + b) / ratings.length;
+
+    return parseFloat(average.toPrecision(2));
   }
 }
