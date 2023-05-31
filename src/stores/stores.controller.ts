@@ -7,6 +7,7 @@ import {
   Body,
   UsePipes,
   ValidationPipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import { StoresService } from './stores.service';
@@ -21,7 +22,7 @@ export class StoresController {
   constructor(
     private storesService: StoresService,
     private locationService: LocationService,
-  ) {}
+  ) { }
 
   //사용자 위치 기반 반경 1km내의 식당 조회
   //localhost:3000/places/within-radius?latitudeSW=37.74812040537091&longitudeSW=126.7688923363321&latitudeNE=37.74970428169939&longitudeNE=126.77258647785946
@@ -73,7 +74,7 @@ export class StoresController {
   //상세조회 (정보+댓글)
   @Public()
   @Get('/:storeId')
-  getOneStore(@Param('storeId') storeId: number): Promise<Stores> {
+  getOneStore(@Param('storeId', ParseIntPipe) storeId: number): Promise<Stores> {
     return this.storesService.getOneStore(storeId);
   }
 

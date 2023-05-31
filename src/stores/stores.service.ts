@@ -14,7 +14,7 @@ export class StoresService {
   constructor(
     @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
-  ) {}
+  ) { }
 
   //사용자 위치 기반 반경 1km내의 식당 조회
   async findRestaurantsWithinRadius(
@@ -35,9 +35,9 @@ export class StoresService {
     });
     console.log(restaurantsWithinRadius);
     return { 근처식당목록: restaurantsWithinRadius };
-  }
+  }//sorting //쿼리 searching 따로 
 
-  //키워드로 검색부분
+  //키워드로 검색부분 //sorting 추가 //전국 식당으로 //가장 가까운 순으로?
   async searchStores(keyword: string): Promise<StoresSearchDto[]> {
     const searchStores = await this.storesRepository.searchStores(keyword);
     return searchStores;
