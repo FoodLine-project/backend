@@ -4,13 +4,15 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { Reviews } from './reviews.entity';
 import { ReviewDto } from './dto';
-import { GetUserId, Public } from 'src/auth/common/decorators';
+import { GetUser, Public } from 'src/auth/common/decorators';
+import { Users } from 'src/auth/users.entity';
 
 @Controller('stores/:storeId/reviews')
 export class ReviewsController {
@@ -18,49 +20,50 @@ export class ReviewsController {
 
   @Public()
   @Get('/')
-  getAllReviews(@Param('storeId') storeId: string): Promise<Reviews[]> {
-    return this.reviewsService.getAllReviews(parseInt(storeId));
+  getAllReviews(
+    @Param('storeId', ParseIntPipe) storeId: number,
+  ): Promise<Reviews[]> {
+    return this.reviewsService.getAllReviews(storeId);
   }
 
   @Post('/')
-  createReview(
-    @GetUserId() userId: number,
-    @Param('storeId') storeId: string,
+  async createReview(
+    @GetUser() user: Users,
+    @Param('storeId', ParseIntPipe) storeId: number,
     @Body()
     reviewDto: ReviewDto,
-  ): Promise<Reviews> {
-    return this.reviewsService.createReview(
-      userId,
-      parseInt(storeId),
-      reviewDto,
-    );
+  ): Promise<{ message: string }> {
+    return await this.reviewsService
+      .createReview(user, storeId, reviewDto)
+      .then(() => {
+        return { message: '리뷰를 작성했습니다.' };
+      });
   }
 
   @Patch('/:reviewId')
-  updateReview(
-    @GetUserId() userId: number,
-    @Param('storeId') storeId: string,
-    @Param('reviewId') reviewId: string,
+  async updateReview(
+    @GetUser() user: Users,
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('reviewId', ParseIntPipe) reviewId: number,
     @Body() reviewDto: ReviewDto,
-  ): Promise<Reviews> {
-    return this.reviewsService.updateReview(
-      userId,
-      parseInt(storeId),
-      parseInt(reviewId),
-      reviewDto,
-    );
+  ): Promise<{ message: string }> {
+    return await this.reviewsService
+      .updateReview(user, storeId, reviewId, reviewDto)
+      .then(() => {
+        return { message: '리뷰가 수정되었습니다.' };
+      });
   }
 
   @Delete('/:reviewId')
-  deleteReview(
-    @GetUserId() userId: number,
-    @Param('storeId') storeId: string,
-    @Param('reviewId') reviewId: string,
-  ): Promise<void> {
-    return this.reviewsService.deleteReview(
-      userId,
-      parseInt(storeId),
-      parseInt(reviewId),
-    );
+  async deleteReview(
+    @GetUser() user: Users,
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('reviewId', ParseIntPipe) reviewId: number,
+  ): Promise<{ message: string }> {
+    return await this.reviewsService
+      .deleteReview(user, storeId, reviewId)
+      .then(() => {
+        return { message: '리뷰를 삭제했습니다.' };
+      });
   }
 }
