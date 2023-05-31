@@ -111,6 +111,10 @@ export class AuthService {
   ): Promise<{ accessToken: string }> {
     const user = await this.usersRepository.findUserById(userId);
 
+    if (!user.refreshToken) {
+      throw new NotFoundException(`로그인이 필요합니다.`);
+    }
+
     const refreshTokenMatches = await bcrypt.compare(
       refreshToken,
       user.refreshToken,
