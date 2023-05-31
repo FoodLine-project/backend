@@ -3,77 +3,145 @@ import { Users } from 'src/auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
 import { Waitings } from './waitings.entity';
 import { WaitingsRepository } from './waitings.repository';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
+import { TablesRepository } from 'src/tables/tables.repository';
 
 @Injectable()
 export class WaitingsService {
   constructor(
     private waitingsRepository: WaitingsRepository,
     private storesRepository: StoresRepository,
+    private tablesRepository: TablesRepository,
   ) {}
 
-  getCurrentWaitingsCnt(storeId: number): Promise<number> {
+  async getCurrentWaitingsCnt(storeId: number): Promise<number> {
+    const existsStore = await this.storesRepository.findOne({
+      where: { storeId },
+    });
+    if (!existsStore) {
+      throw new NotFoundException('음식점이 존재하지 않습니다');
+    }
     return this.waitingsRepository.getCurrentWaitingCnt(storeId);
   }
 
-  getWaitingList(storeId: number, user: Users): Promise<Waitings[]> {
-    // if (!user.isAdmin || user.StoreId !== storeId) {
-    //   throw new NotFoundException('권한이 없습니다');
-    // }
+  async getWaitingList(storeId: number, user: Users): Promise<Waitings[]> {
+    if (user.StoreId !== storeId) {
+      throw new UnauthorizedException('권한이 없습니다.');
+    }
+    const existsStore = await this.storesRepository.findOne({
+      where: { storeId },
+    });
+    if (!existsStore) {
+      throw new NotFoundException('음식점 존재하지 않습니다');
+    }
     return this.waitingsRepository.getWaitingListById(storeId);
   }
 
-  // 가게가 꽉 차있는 경우 웨이팅 신청
-  postWaitings(storeId: number, peopleCnt: number, user: Users): Promise<void> {
-    const existsUser = this.waitingsRepository.getWaitingByUser(user);
-    if (!existsUser) {
-      throw new NotFoundException('이미 웨이팅을 신청하셨습니다');
+  // 음식점이 꽉 차있는 경우 웨이팅 신청
+  async postWaitings(
+    storeId: number,
+    peopleCnt: number,
+    user: Users,
+  ): Promise<void> {
+    const existsStore = await this.storesRepository.findOne({
+      where: { storeId },
+    });
+    if (!existsStore) {
+      throw new NotFoundException('음식점이 존재하지 않습니다');
+    }
+    const existsUser = await this.waitingsRepository.getWaitingByUser(user);
+    if (existsUser) {
+      throw new ConflictException('이미 웨이팅을 신청하셨습니다');
     }
     this.waitingsRepository.postWaitings(storeId, peopleCnt, user);
     return;
   }
 
   // 가게에 자리가 있어 바로
-  postEntered(storeId: number, peopleCnt: number, user: Users): Promise<void> {
-    if (!user.isAdmin || user.StoreId !== storeId) {
-      throw new NotFoundException('권한이 없습니다');
+  async postEntered(
+    storeId: number,
+    peopleCnt: number,
+    user: Users,
+  ): Promise<void> {
+    const existsStore = await this.storesRepository.findOne({
+      where: { storeId },
+    });
+    if (!existsStore) {
+      throw new NotFoundException('음식점이 존재하지 않습니다');
     }
-    const existsUser = this.waitingsRepository.getWaitingByUser(user);
-    if (!existsUser) {
-      throw new NotFoundException('이미 웨이팅을 신청하셨습니다');
+    if (user.StoreId !== storeId) {
+      throw new UnauthorizedException('권한이 없습니다');
+    }
+    const existsUser = await this.waitingsRepository.getWaitingByUser(user);
+    if (existsUser) {
+      throw new ConflictException('이미 웨이팅을 신청하셨습니다');
     }
     this.waitingsRepository.postEntered(storeId, peopleCnt, user);
+    this.tablesRepository.decrementTables(storeId, peopleCnt);
     return;
   }
 
-  patchStatusOfWaitings(
+  async patchStatusOfWaitings(
     storeId: number,
     waitingId: number,
     status: WaitingStatus,
     user: Users,
   ): Promise<void> {
-    // if (user.StoreId !== storeId) {
-    //   throw new NotFoundException('권한이 없습니다');
-    // }
+    if (user.StoreId !== storeId) {
+      throw new UnauthorizedException('권한이 없습니다');
+    }
+    const existsStore = await this.storesRepository.findOne({
+      where: { storeId },
+    });
+    if (!existsStore) {
+      throw new NotFoundException('음식점이 존재하지 않습니다');
+    }
+    const existsUser = await this.waitingsRepository.getWaitingByUser(user);
+    if (!existsUser) {
+      throw new ConflictException('웨이팅이 존재하지 않습니다');
+    }
 
     if (status === 'EXITED') {
-      this.waitingsRepository.patchToEXITED(storeId, waitingId);
+      this.waitingsRepository.patchToExited(storeId, waitingId);
+      const waiting = await this.waitingsRepository.getWaitingById(waitingId);
+      this.tablesRepository.incrementTables(storeId, waiting.peopleCnt);
       return;
     } // 퇴장 처리를 하고 그 인원수에 맞는 대기열을 CALLED 처리 한다 => 매장용
 
     if (status === 'DELAYED') {
-      this.waitingsRepository.patchToDELAYED(storeId, waitingId);
+      this.waitingsRepository.patchToDelayed(storeId, waitingId);
       return;
     } // 최근의 CALLED 된 사람을 DELAYED 로 바꾸고 다음 사람을 CALLED 한다 => 매장용
 
     if (status === 'ENTERED') {
-      this.waitingsRepository.patchStatus(storeId, waitingId, status);
+      this.waitingsRepository.patchToEntered(storeId, waitingId, status);
+      const waiting = await this.waitingsRepository.getWaitingById(waitingId);
+      this.tablesRepository.decrementTables(storeId, waiting.peopleCnt);
       return;
     } // DELAYED, CALLED, WAITING 을 ENTERED 로 바꾸고 입장시킨다 => 매장용
   }
 
-  patchStatusToCanceled(storeId: number, waitingId: number): Promise<void> {
-    this.waitingsRepository.patchStatusToCanceled(storeId, waitingId);
+  async patchStatusToCanceled(
+    storeId: number,
+    waitingId: number,
+    user: Users,
+  ): Promise<void> {
+    const existsStore = await this.storesRepository.findOne({
+      where: { storeId },
+    });
+    if (!existsStore) {
+      throw new NotFoundException('음식점이 존재하지 않습니다');
+    }
+    const existsUser = await this.waitingsRepository.getWaitingByUser(user);
+    if (!existsUser) {
+      throw new ConflictException('웨이팅이 존재하지 않습니다');
+    }
+    this.waitingsRepository.patchToCanceled(storeId, waitingId);
     return;
   }
 
@@ -103,6 +171,17 @@ export class WaitingsService {
     waitingId: number,
     user: Users,
   ): Promise<number> {
+    const existsStore = await this.storesRepository.findOne({
+      where: { storeId },
+    });
+    if (!existsStore) {
+      throw new NotFoundException('음식점이 존재하지 않습니다');
+    }
+    const existsUser = await this.waitingsRepository.getWaitingByUser(user);
+    if (!existsUser) {
+      throw new ConflictException('웨이팅이 존재하지 않습니다');
+    }
+
     const cycleTime = await this.storesRepository.getCycleTimeByStoreId(
       storeId,
     );
