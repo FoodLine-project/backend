@@ -1,6 +1,6 @@
 import { TablesRepository } from './../tables/tables.repository';
 import { Injectable } from '@nestjs/common';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, ILike } from 'typeorm';
 import { Stores } from './stores.entity';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import axios from 'axios';
@@ -36,19 +36,15 @@ export class StoresRepository extends Repository<Stores> {
     return this.find();
   }
 
+
   async searchStores(keyword: string): Promise<StoresSearchDto[]> {
-    const searchStores = await this.createQueryBuilder('stores')
-      .select([
-        'stores.storeId',
-        'stores.storeName',
-        'stores.category',
-        'stores.maxWaitingCnt',
-      ])
-      .where(
-        'stores.storeName ILIKE :keyword OR stores.category ILIKE :keyword OR stores.address ILIKE :keyword',
-        { keyword: `%${keyword}%` },
-      )
-      .getMany();
+    const searchStores = await this.find({
+      select: ['storeId', 'storeName', 'category', 'maxWaitingCnt', 'address'],
+      where: [
+        { storeName: ILike(`%${keyword}%`) },
+        { category: ILike(`%${keyword}%`) },
+        { address: ILike(`%${keyword}%`) },]
+    })
     //ILIKE = case insensitive
     return searchStores;
   }
@@ -100,7 +96,7 @@ export class StoresRepository extends Repository<Stores> {
   }
   //좌표를 위한 주소와 아이디
   async getStoreAddressId() {
-    return await this.find({ select: ['storeId', 'address'] });
+    return await this.find({ select: ['storeId', 'address'], where: { Ma: 0, La: 0 } });
   }
   //주소 넣고 좌표
   async getCoordinate(address: string): Promise<any> {
