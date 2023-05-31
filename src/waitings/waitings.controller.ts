@@ -44,9 +44,10 @@ export class WaitingsController {
     @Param('storeId', ParseIntPipe) storeId: number,
     @Body('peopleCnt') peopleCnt: number,
     @GetUser() user: Users,
-  ): string {
-    this.waitingsService.postWaitings(storeId, peopleCnt, user);
-    return `${peopleCnt}명의 웨이팅을 등록하였습니다`;
+  ): Promise<string> {
+    return this.waitingsService
+      .postWaitings(storeId, peopleCnt, user)
+      .then(() => `${peopleCnt}명의 웨이팅을 등록하였습니다`);
   }
 
   @Post('/:storeId/entered')
@@ -54,9 +55,10 @@ export class WaitingsController {
     @Param('storeId', ParseIntPipe) storeId: number,
     @Body('peopleCnt') peopleCnt: number,
     @GetUser() user: Users,
-  ): string {
-    this.waitingsService.postEntered(storeId, peopleCnt, user);
-    return `${peopleCnt}명이 입장하셨습니다`;
+  ): Promise<string> {
+    return this.waitingsService
+      .postEntered(storeId, peopleCnt, user)
+      .then(() => `${peopleCnt}명이 입장하셨습니다`);
   }
 
   @Patch('/:storeId/waitings/:waitingId/')
@@ -65,25 +67,28 @@ export class WaitingsController {
     @Param('waitingId') waitingId: number,
     @Query('status', WaitingStatusValidationPipe) status: WaitingStatus,
     @GetUser() user: Users,
-  ): { message: string } {
-    this.waitingsService.patchStatusOfWaitings(
-      storeId,
-      waitingId,
-      status,
-      user,
-    );
-    if (status === 'ENTERED') return { message: '입장하였습니다' };
-    else if (status === 'EXITED') return { message: '퇴장하였습니다' };
-    else if (status === 'DELAYED') return { message: '입장을 미루셨습니다' };
+  ): Promise<{ message: string }> {
+    return this.waitingsService
+      .patchStatusOfWaitings(storeId, waitingId, status, user)
+      .then(() => {
+        if (status === 'ENTERED') return { message: '입장하였습니다' };
+        else if (status === 'EXITED') return { message: '퇴장하였습니다' };
+        else if (status === 'DELAYED')
+          return { message: '입장을 미루셨습니다' };
+      });
   }
 
   @Patch('/:storeId/waitings/:waitingId/canceled')
   patchStatusToCanceled(
     @Param('storeId') storeId: number,
     @Param('waitingId') waitingId: number,
-  ): { message: string } {
-    this.waitingsService.patchStatusToCanceled(storeId, waitingId);
-    return { message: '웨이팅을 취소하였습니다' };
+    @GetUser() user: Users,
+  ): Promise<{ message: string }> {
+    return this.waitingsService
+      .patchStatusToCanceled(storeId, waitingId, user)
+      .then(() => {
+        return { message: '웨이팅을 취소하였습니다' };
+      });
   }
 
   @Cron('0 */10 * * * *')
