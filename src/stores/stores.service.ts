@@ -151,6 +151,13 @@ export class StoresService {
       console.error('Error occurred during database operation:', error);
     }
   }
+
+  async updateRating(storeId: number): Promise<void> {
+    const averageRating = await this.reviewsRepository.getAverageRating(
+      storeId,
+    );
+    return this.storesRepository.updateRating(storeId, averageRating);
+  }
 }
 
 // private readonly API_KEY = 'e84edcba09907dc19727de566a994a88';

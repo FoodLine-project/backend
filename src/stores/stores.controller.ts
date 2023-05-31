@@ -8,6 +8,7 @@ import {
   UsePipes,
   ValidationPipe,
   ParseIntPipe,
+  Patch,
 } from '@nestjs/common';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import { StoresService } from './stores.service';
@@ -86,6 +87,11 @@ export class StoresController {
   @UsePipes(ValidationPipe)
   createStore(@Body() createStoreDto: CreateStoresDto): Promise<Stores> {
     return this.storesService.createStore(createStoreDto);
+  }
+
+  @Patch('/:storeId/rating')
+  updateRating(@Param('storeId', ParseIntPipe) storeId: number): Promise<void> {
+    return this.storesService.updateRating(storeId);
   }
 }
 

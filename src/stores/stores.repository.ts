@@ -137,4 +137,8 @@ export class StoresRepository extends Repository<Stores> {
   async findStoreById(storeId: number): Promise<Stores> {
     return await this.findOne({ where: { storeId } });
   }
+
+  async updateRating(storeId: number, rating: number): Promise<void> {
+    await this.update(storeId, { rating });
+  }
 }
