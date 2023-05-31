@@ -42,6 +42,9 @@ export class Stores extends BaseEntity {
   @Column()
   address: string;
 
+  @Column()
+  oldAddress: string;
+
   @Column({ default: 60 })
   cycleTime: number;
 
@@ -50,6 +53,9 @@ export class Stores extends BaseEntity {
 
   @Column()
   tableForFour: number;
+
+  @Column({ type: 'float', default: 0 })
+  rating: number;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

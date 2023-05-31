@@ -62,7 +62,7 @@ export class Users extends BaseEntity {
   @OneToMany(() => Reviews, (review) => review.user)
   reviews: Reviews[];
 
-  @OneToOne(() => Stores, (store) => store.user)
+  @OneToOne(() => Stores, (store) => store.user, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'StoreId' })
   store: Stores;
 }

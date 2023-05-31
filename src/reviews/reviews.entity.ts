@@ -35,7 +35,7 @@ export class Reviews extends BaseEntity {
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 
-  @ManyToOne(() => Stores, (store) => store.reviews)
+  @ManyToOne(() => Stores, (store) => store.reviews, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'StoreId' })
   store: Stores;
 

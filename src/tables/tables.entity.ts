@@ -30,7 +30,7 @@ export class Tables extends BaseEntity {
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 
-  @OneToOne(() => Stores, (stores) => stores.tables)
+  @OneToOne(() => Stores, (stores) => stores.tables, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'StoreId' })
   store: Stores;
 

@@ -1,3 +1,4 @@
+import { ReviewsRepository } from './../reviews/reviews.repository';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -14,7 +15,8 @@ export class StoresService {
   constructor(
     @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
-  ) { }
+    private reviewsRepository: ReviewsRepository,
+  ) {}
 
   //사용자 위치 기반 반경 1km내의 식당 조회
   async findRestaurantsWithinRadius(
@@ -35,7 +37,7 @@ export class StoresService {
     });
     console.log(restaurantsWithinRadius);
     return { 근처식당목록: restaurantsWithinRadius };
-  }//sorting //쿼리 searching 따로 
+  } //sorting //쿼리 searching 따로
 
   //키워드로 검색부분 //sorting 추가 //전국 식당으로 //가장 가까운 순으로?
   async searchStores(keyword: string): Promise<StoresSearchDto[]> {
@@ -120,13 +122,13 @@ export class StoresService {
       const stores = await this.storesRepository.getStoreAddressId();
 
       for (const store of stores) {
-        const { address, storeId } = store;
+        const { address, oldAddress, storeId } = store;
 
         try {
-          const coordinates = await this.storesRepository.getCoordinate(
-            address,
-          );
-
+          let coordinates = await this.storesRepository.getCoordinate(address);
+          if (!coordinates) {
+            coordinates = await this.storesRepository.getCoordinate(oldAddress);
+          }
           const La = coordinates[0];
           const Ma = coordinates[1];
 

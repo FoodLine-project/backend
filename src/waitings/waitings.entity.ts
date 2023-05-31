@@ -35,11 +35,11 @@ export class Waitings extends BaseEntity {
   @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 
-  @ManyToOne(() => Users, (user) => user.waitings)
+  @ManyToOne(() => Users, (user) => user.waitings, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'UserId' })
   user: Users;
 
-  @ManyToOne(() => Stores, (store) => store.waitings)
+  @ManyToOne(() => Stores, (store) => store.waitings, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'StoreId' })
   store: Stores;
 }
