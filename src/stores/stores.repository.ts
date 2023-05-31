@@ -36,15 +36,15 @@ export class StoresRepository extends Repository<Stores> {
     return this.find();
   }
 
-
   async searchStores(keyword: string): Promise<StoresSearchDto[]> {
     const searchStores = await this.find({
       select: ['storeId', 'storeName', 'category', 'maxWaitingCnt', 'address'],
       where: [
         { storeName: ILike(`%${keyword}%`) },
         { category: ILike(`%${keyword}%`) },
-        { address: ILike(`%${keyword}%`) },]
-    })
+        { address: ILike(`%${keyword}%`) },
+      ],
+    });
     //ILIKE = case insensitive
     return searchStores;
   }
@@ -70,6 +70,7 @@ export class StoresRepository extends Repository<Stores> {
         const storeName = rowData['사업장명'];
         const category = rowData['위생업태명'];
         const address = rowData['도로명전체주소'];
+        const oldAddress = rowData['소재지전체주소'];
 
         const store = this.create({
           storeName,
@@ -82,6 +83,7 @@ export class StoresRepository extends Repository<Stores> {
           tableForTwo,
           category,
           address,
+          oldAddress,
         });
 
         try {
@@ -96,7 +98,10 @@ export class StoresRepository extends Repository<Stores> {
   }
   //좌표를 위한 주소와 아이디
   async getStoreAddressId() {
-    return await this.find({ select: ['storeId', 'address'], where: { Ma: 0, La: 0 } });
+    return await this.find({
+      select: ['storeId', 'address'],
+      // where: { Ma: 0, La: 0 },
+    });
   }
   //주소 넣고 좌표
   async getCoordinate(address: string): Promise<any> {
@@ -110,7 +115,7 @@ export class StoresRepository extends Repository<Stores> {
     try {
       const response = await axios.get(url, { headers });
       const result = response.data;
-
+      console.log(result);
       if (result.documents.length !== 0) {
         const resultAddress = result.documents[0].address;
         const coordinates = [resultAddress.y, resultAddress.x];
