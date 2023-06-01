@@ -102,7 +102,7 @@ export class WaitingsController {
   async checkAndPatchNoshow(): Promise<void> {
     this.waitingsService.checkAndPatchNoshow();
     return;
-  }
+  } // Bullqueue
 
   @Get('/:storeId/waitings/:waitingId/time')
   async getWaitingTime(

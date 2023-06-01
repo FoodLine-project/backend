@@ -185,6 +185,11 @@ export class WaitingsRepository extends Repository<Waitings> {
     });
   }
 
+  async saveNoshow(waitings: Waitings): Promise<void> {
+    await this.save(waitings);
+    return;
+  }
+
   async getWaitingsStatusWaiting(
     storeId: number,
     peopleCnt: number,

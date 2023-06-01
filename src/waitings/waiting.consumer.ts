@@ -88,4 +88,12 @@ export class WaitingConsumer {
     await this.waitingsRepository.patchToCanceled(storeId, waitingId);
     return;
   }
+
+  @Process('saveNoshow')
+  async saveNoshow(job: Job): Promise<void> {
+    const { entity } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.waitingsRepository.saveNoshow(entity);
+    return;
+  }
 }

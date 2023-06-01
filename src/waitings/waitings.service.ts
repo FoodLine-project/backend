@@ -163,7 +163,7 @@ export class WaitingsService {
 
       if (timePassed >= 10) {
         entity.status = WaitingStatus.NOSHOW;
-        this.waitingsRepository.save(entity);
+        this.waitingQueue.add('saveNoshow', entity);
         console.log(
           `waitingId ${entity.waitingId}의 상태가 NOSHOW가 되었습니다`,
         );
