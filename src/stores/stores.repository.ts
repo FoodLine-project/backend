@@ -99,28 +99,36 @@ export class StoresRepository extends Repository<Stores> {
   //좌표를 위한 주소와 아이디
   async getStoreAddressId() {
     return await this.find({
-      select: ['storeId', 'address'],
-      // where: { Ma: 0, La: 0 },
+      select: ['storeId', 'address', 'oldAddress'],
+      where: { Ma: 0, La: 0 },
+      order: { storeId: 'ASC' },
     });
   }
   //주소 넣고 좌표
   async getCoordinate(address: string): Promise<any> {
-    const url =
-      'https://dapi.kakao.com/v2/local/search/address.json?query=' +
-      encodeURIComponent(address);
-    // const restApiKey = '800b8fe2427efbffbef3bc6fe96a5464';
-    const restApiKey = `${process.env.KAKAO_REST_API_KEY}`;
-    const headers = { Authorization: 'KakaoAK ' + restApiKey };
-
     try {
+
+      if (!address) {
+        return null
+      }
+      const url =
+        'https://dapi.kakao.com/v2/local/search/address.json?query=' +
+        encodeURIComponent(address);
+      // const restApiKey = '800b8fe2427efbffbef3bc6fe96a5464';
+      const restApiKey = `${process.env.KAKAO_REST_API_KEY}`;
+      const headers = { Authorization: 'KakaoAK ' + restApiKey };
+
       const response = await axios.get(url, { headers });
+
       const result = response.data;
-      console.log(result);
+
       if (result.documents.length !== 0) {
         const resultAddress = result.documents[0].address;
         const coordinates = [resultAddress.y, resultAddress.x];
+
         return coordinates;
       } else {
+
         return null;
       }
     } catch (error) {
