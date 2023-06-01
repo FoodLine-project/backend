@@ -7,6 +7,7 @@ import {
   Body,
   Query,
   ParseIntPipe,
+  ValidationPipe,
 } from '@nestjs/common';
 import { WaitingsService } from './waitings.service';
 import { Users } from 'src/auth/users.entity';
@@ -20,18 +21,7 @@ import { Waitings } from './waitings.entity';
 export class WaitingsController {
   constructor(private waitingsService: WaitingsService) {}
 
-  // @Post('/:storeId/waitings/queue')
-  // async addMessage(
-  //   @Param('storeId', ParseIntPipe) storeId: number,
-  //   @Body('peopleCnt') peopleCnt: number,
-  //   @GetUser() user: Users,
-  // ): Promise<string> {
-  //   return this.waitingsService
-  //     .addMessageQueue(storeId, peopleCnt, user)
-  //     .then(() => `${peopleCnt}명의 웨이팅을 등록하였습니다`);
-  // }
-
-  // 웨이팅 시간 조회
+  // 웨이팅 시간 조회 ( for user )
   @Get('/:storeId/waitings')
   async getCurrentWaitingsCnt(
     @Param('storeId', ParseIntPipe) storeId: number,
@@ -40,16 +30,18 @@ export class WaitingsController {
       storeId,
     );
     return { teams: waitingCnt, message: `${waitingCnt}팀이 대기중입니다` };
-  }
+  } // Bullqueue
 
+  // 웨이팅 리스트 조회 ( for admin )
   @Get('/:storeId/waitings/list')
   async getWaitingList(
     @Param('storeId', ParseIntPipe) storeId: number,
     @GetUser() user: Users,
   ): Promise<Waitings[]> {
     return await this.waitingsService.getWaitingList(storeId, user);
-  }
+  } // Bullqueue
 
+  // 웨이팅을 신청 ( for user )
   @Post('/:storeId/waitings')
   async postWaitings(
     @Param('storeId', ParseIntPipe) storeId: number,
@@ -59,21 +51,24 @@ export class WaitingsController {
     return this.waitingsService
       .postWaitings(storeId, peopleCnt, user)
       .then(() => `${peopleCnt}명의 웨이팅을 등록하였습니다`);
-  }
+  } // Bullqueue
 
-  @Post('/:storeId/entered')
-  postEntered(
+  // 웨이팅을 등록하지 않고 바로 입장 ( for admin )
+  @Post('/:storeId/waitings/:userId/entered')
+  async postEntered(
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Body('peopleCnt') peopleCnt: number,
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body('peopleCnt', ValidationPipe) peopleCnt: number,
     @GetUser() user: Users,
   ): Promise<string> {
     return this.waitingsService
-      .postEntered(storeId, peopleCnt, user)
+      .postEntered(storeId, userId, peopleCnt, user)
       .then(() => `${peopleCnt}명이 입장하셨습니다`);
-  }
+  } // Bullqueue
 
+  // 손님의 상태를 변경 ( for admin )
   @Patch('/:storeId/waitings/:waitingId/')
-  patchStatusOfWaitings(
+  async patchStatusOfWaitings(
     @Param('storeId') storeId: number,
     @Param('waitingId') waitingId: number,
     @Query('status', WaitingStatusValidationPipe) status: WaitingStatus,
@@ -87,10 +82,10 @@ export class WaitingsController {
         else if (status === 'DELAYED')
           return { message: '입장을 미루셨습니다' };
       });
-  }
+  } // Bullqueue
 
   @Patch('/:storeId/waitings/:waitingId/canceled')
-  patchStatusToCanceled(
+  async patchStatusToCanceled(
     @Param('storeId') storeId: number,
     @Param('waitingId') waitingId: number,
     @GetUser() user: Users,
@@ -100,7 +95,7 @@ export class WaitingsController {
       .then(() => {
         return { message: '웨이팅을 취소하였습니다' };
       });
-  }
+  } // Bullqueue
 
   @Cron('0 */10 * * * *')
   // @Cron('0 */1 * * * *')

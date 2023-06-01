@@ -1,10 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Waitings } from './waitings.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { WaitingStatus } from './waitingStatus.enum';
 import { Users } from 'src/auth/users.entity';
-
 export class WaitingsRepository extends Repository<Waitings> {
   constructor(@InjectRepository(Waitings) private dataSource: DataSource) {
     super(Waitings, dataSource.manager);
@@ -23,10 +22,11 @@ export class WaitingsRepository extends Repository<Waitings> {
     return await this.find({
       where: {
         StoreId: storeId,
-        status:
-          WaitingStatus.WAITING ||
-          WaitingStatus.CALLED ||
+        status: In([
+          WaitingStatus.WAITING,
+          WaitingStatus.CALLED,
           WaitingStatus.DELAYED,
+        ]),
       },
     });
   }
@@ -35,11 +35,33 @@ export class WaitingsRepository extends Repository<Waitings> {
     return await this.findOne({
       where: {
         UserId: user.userId,
-        status:
-          WaitingStatus.WAITING ||
-          WaitingStatus.CALLED ||
+        status: In([
+          WaitingStatus.WAITING,
+          WaitingStatus.CALLED,
           WaitingStatus.DELAYED,
+          WaitingStatus.ENTERED,
+        ]),
       },
+    });
+  }
+
+  async getWaitingByUserId(userId: number): Promise<Waitings> {
+    return await this.findOne({
+      where: {
+        UserId: userId,
+        status: In([
+          WaitingStatus.WAITING,
+          WaitingStatus.CALLED,
+          WaitingStatus.DELAYED,
+          WaitingStatus.ENTERED,
+        ]),
+      },
+    });
+  }
+
+  async getWaitingByWaitingId(waitingId: number): Promise<Waitings> {
+    return await this.findOne({
+      where: { waitingId },
     });
   }
 
@@ -58,23 +80,17 @@ export class WaitingsRepository extends Repository<Waitings> {
 
   async postEntered(
     storeId: number,
+    userId: number,
     peopleCnt: number,
-    user: Users,
   ): Promise<void> {
     const waiting = this.create({
       StoreId: storeId,
-      UserId: user.userId,
+      UserId: userId,
       peopleCnt,
       status: WaitingStatus.ENTERED,
     });
     await this.save(waiting);
     return;
-  }
-
-  async getWaitingById(waitingId: number): Promise<Waitings> {
-    return await this.findOne({
-      where: { waitingId },
-    });
   }
 
   async patchToExited(storeId: number, waitingId: number): Promise<void> {
@@ -84,26 +100,24 @@ export class WaitingsRepository extends Repository<Waitings> {
     exited.status = WaitingStatus.EXITED;
     await this.save(exited);
     if (exited.peopleCnt === 1 || 2) {
-      const peopleCntOption = [1, 2];
       const called = await this.findOne({
-        where: peopleCntOption.map((peopleCnt) => ({
+        where: {
           StoreId: storeId,
           status: WaitingStatus.WAITING,
-          peopleCnt,
-        })),
+          peopleCnt: In([1, 2]),
+        },
       });
       if (!called) return;
       called.status = WaitingStatus.CALLED;
       await this.save(called);
       return;
     } else {
-      const peopleCntOption = [3, 4];
       const called = await this.findOne({
-        where: peopleCntOption.map((peopleCnt) => ({
+        where: {
           StoreId: storeId,
           status: WaitingStatus.WAITING,
-          peopleCnt,
-        })),
+          peopleCnt: In([3, 4]),
+        },
       });
       if (!called) return;
       called.status = WaitingStatus.CALLED;
@@ -119,25 +133,23 @@ export class WaitingsRepository extends Repository<Waitings> {
     delayed.status = WaitingStatus.DELAYED;
     await this.save(delayed);
     if (delayed.peopleCnt === 1 || 2) {
-      const peopleCntOption = [1, 2];
       const called = await this.findOne({
-        where: peopleCntOption.map((peopleCnt) => ({
+        where: {
           StoreId: storeId,
           status: WaitingStatus.WAITING,
-          peopleCnt,
-        })),
+          peopleCnt: In([1, 2]),
+        },
       });
       called.status = WaitingStatus.CALLED;
       await this.save(called);
       return;
     } else {
-      const peopleCntOption = [3, 4];
       const called = await this.findOne({
-        where: peopleCntOption.map((peopleCnt) => ({
+        where: {
           StoreId: storeId,
           status: WaitingStatus.WAITING,
-          peopleCnt,
-        })),
+          peopleCnt: In([3, 4]),
+        },
       });
       called.status = WaitingStatus.CALLED;
       await this.save(called);
@@ -178,31 +190,31 @@ export class WaitingsRepository extends Repository<Waitings> {
     peopleCnt: number,
   ): Promise<Waitings[]> {
     if (peopleCnt === 2) {
-      const peopleCntOption = [1, 2];
       return this.find({
-        where: peopleCntOption.map((peopleCnt) => ({
+        where: {
           StoreId: storeId,
-          status:
-            WaitingStatus.WAITING ||
-            WaitingStatus.CALLED ||
+          status: In([
+            WaitingStatus.WAITING,
+            WaitingStatus.CALLED,
             WaitingStatus.DELAYED,
-          peopleCnt,
-        })),
+          ]),
+          peopleCnt: In([1, 2]),
+        },
         order: {
           createdAt: 'ASC', // 생성일 기준 오름차순 정렬
         },
       });
     } else {
-      const peopleCntOption = [3, 4];
       return this.find({
-        where: peopleCntOption.map((peopleCnt) => ({
+        where: {
           StoreId: storeId,
-          status:
-            WaitingStatus.WAITING ||
-            WaitingStatus.CALLED ||
+          status: In([
+            WaitingStatus.WAITING,
+            WaitingStatus.CALLED,
             WaitingStatus.DELAYED,
-          peopleCnt,
-        })),
+          ]),
+          peopleCnt: In([3, 4]),
+        },
         order: {
           createdAt: 'ASC', // 생성일 기준 오름차순 정렬
         },
@@ -215,25 +227,23 @@ export class WaitingsRepository extends Repository<Waitings> {
     peopleCnt: number,
   ): Promise<Waitings[]> {
     if (peopleCnt === 2) {
-      const peopleCntOption = [1, 2];
       return this.find({
-        where: peopleCntOption.map((peopleCnt) => ({
+        where: {
           StoreId: storeId,
           status: WaitingStatus.ENTERED,
-          peopleCnt,
-        })),
+          peopleCnt: In([1, 2]),
+        },
         order: {
           createdAt: 'ASC', // 생성일 기준 오름차순 정렬
         },
       });
     } else {
-      const peopleCntOption = [3, 4];
       return this.find({
-        where: peopleCntOption.map((peopleCnt) => ({
+        where: {
           StoreId: storeId,
           status: WaitingStatus.ENTERED,
-          peopleCnt,
-        })),
+          peopleCnt: In([3, 4]),
+        },
         order: {
           createdAt: 'ASC', // 생성일 기준 오름차순 정렬
         },

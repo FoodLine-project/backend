@@ -11,7 +11,7 @@ import { TablesRepository } from 'src/tables/tables.repository';
 import { Stores } from 'src/stores/stores.entity';
 import { Tables } from 'src/tables/tables.entity';
 import { BullModule } from '@nestjs/bull';
-import { Redis, RedisOptions } from 'ioredis';
+import { RedisOptions } from 'ioredis';
 import { WaitingConsumer } from './waiting.consumer';
 
 const redisOptions: RedisOptions = {
