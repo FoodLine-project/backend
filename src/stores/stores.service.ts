@@ -16,7 +16,7 @@ export class StoresService {
     @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
-  ) { }
+  ) {}
 
   //사용자 위치 기반 반경 1km내의 식당 조회
   async findRestaurantsWithinRadius(
@@ -125,13 +125,12 @@ export class StoresService {
         const { address, oldAddress, storeId } = store;
 
         try {
-
           let coordinates = await this.storesRepository.getCoordinate(address);
 
           if (!coordinates) {
             coordinates = await this.storesRepository.getCoordinate(oldAddress);
           }
-          if (!coordinates) continue
+          if (!coordinates) continue;
 
           const La = coordinates[0];
           const Ma = coordinates[1];

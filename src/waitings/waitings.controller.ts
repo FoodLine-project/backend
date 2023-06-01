@@ -20,6 +20,17 @@ import { Waitings } from './waitings.entity';
 export class WaitingsController {
   constructor(private waitingsService: WaitingsService) {}
 
+  // @Post('/:storeId/waitings/queue')
+  // async addMessage(
+  //   @Param('storeId', ParseIntPipe) storeId: number,
+  //   @Body('peopleCnt') peopleCnt: number,
+  //   @GetUser() user: Users,
+  // ): Promise<string> {
+  //   return this.waitingsService
+  //     .addMessageQueue(storeId, peopleCnt, user)
+  //     .then(() => `${peopleCnt}명의 웨이팅을 등록하였습니다`);
+  // }
+
   // 웨이팅 시간 조회
   @Get('/:storeId/waitings')
   async getCurrentWaitingsCnt(
@@ -40,7 +51,7 @@ export class WaitingsController {
   }
 
   @Post('/:storeId/waitings')
-  postWaitings(
+  async postWaitings(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Body('peopleCnt') peopleCnt: number,
     @GetUser() user: Users,

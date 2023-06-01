@@ -16,7 +16,6 @@ export class WaitingsRepository extends Repository<Waitings> {
       .where('store.storeId = :storeId', { storeId })
       .andWhere('waitings.status = :status', { status: WaitingStatus.WAITING })
       .getCount();
-
     return waitingCounts;
   }
 

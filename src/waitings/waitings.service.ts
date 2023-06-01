@@ -8,16 +8,43 @@ import {
   NotFoundException,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { TablesRepository } from 'src/tables/tables.repository';
-
+import { InjectQueue } from '@nestjs/bull/dist/decorators';
+import { Job, Queue } from 'bull';
 @Injectable()
 export class WaitingsService {
   constructor(
+    @InjectQueue('waitingQueue')
+    private waitingQueue: Queue,
     private waitingsRepository: WaitingsRepository,
     private storesRepository: StoresRepository,
     private tablesRepository: TablesRepository,
   ) {}
+
+  // async addMessageQueue(
+  //   storeId: number,
+  //   peopleCnt: number,
+  //   user: Users,
+  // ): Promise<void> {
+  //   const existsStore = await this.storesRepository.findOne({
+  //     where: { storeId },
+  //   });
+  //   if (!existsStore) {
+  //     throw new NotFoundException('음식점이 존재하지 않습니다');
+  //   }
+  //   const existsUser = await this.waitingsRepository.getWaitingByUser(user);
+  //   if (existsUser) {
+  //     throw new ConflictException('이미 웨이팅을 신청하셨습니다');
+  //   }
+  //   await this.waitingQueue.add('createWaiting', {
+  //     storeId,
+  //     peopleCnt,
+  //     user,
+  //   });
+  //   return;
+  // }
 
   async getCurrentWaitingsCnt(storeId: number): Promise<number> {
     const existsStore = await this.storesRepository.findOne({
@@ -26,7 +53,9 @@ export class WaitingsService {
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
-    return this.waitingsRepository.getCurrentWaitingCnt(storeId);
+    const job = await this.waitingQueue.add('getCurrentWaitingCnt', storeId);
+    const result = await job.finished();
+    return result;
   }
 
   async getWaitingList(storeId: number, user: Users): Promise<Waitings[]> {
@@ -58,7 +87,7 @@ export class WaitingsService {
     if (existsUser) {
       throw new ConflictException('이미 웨이팅을 신청하셨습니다');
     }
-    this.waitingsRepository.postWaitings(storeId, peopleCnt, user);
+    this.waitingQueue.add('postWaiting', { storeId, peopleCnt, user });
     return;
   }
 
