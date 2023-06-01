@@ -1,3 +1,4 @@
+import { TablesRepository } from 'src/tables/tables.repository';
 import { WaitingsRepository } from './waitings.repository';
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
@@ -5,7 +6,10 @@ import { Waitings } from './waitings.entity';
 
 @Processor('waitingQueue')
 export class WaitingConsumer {
-  constructor(private readonly waitingsRepository: WaitingsRepository) {}
+  constructor(
+    private readonly waitingsRepository: WaitingsRepository,
+    private readonly tablesRepository: TablesRepository,
+  ) {}
 
   @Process('getCurrentWaitingCnt')
   async getCurrentWaitingCnt(job: Job): Promise<number> {
@@ -27,6 +31,22 @@ export class WaitingConsumer {
     const { storeId, userId, peopleCnt } = job.data;
     console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.postEntered(storeId, userId, peopleCnt);
+    return;
+  }
+
+  @Process('decrementTables')
+  async decrementTables(job: Job): Promise<void> {
+    const { storeId, peopleCnt } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.tablesRepository.decrementTables(storeId, peopleCnt);
+    return;
+  }
+
+  @Process('incrementTables')
+  async incrementTables(job: Job): Promise<void> {
+    const { storeId, peopleCnt } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.tablesRepository.incrementTables(storeId, peopleCnt);
     return;
   }
 
