@@ -107,9 +107,8 @@ export class StoresRepository extends Repository<Stores> {
   //주소 넣고 좌표
   async getCoordinate(address: string): Promise<any> {
     try {
-
       if (!address) {
-        return null
+        return null;
       }
       const url =
         'https://dapi.kakao.com/v2/local/search/address.json?query=' +
@@ -128,7 +127,6 @@ export class StoresRepository extends Repository<Stores> {
 
         return coordinates;
       } else {
-
         return null;
       }
     } catch (error) {
