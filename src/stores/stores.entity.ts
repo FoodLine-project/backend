@@ -42,7 +42,10 @@ export class Stores extends BaseEntity {
   @Column()
   address: string;
 
-  @Column()
+  @Column({ nullable: true })
+  distance: number;
+
+  @Column({ nullable: true })
   oldAddress: string;
 
   @Column({ default: 60 })
