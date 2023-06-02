@@ -13,12 +13,18 @@ import { Tables } from 'src/tables/tables.entity';
 import { BullModule } from '@nestjs/bull';
 import { RedisOptions } from 'ioredis';
 import { WaitingConsumer } from './waiting.consumer';
+import { config } from 'dotenv';
+
+const result = config();
+if (result.error) {
+  throw result.error;
+}
 
 const redisOptions: RedisOptions = {
-  host: 'redis-10555.c262.us-east-1-3.ec2.cloud.redislabs.com',
+  host: `${process.env.REDIS_HOST}`,
   port: 10555,
-  username: `default`,
-  password: `zxXBZoDFEW3cGnFA0tYMj0edC673xHhU`,
+  username: `${process.env.REDIS_USERNAME}`,
+  password: `${process.env.REDIS_PASSWORD}`,
 };
 console.log(process.env.REDIS_HOST);
 @Module({
