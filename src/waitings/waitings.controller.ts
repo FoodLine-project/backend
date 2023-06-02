@@ -84,6 +84,7 @@ export class WaitingsController {
       });
   } // Bullqueue
 
+  // 웨이팅 취소 ( for user )
   @Patch('/:storeId/waitings/:waitingId/canceled')
   async patchStatusToCanceled(
     @Param('storeId') storeId: number,
@@ -97,6 +98,7 @@ export class WaitingsController {
       });
   } // Bullqueue
 
+  // DELAYED 후 10분이 지나면 NOSHOW
   @Cron('0 */10 * * * *')
   // @Cron('0 */1 * * * *')
   async checkAndPatchNoshow(): Promise<void> {
@@ -104,6 +106,7 @@ export class WaitingsController {
     return;
   } // Bullqueue
 
+  // 입장 예상 시간 조회 ( for user )
   @Get('/:storeId/waitings/:waitingId/time')
   async getWaitingTime(
     @Param('storeId', ParseIntPipe) storeId: number,
