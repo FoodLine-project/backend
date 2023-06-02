@@ -31,9 +31,11 @@ export class StoresRepository extends Repository<Stores> {
     super(Stores, dataSource.createEntityManager());
   }
 
-  //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터와 비교
+  //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
-    return this.find();
+    const result = await this.find();
+    // console.log(result); 잘 읽히는것 확인
+    return result;
   }
 
   async searchStores(keyword: string): Promise<StoresSearchDto[]> {

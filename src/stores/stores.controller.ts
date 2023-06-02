@@ -26,26 +26,82 @@ export class StoresController {
   ) {}
 
   //사용자 위치 기반 반경 1km내의 식당 조회
-  //localhost:3000/places/within-radius?latitudeSW=37.74812040537091&longitudeSW=126.7688923363321&latitudeNE=37.74970428169939&longitudeNE=126.77258647785946
   @Public()
   @Post('/coordinates')
-  async findRestaurantsWithinRadius(
+  async findResWithinRadius(
     @Body() coordinatesData: any,
   ): Promise<{ 근처식당목록: Stores[] }> {
     console.log(coordinatesData);
     const { swLatlng, neLatlng } = coordinatesData;
-    return this.storesService.findRestaurantsWithinRadius(
-      // latitudeSW,
-      // longitudeSW,
-      // latitudeNE,
-      // longitudeNE,
+    return this.storesService.findResWithinRadius(
       swLatlng.Ma,
       swLatlng.La,
       neLatlng.Ma,
       neLatlng.La,
-      //La Ma 다시 정리해보기
-      // swLatlng: { La: 126.7863104768037, Ma: 37.751676049306454 },
-      // neLatlng: { La: 126.79999791927987, Ma: 37.7548534512587 }
+    );
+  }
+
+  //사용자 위치 기반 반경 1km내에 식당을 이름순으로 조회
+  @Public()
+  @Post('/coordinates-name')
+  async findResWithName(
+    @Body() coordinatesData: any,
+  ): Promise<{ 근처식당목록: Stores[] }> {
+    console.log(coordinatesData);
+    const { swLatlng, neLatlng } = coordinatesData;
+    return this.storesService.findResWithName(
+      swLatlng.Ma,
+      swLatlng.La,
+      neLatlng.Ma,
+      neLatlng.La,
+    );
+  }
+
+  //웨이팅카운트 적은순으로 조회
+  @Public()
+  @Post('/coordinates-waitingcnt')
+  async findResWithWaitingCnt(
+    @Body() coordinatesData: any,
+  ): Promise<{ 근처식당목록: Stores[] }> {
+    console.log(coordinatesData);
+    const { swLatlng, neLatlng } = coordinatesData;
+    return this.storesService.findResWithWaitingCnt(
+      swLatlng.Ma,
+      swLatlng.La,
+      neLatlng.Ma,
+      neLatlng.La,
+    );
+  }
+
+  //웨이팅카운트 많은순으로 조회
+  @Public()
+  @Post('/coordinates-waitingcnt2')
+  async findResWithWaitingCnt2(
+    @Body() coordinatesData: any,
+  ): Promise<{ 근처식당목록: Stores[] }> {
+    console.log(coordinatesData);
+    const { swLatlng, neLatlng } = coordinatesData;
+    return this.storesService.findResWithWaitingCnt2(
+      swLatlng.Ma,
+      swLatlng.La,
+      neLatlng.Ma,
+      neLatlng.La,
+    );
+  }
+
+  //별점 높은 순으로 조회
+  @Public()
+  @Post('/coordinates-rating')
+  async findResWithRating(
+    @Body() coordinatesData: any,
+  ): Promise<{ 근처식당목록: Stores[] }> {
+    console.log(coordinatesData);
+    const { swLatlng, neLatlng } = coordinatesData;
+    return this.storesService.findResWithRating(
+      swLatlng.Ma,
+      swLatlng.La,
+      neLatlng.Ma,
+      neLatlng.La,
     );
   }
 
