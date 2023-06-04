@@ -12,14 +12,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up environment variables
-        run: |
-          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
-          echo "CUSTOM_TOKEN=${{ secrets.CUSTOM_TOKEN }}" >> $GITHUB_ENV
-          echo "OPENAI_API_KEY=${{ secrets.MY_OPENAI_API_KEY }}" >> $GITHUB_ENV
-
       - uses: anc95/ChatGPT-CodeReview@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.MY_OPENAI_API_KEY }}
           LANGUAGE: Korean
