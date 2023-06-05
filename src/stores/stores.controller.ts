@@ -25,84 +25,31 @@ export class StoresController {
     private locationService: LocationService,
   ) {}
 
-  //사용자 위치 기반 반경 1km내의 식당 조회
   @Public()
   @Post('/coordinates')
-  async findResWithinRadius(
+  async searchRestaurants(
     @Body() coordinatesData: any,
+    @Query('sort')
+    sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
   ): Promise<{ 근처식당목록: Stores[] }> {
     console.log(coordinatesData);
     const { swLatlng, neLatlng } = coordinatesData;
-    return this.storesService.findResWithinRadius(
-      swLatlng.Ma,
-      swLatlng.La,
-      neLatlng.Ma,
-      neLatlng.La,
-    );
-  }
+    const southWestLatitude = swLatlng.La;
+    const southWestLongitude = swLatlng.Ma;
+    const northEastLatitude = neLatlng.La;
+    const northEastLongitude = neLatlng.Ma;
 
-  //사용자 위치 기반 반경 1km내에 식당을 이름순으로 조회
-  @Public()
-  @Post('/coordinates-name')
-  async findResWithName(
-    @Body() coordinatesData: any,
-  ): Promise<{ 근처식당목록: Stores[] }> {
-    console.log(coordinatesData);
-    const { swLatlng, neLatlng } = coordinatesData;
-    return this.storesService.findResWithName(
-      swLatlng.Ma,
-      swLatlng.La,
-      neLatlng.Ma,
-      neLatlng.La,
-    );
-  }
+    //geolocation 받고 그 가운데에 user위치;
 
-  //웨이팅카운트 적은순으로 조회
-  @Public()
-  @Post('/coordinates-waitingcnt')
-  async findResWithWaitingCnt(
-    @Body() coordinatesData: any,
-  ): Promise<{ 근처식당목록: Stores[] }> {
-    console.log(coordinatesData);
-    const { swLatlng, neLatlng } = coordinatesData;
-    return this.storesService.findResWithWaitingCnt(
-      swLatlng.Ma,
-      swLatlng.La,
-      neLatlng.Ma,
-      neLatlng.La,
+    const restaurants = await this.storesService.searchRestaurants(
+      southWestLatitude,
+      southWestLongitude,
+      northEastLatitude,
+      northEastLongitude,
+      sortBy,
     );
-  }
 
-  //웨이팅카운트 많은순으로 조회
-  @Public()
-  @Post('/coordinates-waitingcnt2')
-  async findResWithWaitingCnt2(
-    @Body() coordinatesData: any,
-  ): Promise<{ 근처식당목록: Stores[] }> {
-    console.log(coordinatesData);
-    const { swLatlng, neLatlng } = coordinatesData;
-    return this.storesService.findResWithWaitingCnt2(
-      swLatlng.Ma,
-      swLatlng.La,
-      neLatlng.Ma,
-      neLatlng.La,
-    );
-  }
-
-  //별점 높은 순으로 조회
-  @Public()
-  @Post('/coordinates-rating')
-  async findResWithRating(
-    @Body() coordinatesData: any,
-  ): Promise<{ 근처식당목록: Stores[] }> {
-    console.log(coordinatesData);
-    const { swLatlng, neLatlng } = coordinatesData;
-    return this.storesService.findResWithRating(
-      swLatlng.Ma,
-      swLatlng.La,
-      neLatlng.Ma,
-      neLatlng.La,
-    );
+    return restaurants;
   }
 
   ///api/stores/search?keyword=햄버거 간단한 검색기능
