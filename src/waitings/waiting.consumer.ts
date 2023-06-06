@@ -1,3 +1,4 @@
+import { StoresRepository } from 'src/stores/stores.repository';
 import { TablesRepository } from 'src/tables/tables.repository';
 import { WaitingsRepository } from './waitings.repository';
 import { Process, Processor } from '@nestjs/bull';
@@ -11,6 +12,7 @@ export class WaitingConsumer {
   constructor(
     private readonly waitingsRepository: WaitingsRepository,
     private readonly tablesRepository: TablesRepository,
+    private readonly storesRepository: StoresRepository,
   ) {}
 
   @Process('getCurrentWaitingCnt')
@@ -36,18 +38,20 @@ export class WaitingConsumer {
     return;
   }
 
-  @Process('decrementTables')
+  @Process('decrementTablesAndIncrementCurrentWaitingCnt')
   async decrementTables(job: Job): Promise<void> {
     const { storeId, peopleCnt } = job.data;
     console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.storesRepository.incrementCurrentWaitingCnt(storeId);
     await this.tablesRepository.decrementTables(storeId, peopleCnt);
     return;
   }
 
-  @Process('incrementTables')
+  @Process('incrementTablesAndDecrementCurrentWaitingCnt')
   async incrementTables(job: Job): Promise<void> {
     const { storeId, peopleCnt } = job.data;
     console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.storesRepository.decrementCurrentWaitingCnt(storeId);
     await this.tablesRepository.incrementTables(storeId, peopleCnt);
     return;
   }
@@ -96,6 +100,22 @@ export class WaitingConsumer {
     const { entity } = job.data;
     console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.saveNoshow(entity);
+    return;
+  }
+
+  @Process('decrementCurrentWaitingCnt')
+  async decrementWaitingCnt(job: Job): Promise<void> {
+    const { storeId } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.storesRepository.decrementCurrentWaitingCnt(storeId);
+    return;
+  }
+
+  @Process('incrementCurrentWaitingCnt')
+  async incrementWaitingCnt(job: Job): Promise<void> {
+    const { storeId } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.storesRepository.incrementCurrentWaitingCnt(storeId);
     return;
   }
 }
