@@ -58,7 +58,7 @@ export class WaitingsController {
   async postEntered(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('userId', ParseIntPipe) userId: number,
-    @Body('peopleCnt', ValidationPipe) peopleCnt: number,
+    @Body('peopleCnt') peopleCnt: number,
     @GetUser() user: Users,
   ): Promise<string> {
     return this.waitingsService

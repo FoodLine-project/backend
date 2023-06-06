@@ -150,4 +150,14 @@ export class StoresRepository extends Repository<Stores> {
   async updateRating(storeId: number, rating: number): Promise<void> {
     await this.update(storeId, { rating });
   }
+
+  async decrementCurrentWaitingCnt(storeId: number): Promise<void> {
+    this.decrement({ storeId }, 'currentWaitingCnt', 1);
+    return;
+  }
+
+  async incrementCurrentWaitingCnt(storeId: number): Promise<void> {
+    this.increment({ storeId }, 'currentWaitingCnt', 1);
+    return;
+  }
 }
