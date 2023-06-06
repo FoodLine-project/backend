@@ -3,7 +3,9 @@ import { WaitingsRepository } from './waitings.repository';
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Waitings } from './waitings.entity';
+import { EventEmitter } from 'events';
 
+EventEmitter.defaultMaxListeners = 15;
 @Processor('waitingQueue')
 export class WaitingConsumer {
   constructor(
