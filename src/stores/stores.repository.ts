@@ -33,7 +33,10 @@ export class StoresRepository extends Repository<Stores> {
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
-    return this.find({ order: { storeId: 'ASC' } });
+    const result = await this.find({ order: { storeId: 'ASC' } });
+    // order: { storeId: 'ASC' },
+    // console.log(result); 잘 읽히는것 확인
+    return result;
   }
 
   async searchStores(keyword: string): Promise<StoresSearchDto[]> {
@@ -146,5 +149,15 @@ export class StoresRepository extends Repository<Stores> {
 
   async updateRating(storeId: number, rating: number): Promise<void> {
     await this.update(storeId, { rating });
+  }
+
+  async decrementCurrentWaitingCnt(storeId: number): Promise<void> {
+    this.decrement({ storeId }, 'currentWaitingCnt', 1);
+    return;
+  }
+
+  async incrementCurrentWaitingCnt(storeId: number): Promise<void> {
+    this.increment({ storeId }, 'currentWaitingCnt', 1);
+    return;
   }
 }
