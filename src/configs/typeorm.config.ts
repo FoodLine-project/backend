@@ -9,7 +9,6 @@ if (result.error) {
 export const typeORMConfig: TypeOrmModuleOptions = {
   type: 'postgres',
   host: `${process.env.POSTGRES_HOST}`,
-  // host: 'localhost',
   port: 5432,
   username: `${process.env.POSTGRES_USERNAME}`,
   password: `${process.env.POSTGRES_PASSWORD}`,
