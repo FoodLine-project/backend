@@ -12,8 +12,6 @@ export const typeORMConfig: TypeOrmModuleOptions = {
   // host: 'localhost',
   port: 5432,
   username: `${process.env.POSTGRES_USERNAME}`,
-  // password: '1234',
-  // database: 'postgres',
   password: `${process.env.POSTGRES_PASSWORD}`,
   database: `temp`,
   entities: [__dirname + './../**/*.entity.{js,ts}'],

@@ -1,4 +1,5 @@
 import {
+  Equals,
   IsNotEmpty,
   IsString,
   Matches,
