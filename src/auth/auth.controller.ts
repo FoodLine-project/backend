@@ -58,4 +58,10 @@ export class AuthController {
   async getMyProfile(@GetUser() user: Users): Promise<Users> {
     return user;
   }
+
+  @Public()
+  @Post('/gen-random-admin-users')
+  async genRandomUsers() {
+    return await this.authService.genRandomAdminUsers();
+  }
 }

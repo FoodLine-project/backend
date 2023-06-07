@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -10,11 +11,14 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { Tokens } from './types';
 import { Users } from './users.entity';
+import { StoresRepository } from 'src/stores/stores.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(UsersRepository) private usersRepository: UsersRepository,
+    @InjectRepository(UsersRepository)
+    private usersRepository: UsersRepository,
+    private storesRepository: StoresRepository,
     private jwtService: JwtService,
   ) {}
 
@@ -73,6 +77,16 @@ export class AuthService {
   }
 
   async signUp(signupDto: SignupDto): Promise<void> {
+    if (signupDto.password.includes(signupDto.nickname)) {
+      throw new BadRequestException(`비밀번호에 닉네임을 포함할 수 없습니다.`);
+    }
+
+    if (signupDto.password !== signupDto.confirm) {
+      throw new BadRequestException(
+        `비밀번호와 비밀번호 확인이 일치하지 않습니다.`,
+      );
+    }
+
     const hashedPassword = await this.hash(signupDto.password);
 
     return await this.usersRepository.createUser(signupDto, hashedPassword);
@@ -130,5 +144,12 @@ export class AuthService {
 
   async getUserInfo(userId: number): Promise<Users> {
     return await this.usersRepository.findUserById(userId);
+  }
+
+  async genRandomAdminUsers() {
+    const storeCount = (await this.storesRepository.findAll()).length;
+    console.log(storeCount);
+
+    await this.usersRepository.createAdminUsers(storeCount);
   }
 }

@@ -64,7 +64,7 @@ export class WaitingsService {
     if (existsUser) {
       throw new ConflictException('이미 웨이팅을 신청하셨습니다');
     }
-    this.waitingQueue.add('postWaiting', { storeId, peopleCnt, user });
+    await this.waitingQueue.add('postWaiting', { storeId, peopleCnt, user });
     return;
   }
 
