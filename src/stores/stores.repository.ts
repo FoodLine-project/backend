@@ -33,9 +33,7 @@ export class StoresRepository extends Repository<Stores> {
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
-    const result = await this.find();
-    // console.log(result); 잘 읽히는것 확인
-    return result;
+    return this.find({ order: { storeId: 'ASC' } });
   }
 
   async searchStores(keyword: string): Promise<StoresSearchDto[]> {

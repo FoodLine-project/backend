@@ -50,6 +50,8 @@ export class StoresService {
       return withinLatitudeRange && withinLongitudeRange;
     });
 
+    console.log(restaurantsWithinRadius);
+
     // 가까운 순으로 sort
     const userLocation = {
       latitude: southWestLatitude,

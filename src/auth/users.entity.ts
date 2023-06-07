@@ -38,15 +38,13 @@ export class Users extends BaseEntity {
   @Column({ default: false })
   isAdmin: boolean;
 
-  @Column({ nullable: true, name: 'StoreId' })
+  @Column({ nullable: true, name: 'StoreId', unique: true })
   StoreId: number;
 
   @BeforeInsert()
   checkStoreId() {
     if (this.isAdmin && !this.StoreId) {
-      throw new UnauthorizedException(
-        `StoreId must be provided for admin users`,
-      );
+      throw new UnauthorizedException(`StoreId가 존재하지 않습니다.`);
     }
   }
 
