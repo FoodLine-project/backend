@@ -17,8 +17,14 @@ dotenv.config();
 
 @Module({
   imports: [
-    RedisCacheModule,
     TypeOrmModule.forFeature([Stores, Tables, Reviews]),
+    ElasticsearchModule.register({
+      node: 'http://localhost:9200',
+      maxRetries: 10,
+      requestTimeout: 60000,
+      pingTimeout: 60000,
+      sniffOnStart: true,
+    }),
   ],
   controllers: [StoresController],
   providers: [

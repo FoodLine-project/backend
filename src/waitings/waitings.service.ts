@@ -64,7 +64,7 @@ export class WaitingsService {
     if (existsUser) {
       throw new ConflictException('이미 웨이팅을 신청하셨습니다');
     }
-    this.waitingQueue.add('postWaiting', { storeId, peopleCnt, user });
+    await this.waitingQueue.add('postWaiting', { storeId, peopleCnt, user });
     return;
   }
 
@@ -117,8 +117,10 @@ export class WaitingsService {
     if (status === 'EXITED') {
       await this.waitingQueue.add('patchToExited', { storeId, waitingId });
       await this.waitingQueue.add('incrementTables', { storeId, peopleCnt });
+      await this.waitingQueue.add('decrementCurrentWaitingCnt', storeId);
       return;
     } // 퇴장 처리를 하고 그 인원수에 맞는 대기열을 CALLED 처리 한다 => 매장용
+    // 대기열이 없으면 부르지 않는다
 
     if (status === 'DELAYED') {
       this.waitingQueue.add('patchToDelayed', { storeId, waitingId });
@@ -128,6 +130,7 @@ export class WaitingsService {
     if (status === 'ENTERED') {
       this.waitingQueue.add('patchToEntered', { storeId, waitingId, status });
       this.waitingQueue.add('decrementTables', { storeId, peopleCnt });
+      this.waitingQueue.add('incrementCurrentWaitingCnt', storeId);
       return;
     } // DELAYED, CALLED, WAITING 을 ENTERED 로 바꾸고 입장시킨다 => 매장용
   }
@@ -148,6 +151,7 @@ export class WaitingsService {
       throw new ConflictException('웨이팅이 존재하지 않습니다');
     }
     this.waitingQueue.add('patchToCanceled', { storeId, waitingId });
+    this.waitingQueue.add('decrementCurrentWaitingCnt', storeId);
     return;
   }
 
@@ -164,6 +168,7 @@ export class WaitingsService {
       if (timePassed >= 10) {
         entity.status = WaitingStatus.NOSHOW;
         this.waitingQueue.add('saveNoshow', entity);
+        this.waitingQueue.add('decrementCurrentWaitingCnt', entity.StoreId);
         console.log(
           `waitingId ${entity.waitingId}의 상태가 NOSHOW가 되었습니다`,
         );
