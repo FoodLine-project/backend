@@ -1,12 +1,12 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { RedisCacheService } from './../cache/redis.service';
 import { ReviewsRepository } from './../reviews/reviews.repository';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-
 import { Stores } from './stores.entity';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import { StoresRepository } from './stores.repository';
-// import axios from 'axios';
 import { createReadStream } from 'fs';
 import * as csvParser from 'csv-parser';
 
@@ -16,7 +16,14 @@ export class StoresService {
     @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
+    private RedisCacheService: RedisCacheService,
   ) {}
+
+  async useRedis() {
+    await this.RedisCacheService.set('key', 'value', { ttl: 1000 });
+    const value = await this.RedisCacheService.get('key');
+    console.log(value);
+  }
 
   async searchRestaurants(
     southWestLatitude: number,
@@ -25,6 +32,15 @@ export class StoresService {
     northEastLongitude: number,
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
   ): Promise<{ 근처식당목록: Stores[] }> {
+    //캐시 키 생성
+    const cacheKey = `searchRestaurants:${southWestLatitude},${southWestLongitude},${northEastLatitude},${northEastLongitude},${sortBy}`;
+    console.log(cacheKey);
+
+    const cachedData = await this.RedisCacheService.get(cacheKey);
+    if (cachedData) {
+      console.log('Data found in cache');
+      return { 근처식당목록: cachedData };
+    }
     const restaurants = await this.storesRepository.findAll();
 
     const restaurantsWithinRadius = restaurants.filter((restaurant) => {
@@ -88,6 +104,7 @@ export class StoresService {
       return 0;
     });
 
+    await this.RedisCacheService.set(cacheKey, restaurantsWithinRadius);
     return { 근처식당목록: restaurantsWithinRadius };
   }
 
