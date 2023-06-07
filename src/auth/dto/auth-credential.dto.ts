@@ -1,4 +1,5 @@
 import {
+  Equals,
   IsNotEmpty,
   IsString,
   Matches,
@@ -9,36 +10,33 @@ import {
 export class SignupDto {
   @IsNotEmpty()
   @IsString()
+  @Matches(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, {
+    message: '이메일 형식이 올바르지 않습니다.',
+  })
   email: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(6)
-  @MaxLength(20)
+  @MinLength(4, { message: `닉네임의 최소 길이는 4자입니다.` })
+  @MaxLength(16, { message: `닉네임의 최대 길이는 16자입니다.` })
   nickname: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(8)
-  @MaxLength(20)
-  @Matches(/^[a-zA-Z0-9]*$/, {
-    message: 'Password only accepts alphabetical characters and numbers',
-  })
+  @MinLength(8, { message: `비밀번호의 최소 길이는 8자입니다.` })
+  @MaxLength(20, { message: `비밀번호의 최대 길이는 20자입니다.` })
   password: string;
 
   @IsNotEmpty()
   @IsString()
   @MinLength(8)
   @MaxLength(20)
-  @Matches(/^[a-zA-Z0-9]*$/, {
-    message: 'password only accepts alphabetical characters and numbers',
-  })
   confirm: string;
 
   @IsNotEmpty()
   @IsString()
-  @Matches(/^[0-9-]*$/, {
-    message: 'phone number can contain only numbers and a hyphen',
+  @Matches(/^010-\d{4}-\d{4}$/, {
+    message: '전화번호의 형식은 010-1234-5678과 같아야합니다.',
   })
   phoneNumber: string;
 
@@ -50,14 +48,14 @@ export class SignupDto {
 export class LoginDto {
   @IsNotEmpty()
   @IsString()
+  @Matches(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, {
+    message: '이메일 형식이 올바르지 않습니다.',
+  })
   email: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(8)
-  @MaxLength(20)
-  @Matches(/^[a-zA-Z0-9]*$/, {
-    message: 'password only accepts alphabetical characters and numbers',
-  })
+  @MinLength(8, { message: `비밀번호의 최소 길이는 8자입니다.` })
+  @MaxLength(20, { message: `비밀번호의 최대 길이는 20자입니다.` })
   password: string;
 }
