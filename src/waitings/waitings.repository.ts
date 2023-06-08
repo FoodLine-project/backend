@@ -10,11 +10,19 @@ export class WaitingsRepository extends Repository<Waitings> {
   }
 
   async getCurrentWaitingCnt(storeId: number): Promise<number> {
+    const waitingStatuses = [
+      WaitingStatus.WAITING,
+      WaitingStatus.CALLED,
+      WaitingStatus.DELAYED,
+    ];
     const waitingCounts = await this.createQueryBuilder('waitings')
       .leftJoin('waitings.store', 'store')
       .where('store.storeId = :storeId', { storeId })
-      .andWhere('waitings.status = :status', { status: WaitingStatus.WAITING })
+      .andWhere('waitings.status IN (:...statuses)', {
+        statuses: waitingStatuses,
+      })
       .getCount();
+    console.log(waitingCounts, '여기야');
     return waitingCounts;
   }
 
@@ -27,6 +35,9 @@ export class WaitingsRepository extends Repository<Waitings> {
           WaitingStatus.CALLED,
           WaitingStatus.DELAYED,
         ]),
+      },
+      order: {
+        createdAt: 'ASC',
       },
     });
   }
@@ -132,7 +143,7 @@ export class WaitingsRepository extends Repository<Waitings> {
     });
     delayed.status = WaitingStatus.DELAYED;
     await this.save(delayed);
-    if (delayed.peopleCnt === 1 || 2) {
+    if (delayed.peopleCnt == 1 || delayed.peopleCnt == 2) {
       const called = await this.findOne({
         where: {
           StoreId: storeId,
@@ -140,6 +151,7 @@ export class WaitingsRepository extends Repository<Waitings> {
           peopleCnt: In([1, 2]),
         },
       });
+      if (!called) return;
       called.status = WaitingStatus.CALLED;
       await this.save(called);
       return;
@@ -151,6 +163,7 @@ export class WaitingsRepository extends Repository<Waitings> {
           peopleCnt: In([3, 4]),
         },
       });
+      if (!called) return;
       called.status = WaitingStatus.CALLED;
       await this.save(called);
       return;

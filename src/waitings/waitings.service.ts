@@ -8,6 +8,7 @@ import {
   NotFoundException,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { TablesRepository } from 'src/tables/tables.repository';
 import { InjectQueue } from '@nestjs/bull/dist/decorators';
@@ -53,19 +54,35 @@ export class WaitingsService {
     storeId: number,
     peopleCnt: number,
     user: Users,
-  ): Promise<void> {
+  ): Promise<string> {
     const existsStore = await this.storesRepository.findOne({
       where: { storeId },
     });
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
+    if (existsStore.maxWaitingCnt === existsStore.currentWaitingCnt) {
+      return 'full';
+    }
+    const tablesOfStore = await this.tablesRepository.findOne({
+      where: { StoreId: storeId },
+    });
+    if (peopleCnt === 1 || peopleCnt === 2) {
+      if (tablesOfStore.availableTableForTwo !== 0) {
+        throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
+      }
+    } else {
+      if (tablesOfStore.availableTableForFour !== 0) {
+        throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
+      }
+    }
     const existsUser = await this.waitingsRepository.getWaitingByUser(user);
     if (existsUser) {
       throw new ConflictException('이미 웨이팅을 신청하셨습니다');
     }
     this.waitingQueue.add('postWaiting', { storeId, peopleCnt, user });
-    return;
+    this.waitingQueue.add('incrementCurrentWaitingCnt', storeId);
+    return 'success';
   }
 
   async postEntered(
@@ -87,6 +104,18 @@ export class WaitingsService {
     if (existsUser) {
       throw new ConflictException('이미 웨이팅을 신청하셨습니다');
     }
+    const tablesOfStore = await this.tablesRepository.findOne({
+      where: { StoreId: storeId },
+    });
+    if (peopleCnt === 1 || peopleCnt === 2) {
+      if (tablesOfStore.availableTableForTwo === 0) {
+        throw new ConflictException('자리가 없습니다');
+      }
+    } else {
+      if (tablesOfStore.availableTableForFour === 0) {
+        throw new ConflictException('자리가 없습니다');
+      }
+    }
     await this.waitingQueue.add('postEntered', { storeId, userId, peopleCnt });
     await this.waitingQueue.add('decrementTables', { storeId, peopleCnt });
     return;
@@ -98,7 +127,7 @@ export class WaitingsService {
     status: WaitingStatus,
     user: Users,
   ): Promise<void> {
-    if (user.StoreId !== storeId) {
+    if (user.StoreId != storeId) {
       throw new UnauthorizedException('권한이 없습니다');
     }
     const existsStore = await this.storesRepository.findOne({
@@ -115,22 +144,35 @@ export class WaitingsService {
     }
     const peopleCnt = waiting.peopleCnt;
     if (status === 'EXITED') {
+      if (waiting.status !== WaitingStatus.ENTERED) {
+        throw new BadRequestException('적절하지 않은 status 입니다');
+      }
       await this.waitingQueue.add('patchToExited', { storeId, waitingId });
       await this.waitingQueue.add('incrementTables', { storeId, peopleCnt });
-      await this.waitingQueue.add('decrementCurrentWaitingCnt', storeId);
       return;
-    } // 퇴장 처리를 하고 그 인원수에 맞는 대기열을 CALLED 처리 한다 => 매장용
+    } // ENTERED 를 퇴장 처리를 하고 그 인원수에 맞는 대기열을 CALLED 처리 한다 => 매장용
     // 대기열이 없으면 부르지 않는다
 
     if (status === 'DELAYED') {
+      if (waiting.status !== WaitingStatus.CALLED) {
+        throw new BadRequestException('적절하지 않은 status 입니다');
+      }
       this.waitingQueue.add('patchToDelayed', { storeId, waitingId });
       return;
     } // 최근의 CALLED 된 사람을 DELAYED 로 바꾸고 다음 사람을 CALLED 한다 => 매장용
 
     if (status === 'ENTERED') {
-      this.waitingQueue.add('patchToEntered', { storeId, waitingId, status });
-      this.waitingQueue.add('decrementTables', { storeId, peopleCnt });
-      this.waitingQueue.add('incrementCurrentWaitingCnt', storeId);
+      if (
+        waiting.status == WaitingStatus.DELAYED ||
+        waiting.status == WaitingStatus.CALLED ||
+        waiting.status == WaitingStatus.WAITING
+      ) {
+        this.waitingQueue.add('patchToEntered', { storeId, waitingId, status });
+        this.waitingQueue.add('decrementTables', { storeId, peopleCnt });
+        this.waitingQueue.add('decrementCurrentWaitingCnt', storeId);
+      } else {
+        throw new BadRequestException('적절하지 않은 status 입니다');
+      }
       return;
     } // DELAYED, CALLED, WAITING 을 ENTERED 로 바꾸고 입장시킨다 => 매장용
   }
@@ -150,9 +192,20 @@ export class WaitingsService {
     if (!existsUser) {
       throw new ConflictException('웨이팅이 존재하지 않습니다');
     }
-    this.waitingQueue.add('patchToCanceled', { storeId, waitingId });
-    this.waitingQueue.add('decrementCurrentWaitingCnt', storeId);
-    return;
+    const waiting = await this.waitingsRepository.getWaitingByWaitingId(
+      waitingId,
+    );
+    if (
+      waiting.status == WaitingStatus.CALLED ||
+      waiting.status == WaitingStatus.DELAYED ||
+      waiting.status == WaitingStatus.WAITING
+    ) {
+      this.waitingQueue.add('patchToCanceled', { storeId, waitingId });
+      this.waitingQueue.add('decrementCurrentWaitingCnt', storeId);
+      return;
+    } else {
+      throw new BadRequestException('적절하지 않은 status 입니다');
+    }
   }
 
   async checkAndPatchNoshow(): Promise<void> {
@@ -167,7 +220,7 @@ export class WaitingsService {
 
       if (timePassed >= 10) {
         entity.status = WaitingStatus.NOSHOW;
-        this.waitingQueue.add('saveNoshow', entity);
+        this.waitingQueue.add('saveNoshow', { entity });
         this.waitingQueue.add('decrementCurrentWaitingCnt', entity.StoreId);
         console.log(
           `waitingId ${entity.waitingId}의 상태가 NOSHOW가 되었습니다`,

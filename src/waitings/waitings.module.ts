@@ -26,10 +26,12 @@ const redisOptions: RedisOptions = {
   username: `${process.env.REDIS_USERNAME}`,
   password: `${process.env.REDIS_PASSWORD}`,
 };
-console.log(process.env.REDIS_HOST);
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Waitings, Stores, Tables]),
+    TypeOrmModule.forFeature([Waitings, Stores, Tables], {
+      type: 'spanner',
+      maxQueryExecutionTime: 50000,
+    }),
     AuthModule,
     ScheduleModule.forRoot(),
     BullModule.forRoot({

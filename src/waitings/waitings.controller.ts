@@ -7,12 +7,11 @@ import {
   Body,
   Query,
   ParseIntPipe,
-  ValidationPipe,
 } from '@nestjs/common';
 import { WaitingsService } from './waitings.service';
 import { Users } from 'src/auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
-import { GetUser } from 'src/auth/common/decorators';
+import { GetUser, Public } from 'src/auth/common/decorators';
 import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.pipe';
 import { Cron } from '@nestjs/schedule';
 import { Waitings } from './waitings.entity';
@@ -22,6 +21,7 @@ export class WaitingsController {
   constructor(private waitingsService: WaitingsService) {}
 
   // 웨이팅 시간 조회 ( for user )
+  @Public()
   @Get('/:storeId/waitings')
   async getCurrentWaitingsCnt(
     @Param('storeId', ParseIntPipe) storeId: number,
@@ -50,7 +50,13 @@ export class WaitingsController {
   ): Promise<string> {
     return this.waitingsService
       .postWaitings(storeId, peopleCnt, user)
-      .then(() => `${peopleCnt}명의 웨이팅을 등록하였습니다`);
+      .then((result) => {
+        if (result === 'full') {
+          return '웨이팅 최대 인원을 초과했습니다';
+        } else {
+          return `${peopleCnt}명의 웨이팅을 등록하였습니다`;
+        }
+      });
   } // Bullqueue
 
   // 웨이팅을 등록하지 않고 바로 입장 ( for admin )
@@ -69,8 +75,8 @@ export class WaitingsController {
   // 손님의 상태를 변경 ( for admin )
   @Patch('/:storeId/waitings/:waitingId/')
   async patchStatusOfWaitings(
-    @Param('storeId') storeId: number,
-    @Param('waitingId') waitingId: number,
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('waitingId', ParseIntPipe) waitingId: number,
     @Query('status', WaitingStatusValidationPipe) status: WaitingStatus,
     @GetUser() user: Users,
   ): Promise<{ message: string }> {
@@ -87,8 +93,8 @@ export class WaitingsController {
   // 웨이팅 취소 ( for user )
   @Patch('/:storeId/waitings/:waitingId/canceled')
   async patchStatusToCanceled(
-    @Param('storeId') storeId: number,
-    @Param('waitingId') waitingId: number,
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @Param('waitingId', ParseIntPipe) waitingId: number,
     @GetUser() user: Users,
   ): Promise<{ message: string }> {
     return this.waitingsService
