@@ -94,11 +94,10 @@ export class WaitingsController {
   @Patch('/:storeId/waitings/:waitingId/canceled')
   async patchStatusToCanceled(
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Param('waitingId', ParseIntPipe) waitingId: number,
     @GetUser() user: Users,
   ): Promise<{ message: string }> {
     return this.waitingsService
-      .patchStatusToCanceled(storeId, waitingId, user)
+      .patchStatusToCanceled(storeId, user)
       .then(() => {
         return { message: '웨이팅을 취소하였습니다' };
       });
@@ -112,18 +111,13 @@ export class WaitingsController {
     return;
   } // Bullqueue
 
-  // 입장 예상 시간 조회 ( for user )
-  @Get('/:storeId/waitings/:waitingId/time')
+  // 나의 입장 예상 시간 조회 ( for user )
+  @Get('/:storeId/waitings/time')
   async getWaitingTime(
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Param('waitingId', ParseIntPipe) waitingId: number,
     @GetUser() user: Users,
   ): Promise<{ time: number; message: string }> {
-    const time = await this.waitingsService.getWaitingTime(
-      storeId,
-      waitingId,
-      user,
-    );
+    const time = await this.waitingsService.getWaitingTime(storeId, user);
     if (time > 0)
       return { time: time, message: `${time}뒤에 입장이 가능합니다` };
     else if (time < 0) return { time: time, message: '곧 입장이 가능합니다' };

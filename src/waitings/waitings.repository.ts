@@ -108,9 +108,15 @@ export class WaitingsRepository extends Repository<Waitings> {
     const exited = await this.findOne({
       where: { waitingId },
     });
-    exited.status = WaitingStatus.EXITED;
-    await this.save(exited);
-    if (exited.peopleCnt === 1 || 2) {
+    // exited.status = WaitingStatus.NOTFILLED;
+    // await this.save(exited);
+    await this.createQueryBuilder('waitings')
+      .update(Waitings)
+      .set({ status: WaitingStatus.NOTFILLED, updatedAt: () => 'updatedAt' })
+      .where('waitingId = :waitingId', { waitingId })
+      .setParameter('updatedAt', exited.updatedAt)
+      .execute();
+    if (exited.peopleCnt == 1 || exited.peopleCnt == 2) {
       const called = await this.findOne({
         where: {
           StoreId: storeId,
@@ -150,6 +156,9 @@ export class WaitingsRepository extends Repository<Waitings> {
           status: WaitingStatus.WAITING,
           peopleCnt: In([1, 2]),
         },
+        order: {
+          createdAt: 'ASC',
+        },
       });
       if (!called) return;
       called.status = WaitingStatus.CALLED;
@@ -161,6 +170,9 @@ export class WaitingsRepository extends Repository<Waitings> {
           StoreId: storeId,
           status: WaitingStatus.WAITING,
           peopleCnt: In([3, 4]),
+        },
+        order: {
+          createdAt: 'ASC',
         },
       });
       if (!called) return;
@@ -180,6 +192,39 @@ export class WaitingsRepository extends Repository<Waitings> {
     });
     entered.status = status;
     await this.save(entered);
+    if (entered.peopleCnt == 1 || entered.peopleCnt == 2) {
+      const notFilled = await this.findOne({
+        where: {
+          StoreId: storeId,
+          status: WaitingStatus.NOTFILLED,
+          peopleCnt: In([1, 2]),
+        },
+        order: {
+          updatedAt: 'ASC',
+        },
+      });
+      console.log(notFilled);
+      if (!notFilled) return;
+      notFilled.status = WaitingStatus.EXITED;
+      await this.save(notFilled);
+      return;
+    } else {
+      const notFilled = await this.findOne({
+        where: {
+          StoreId: storeId,
+          status: WaitingStatus.NOTFILLED,
+          peopleCnt: In([3, 4]),
+        },
+        order: {
+          updatedAt: 'ASC',
+        },
+      });
+      console.log(notFilled);
+      if (!notFilled) return;
+      notFilled.status = WaitingStatus.EXITED;
+      await this.save(notFilled);
+      return;
+    }
     return;
   }
 
@@ -207,7 +252,7 @@ export class WaitingsRepository extends Repository<Waitings> {
     storeId: number,
     peopleCnt: number,
   ): Promise<Waitings[]> {
-    if (peopleCnt === 2) {
+    if (peopleCnt == 1 || peopleCnt == 2) {
       return this.find({
         where: {
           StoreId: storeId,
@@ -248,56 +293,36 @@ export class WaitingsRepository extends Repository<Waitings> {
       return this.find({
         where: {
           StoreId: storeId,
-          status: WaitingStatus.ENTERED,
+          status: In([WaitingStatus.ENTERED, WaitingStatus.NOTFILLED]),
           peopleCnt: In([1, 2]),
         },
         order: {
-          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+          updatedAt: 'ASC', // update 기준 오름차순 정렬
         },
       });
     } else {
       return this.find({
         where: {
           StoreId: storeId,
-          status: WaitingStatus.ENTERED,
+          status: In([WaitingStatus.ENTERED, WaitingStatus.NOTFILLED]),
           peopleCnt: In([3, 4]),
         },
         order: {
-          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+          updatedAt: 'ASC', // update 기준 오름차순 정렬
         },
       });
     }
   }
 
-  async getTableTotalCnt(
-    storeId: number,
-    getPeopleCnt: number,
-  ): Promise<number> {
+  async getTableTotalCnt(storeId: number, peopleCnt: number): Promise<number> {
     const stores = await this.findOne({
       where: { store: { storeId: storeId } },
       relations: ['store'],
     });
-    if (getPeopleCnt === 2) {
+    if (peopleCnt === 1 || peopleCnt === 0) {
       return stores.store.tableForTwo;
     } else {
       return stores.store.tableForFour;
     }
-  }
-
-  async getPeopleCnt(
-    storeId: number,
-    waitingId: number,
-    user: Users,
-  ): Promise<number> {
-    const findWaitingById = await this.findOne({
-      where: { waitingId, StoreId: storeId, UserId: user.userId },
-    });
-    if (!findWaitingById) {
-      throw new NotFoundException(`Can't find waiting with id`);
-    } else if (findWaitingById.status !== 'WAITING') {
-      throw new NotFoundException('이미 입장한 상태입니다.');
-    }
-    if (findWaitingById.peopleCnt > 2) return 4;
-    else return 2;
   }
 }
