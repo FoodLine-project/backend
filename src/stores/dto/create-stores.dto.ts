@@ -4,19 +4,21 @@ import { IsNotEmpty } from "class-validator";
 export class CreateStoresDto {
     @IsNotEmpty()
     storeName: string;
+    @IsNotEmpty()
     category: string;
+    @IsNotEmpty()
     description: string;
+    @IsNotEmpty()
     maxWaitingCnt: number;
+    @IsNotEmpty()
     currentWaitingCnt: number;
+    @IsNotEmpty()
     Ma: number;
+    @IsNotEmpty()
     La: number;
     @IsNotEmpty()
     tableForTwo: number;
+    @IsNotEmpty()
     tableForFour: number;
-    //   “storeId” : number = 1  
-    //     “storeName”: string = “burgerKing”,
-    //     “category”: string = “양식”, 
-    //     “rating”: number = 4.6,
-    //     “waiting”: number = 7,
-    //     “distance”: number = 44m
+
 }

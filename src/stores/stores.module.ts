@@ -10,9 +10,18 @@ import { Tables } from 'src/tables/tables.entity';
 import { TablesRepository } from 'src/tables/tables.repository';
 import { ReviewsRepository } from 'src/reviews/reviews.repository';
 import { Reviews } from 'src/reviews/reviews.entity';
-
+import { ElasticsearchModule } from '@nestjs/elasticsearch';
 @Module({
-  imports: [TypeOrmModule.forFeature([Stores, Tables, Reviews])],
+  imports: [TypeOrmModule.forFeature([Stores, Tables, Reviews]),
+  ElasticsearchModule.register({
+    node: 'http://localhost:9200',
+    maxRetries: 10,
+    requestTimeout: 60000,
+    pingTimeout: 60000,
+    sniffOnStart: true
+
+
+  })],
   controllers: [StoresController],
   providers: [
     StoresService,
@@ -22,4 +31,4 @@ import { Reviews } from 'src/reviews/reviews.entity';
     ReviewsRepository,
   ],
 })
-export class StoresModule {}
+export class StoresModule { }
