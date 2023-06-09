@@ -14,6 +14,6 @@ export const typeORMConfig: TypeOrmModuleOptions = {
   password: `${process.env.POSTGRES_PASSWORD}`,
   database: `temp`,
   entities: [__dirname + './../**/*.entity.{js,ts}'],
-  synchronize: true, logging: true,
-
+  synchronize: true,
+  // logging: true,
 };

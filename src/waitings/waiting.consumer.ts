@@ -38,24 +38,6 @@ export class WaitingConsumer {
     return;
   }
 
-  @Process('decrementTablesAndIncrementCurrentWaitingCnt')
-  async decrementTables(job: Job): Promise<void> {
-    const { storeId, peopleCnt } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
-    await this.storesRepository.incrementCurrentWaitingCnt(storeId);
-    await this.tablesRepository.decrementTables(storeId, peopleCnt);
-    return;
-  }
-
-  @Process('incrementTablesAndDecrementCurrentWaitingCnt')
-  async incrementTables(job: Job): Promise<void> {
-    const { storeId, peopleCnt } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
-    await this.storesRepository.decrementCurrentWaitingCnt(storeId);
-    await this.tablesRepository.incrementTables(storeId, peopleCnt);
-    return;
-  }
-
   @Process('getWaitingListById')
   async getWaitingList(job: Job): Promise<Waitings[]> {
     const storeId = job.data;

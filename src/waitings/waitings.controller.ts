@@ -72,6 +72,19 @@ export class WaitingsController {
       .then(() => `${peopleCnt}명이 입장하셨습니다`);
   } // Bullqueue
 
+  // 웨이팅 취소 ( for user )
+  @Patch('/:storeId/waitings/canceled')
+  async patchStatusToCanceled(
+    @Param('storeId', ParseIntPipe) storeId: number,
+    @GetUser() user: Users,
+  ): Promise<{ message: string }> {
+    return this.waitingsService
+      .patchStatusToCanceled(storeId, user)
+      .then(() => {
+        return { message: '웨이팅을 취소하였습니다' };
+      });
+  } // Bullqueue
+
   // 손님의 상태를 변경 ( for admin )
   @Patch('/:storeId/waitings/:waitingId/')
   async patchStatusOfWaitings(
@@ -87,19 +100,6 @@ export class WaitingsController {
         else if (status === 'EXITED') return { message: '퇴장하였습니다' };
         else if (status === 'DELAYED')
           return { message: '입장을 미루셨습니다' };
-      });
-  } // Bullqueue
-
-  // 웨이팅 취소 ( for user )
-  @Patch('/:storeId/waitings/:waitingId/canceled')
-  async patchStatusToCanceled(
-    @Param('storeId', ParseIntPipe) storeId: number,
-    @GetUser() user: Users,
-  ): Promise<{ message: string }> {
-    return this.waitingsService
-      .patchStatusToCanceled(storeId, user)
-      .then(() => {
-        return { message: '웨이팅을 취소하였습니다' };
       });
   } // Bullqueue
 

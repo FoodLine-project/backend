@@ -1,4 +1,3 @@
-import { NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Waitings } from './waitings.entity';
 import { DataSource, In, Repository } from 'typeorm';
