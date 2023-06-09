@@ -55,6 +55,9 @@ export class WaitingsService {
     peopleCnt: number,
     user: Users,
   ): Promise<string> {
+    if (peopleCnt > 4) {
+      throw new BadRequestException('최대 4명까지 신청할 수 있습니다');
+    }
     const existsStore = await this.storesRepository.findOne({
       where: { storeId },
     });
@@ -94,6 +97,9 @@ export class WaitingsService {
     const existsStore = await this.storesRepository.findOne({
       where: { storeId },
     });
+    if (peopleCnt > 4) {
+      throw new BadRequestException('최대 4명까지 신청할 수 있습니다');
+    }
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
@@ -284,6 +290,9 @@ export class WaitingsService {
     const currentTime = new Date();
     const updatedTime = enteredPeople[leftCnt - 1].updatedAt;
     console.log(enteredPeople[leftCnt - 1].waitingId, '얘랑 비교');
+    if (bigCycle == 1 && enteredPeople[leftCnt - 1].status == 'NOTFILLED') {
+      return 0;
+    }
     // 내가 앉을 테이블에 앉은 사람이 먹은지 몇분 됐는지
     const prePersonEatingTime = Math.floor(
       (currentTime.getTime() - updatedTime.getTime()) / 1000 / 60,
