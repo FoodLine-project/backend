@@ -6,4 +6,5 @@ export enum WaitingStatus {
   CALLED = 'CALLED',
   DELAYED = 'DELAYED',
   NOSHOW = 'NOSHOW',
+  NOTFILLED = 'NOTFILLED',
 }

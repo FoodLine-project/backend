@@ -102,7 +102,7 @@ export class WaitingsService {
     }
     const existsUser = await this.waitingsRepository.getWaitingByUserId(userId);
     if (existsUser) {
-      throw new ConflictException('이미 웨이팅을 신청하셨습니다');
+      throw new ConflictException('이미 웨이팅이 신청되어있습니다');
     }
     const tablesOfStore = await this.tablesRepository.findOne({
       where: { StoreId: storeId },
@@ -150,7 +150,7 @@ export class WaitingsService {
       await this.waitingQueue.add('patchToExited', { storeId, waitingId });
       await this.waitingQueue.add('incrementTables', { storeId, peopleCnt });
       return;
-    } // ENTERED 를 퇴장 처리를 하고 그 인원수에 맞는 대기열을 CALLED 처리 한다 => 매장용
+    } // ENTERED 를 NOTFILLED로 처리하고 그 인원수에 맞는 대기열을 CALLED 처리 한다 => 매장용
     // 대기열이 없으면 부르지 않는다
 
     if (status === 'DELAYED') {
@@ -177,24 +177,18 @@ export class WaitingsService {
     } // DELAYED, CALLED, WAITING 을 ENTERED 로 바꾸고 입장시킨다 => 매장용
   }
 
-  async patchStatusToCanceled(
-    storeId: number,
-    waitingId: number,
-    user: Users,
-  ): Promise<void> {
+  async patchStatusToCanceled(storeId: number, user: Users): Promise<void> {
     const existsStore = await this.storesRepository.findOne({
       where: { storeId },
     });
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
-    const existsUser = await this.waitingsRepository.getWaitingByUser(user);
-    if (!existsUser) {
+    const waiting = await this.waitingsRepository.getWaitingByUser(user);
+    if (!waiting) {
       throw new ConflictException('웨이팅이 존재하지 않습니다');
     }
-    const waiting = await this.waitingsRepository.getWaitingByWaitingId(
-      waitingId,
-    );
+    const waitingId = waiting.waitingId;
     if (
       waiting.status == WaitingStatus.CALLED ||
       waiting.status == WaitingStatus.DELAYED ||
@@ -230,34 +224,30 @@ export class WaitingsService {
     return;
   }
 
-  async getWaitingTime(
-    storeId: number,
-    waitingId: number,
-    user: Users,
-  ): Promise<number> {
+  async getWaitingTime(storeId: number, user: Users): Promise<number> {
     const existsStore = await this.storesRepository.findOne({
       where: { storeId },
     });
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
-    const existsUser = await this.waitingsRepository.getWaitingByUser(user);
-    if (!existsUser) {
+    const existsWaiting = await this.waitingsRepository.getWaitingByUser(user);
+    if (!existsWaiting) {
       throw new ConflictException('웨이팅이 존재하지 않습니다');
     }
-    if (existsUser.status === WaitingStatus.ENTERED) {
-      throw new ConflictException('이미 입장하셨습니다');
+    if (
+      existsWaiting.status === WaitingStatus.ENTERED ||
+      existsWaiting.status === WaitingStatus.CANCELED ||
+      existsWaiting.status === WaitingStatus.NOSHOW
+    ) {
+      throw new ConflictException('조회할 웨이팅이 올바른 상태가 아닙니다');
     }
 
     const cycleTime = await this.storesRepository.getCycleTimeByStoreId(
       storeId,
     );
 
-    const peopleCnt = await this.waitingsRepository.getPeopleCnt(
-      storeId,
-      waitingId,
-      user,
-    ); // 대기를 건 사람의 수
+    const peopleCnt = existsWaiting.peopleCnt;
 
     const tableCnt = await this.waitingsRepository.getTableTotalCnt(
       storeId,
@@ -270,30 +260,30 @@ export class WaitingsService {
         peopleCnt,
       );
     const waitingIdsArr = waitingPeople.map((e) => e.waitingId);
-
+    console.log(waitingIdsArr, '여기다');
     // status 가 WAITING 인 사람 중에서 내가 몇등인지
-    const myTurn = waitingIdsArr.indexOf(Number(waitingId)) + 1;
+    const myTurn = waitingIdsArr.indexOf(Number(existsWaiting.waitingId)) + 1;
+    console.log(myTurn);
 
     const enteredPeople: Waitings[] =
       await this.waitingsRepository.getWaitingsStatusEntered(
         storeId,
         peopleCnt,
       );
-
+    console.log(enteredPeople.map((e) => e.waitingId));
     if (tableCnt > enteredPeople.length || enteredPeople.length === 0) {
-      return 0;
+      if (waitingIdsArr.length === 0) return 0;
     }
+    const bigCycle = Math.ceil(myTurn / tableCnt); // 기다리는 사람들을 매장에 있는 사람들로 나눈 몫
+    const left = myTurn % tableCnt; // 그 나머지
 
-    const bigCycle = Math.ceil(myTurn / enteredPeople.length); // 기다리는 사람들을 매장에 있는 사람들로 나눈 몫
-    const left = myTurn % enteredPeople.length; // 그 나머지
-
-    const leftCnt: number = left === 0 ? enteredPeople.length : left;
+    const leftCnt: number = left === 0 ? tableCnt : left;
 
     console.log(bigCycle, leftCnt);
 
     const currentTime = new Date();
     const updatedTime = enteredPeople[leftCnt - 1].updatedAt;
-
+    console.log(enteredPeople[leftCnt - 1].waitingId, '얘랑 비교');
     // 내가 앉을 테이블에 앉은 사람이 먹은지 몇분 됐는지
     const prePersonEatingTime = Math.floor(
       (currentTime.getTime() - updatedTime.getTime()) / 1000 / 60,
