@@ -10,7 +10,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { WaitingStatus } from './waitingStatus.enum';
-import { Stores } from 'src/stores/stores.entity';
+import { Stores } from '../stores/stores.entity';
 
 @Entity()
 export class Waitings extends BaseEntity {

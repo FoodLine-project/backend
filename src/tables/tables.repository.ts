@@ -1,39 +1,37 @@
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Tables } from './tables.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Stores } from 'src/stores/stores.entity';
-export class TablesRepository extends Repository<Tables> {
-  constructor(@InjectRepository(Tables) private dataSource: DataSource) {
-    super(Tables, dataSource.manager);
-  }
+import { Stores } from '../stores/stores.entity';
+export class TablesRepository {
+  constructor(@InjectRepository(Tables) private tables: Repository<Tables>) {}
 
   async findTableById(storeId: number): Promise<Tables> {
-    return await this.findOne({ where: { StoreId: storeId } });
+    return await this.tables.findOne({ where: { StoreId: storeId } });
   }
 
   async createTable(stores: Stores): Promise<void> {
-    const table = this.create({
+    const table = this.tables.create({
       StoreId: stores.storeId,
       availableTableForFour: stores.tableForFour,
       availableTableForTwo: stores.tableForTwo,
     });
-    await this.save(table);
+    await this.tables.save(table);
     return;
   }
 
   async incrementTables(storeId: number, peopleCnt: number): Promise<void> {
     if (peopleCnt === 1 || 2) {
-      this.increment({ StoreId: storeId }, 'availableTableForTwo', 1);
+      this.tables.increment({ StoreId: storeId }, 'availableTableForTwo', 1);
     } else {
-      this.increment({ StoreId: storeId }, 'availableTableForFour', 1);
+      this.tables.increment({ StoreId: storeId }, 'availableTableForFour', 1);
     }
   }
 
   async decrementTables(storeId: number, peopleCnt: number): Promise<void> {
     if (peopleCnt === 1 || 2) {
-      this.decrement({ StoreId: storeId }, 'availableTableForTwo', 1);
+      this.tables.decrement({ StoreId: storeId }, 'availableTableForTwo', 1);
     } else {
-      this.decrement({ StoreId: storeId }, 'availableTableForFour', 1);
+      this.tables.decrement({ StoreId: storeId }, 'availableTableForFour', 1);
     }
   }
 }

@@ -7,12 +7,11 @@ import {
   Body,
   Query,
   ParseIntPipe,
-  ValidationPipe,
 } from '@nestjs/common';
 import { WaitingsService } from './waitings.service';
-import { Users } from 'src/auth/users.entity';
+import { Users } from '../auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
-import { GetUser } from 'src/auth/common/decorators';
+import { GetUser } from '../auth/common/decorators';
 import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.pipe';
 import { Cron } from '@nestjs/schedule';
 import { Waitings } from './waitings.entity';

@@ -1,7 +1,7 @@
-import { Users } from 'src/auth/users.entity';
-import { Reviews } from 'src/reviews/reviews.entity';
-import { Tables } from 'src/tables/tables.entity';
-import { Waitings } from 'src/waitings/waitings.entity';
+import { Users } from '../auth/users.entity';
+import { Reviews } from '../reviews/reviews.entity';
+import { Tables } from '../tables/tables.entity';
+import { Waitings } from '../waitings/waitings.entity';
 import {
   BaseEntity,
   Column,

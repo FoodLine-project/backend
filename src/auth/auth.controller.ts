@@ -2,8 +2,7 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
-  HttpStatus,
+  Logger,
   Patch,
   Post,
   UseGuards,
@@ -17,41 +16,81 @@ import { Users } from './users.entity';
 
 @Controller('auth')
 export class AuthController {
+  private logger = new Logger('AuthController');
+
   constructor(private authService: AuthService) {}
 
-  @Public() // 회원가입 시에는 인증 절차를 거칠 필요 x
+  @Public()
   @Post('/signup')
-  @HttpCode(HttpStatus.CREATED) // 상태코드 설정
   async signUp(@Body() signupDto: SignupDto): Promise<{ message: string }> {
-    return await this.authService.signUp(signupDto).then(() => {
+    try {
+      await this.authService.signUp(signupDto);
+
+      // this.logger.log(`회원가입 성공 - Payload: ${JSON.stringify(signupDto)}`);
+
       return { message: '회원가입에 성공했습니다.' };
-    });
+    } catch (error) {
+      // this.logger.error(
+      //   `회원가입 실패 - Payload: ${JSON.stringify(signupDto)}
+      //     Error: ${error}`,
+      // );
+      throw error;
+    }
   }
 
   @Public()
   @Post('/login')
-  @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto): Promise<Tokens> {
-    return await this.authService.login(loginDto);
+    try {
+      const tokens = await this.authService.login(loginDto);
+      // this.logger.log(`로그인 성공 - Payload: ${JSON.stringify(loginDto)}`);
+      return tokens;
+    } catch (error) {
+      // this.logger.error(
+      //   `로그인 실패 - Payload: ${JSON.stringify(loginDto)}
+      //   Error: ${error}`,
+      // );
+      throw error;
+    }
   }
 
   @Patch('/logout')
-  @HttpCode(HttpStatus.OK)
   async logout(@GetUserId() userId: number): Promise<{ message: string }> {
-    return await this.authService.logout(userId).then(() => {
+    try {
+      await this.authService.logout(userId);
+      // this.logger.log(`로그아웃 성공 - userId: ${userId}`);
       return { message: '로그아웃 되었습니다.' };
-    });
+    } catch (error) {
+      // this.logger.error(
+      //   `로그아웃 실패 - userId: ${userId}
+      //   Error: ${error}`,
+      // );
+      throw error;
+    }
   }
 
   @Public()
   @UseGuards(RefreshTokenGuard)
   @Post('/refresh')
-  @HttpCode(HttpStatus.OK)
   async refreshAccessToken(
     @GetUserId() userId: number,
     @GetUser('refreshToken') refreshToken: string,
   ): Promise<{ accessToken: string }> {
-    return await this.authService.refreshAccessToken(userId, refreshToken);
+    try {
+      const accessToken = await this.authService.refreshAccessToken(
+        userId,
+        refreshToken,
+      );
+      // this.logger.log(`액세스 토큰 재발급 성공 - userId: ${userId}`);
+
+      return { accessToken };
+    } catch (error) {
+      // this.logger.error(
+      //   `액세스 토큰 재발급 실패 - userId: ${userId}
+      //   Error: ${error}`,
+      // );
+      throw error;
+    }
   }
 
   @Get('/test')
@@ -59,9 +98,9 @@ export class AuthController {
     return user;
   }
 
-  @Public()
-  @Post('/gen-random-admin-users')
-  async genRandomUsers() {
-    return await this.authService.genRandomAdminUsers();
-  }
+  // @Public()
+  // @Post('/gen-random-admin-users')
+  // async genRandomUsers() {
+  //   return await this.authService.genRandomAdminUsers();
+  // }
 }

@@ -1,5 +1,5 @@
-import { StoresRepository } from 'src/stores/stores.repository';
-import { TablesRepository } from 'src/tables/tables.repository';
+import { StoresRepository } from '../stores/stores.repository';
+import { TablesRepository } from '../tables/tables.repository';
 import { WaitingsRepository } from './waitings.repository';
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';

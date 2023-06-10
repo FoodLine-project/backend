@@ -12,11 +12,11 @@ import {
 } from '@nestjs/common';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import { StoresService } from './stores.service';
-import { LocationService } from 'src/location/location.service';
+import { LocationService } from '../location/location.service';
 import { Stores } from './stores.entity';
 import * as path from 'path';
 import { CreateStoresDto } from './dto/create-stores.dto';
-import { Public } from 'src/auth/common/decorators';
+import { Public } from '../auth/common/decorators';
 
 @Controller('places')
 export class StoresController {
@@ -63,7 +63,7 @@ export class StoresController {
   @Public()
   @Post('/process')
   async processCSV(): Promise<void> {
-    const inputFile = path.resolve('src/stores/csv/111.csv');
+    const inputFile = path.resolve('../stores/csv/111.csv');
     await this.storesService.processCSVFile(inputFile);
   }
 

@@ -6,13 +6,12 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Users } from './users.entity';
-import { LocationService } from 'src/location/location.service';
 import { AccessTokenStrategy } from './strategies';
 import { RefreshTokenStrategy } from './strategies';
-import { Stores } from 'src/stores/stores.entity';
-import { StoresRepository } from 'src/stores/stores.repository';
-import { TablesRepository } from 'src/tables/tables.repository';
-import { Tables } from 'src/tables/tables.entity';
+import { Stores } from '../stores/stores.entity';
+import { StoresRepository } from '../stores/stores.repository';
+import { TablesRepository } from '../tables/tables.repository';
+import { Tables } from '../tables/tables.entity';
 
 @Module({
   imports: [
@@ -24,9 +23,8 @@ import { Tables } from 'src/tables/tables.entity';
   providers: [
     AuthService,
     UsersRepository,
-    StoresRepository,
-    TablesRepository,
-    LocationService,
+    // StoresRepository,
+    // TablesRepository,
     AccessTokenStrategy,
     RefreshTokenStrategy,
   ],

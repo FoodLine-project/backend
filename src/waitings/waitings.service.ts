@@ -1,5 +1,5 @@
 import { StoresRepository } from './../stores/stores.repository';
-import { Users } from 'src/auth/users.entity';
+import { Users } from '../auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
 import { Waitings } from './waitings.entity';
 import { WaitingsRepository } from './waitings.repository';
@@ -9,7 +9,7 @@ import {
   UnauthorizedException,
   ConflictException,
 } from '@nestjs/common';
-import { TablesRepository } from 'src/tables/tables.repository';
+import { TablesRepository } from '../tables/tables.repository';
 import { InjectQueue } from '@nestjs/bull/dist/decorators';
 import { Queue } from 'bull';
 @Injectable()
@@ -23,12 +23,11 @@ export class WaitingsService {
   ) {}
 
   async getCurrentWaitingsCnt(storeId: number): Promise<number> {
-    const existsStore = await this.storesRepository.findOne({
-      where: { storeId },
-    });
+    const existsStore = await this.storesRepository.findStoreById(storeId);
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
+
     const job = await this.waitingQueue.add('getCurrentWaitingCnt', storeId);
     const result = await job.finished();
     return result;
@@ -38,9 +37,7 @@ export class WaitingsService {
     if (user.StoreId !== storeId) {
       throw new UnauthorizedException('권한이 없습니다.');
     }
-    const existsStore = await this.storesRepository.findOne({
-      where: { storeId },
-    });
+    const existsStore = await this.storesRepository.findStoreById(storeId);
     if (!existsStore) {
       throw new NotFoundException('음식점 존재하지 않습니다');
     }
@@ -54,9 +51,7 @@ export class WaitingsService {
     peopleCnt: number,
     user: Users,
   ): Promise<void> {
-    const existsStore = await this.storesRepository.findOne({
-      where: { storeId },
-    });
+    const existsStore = await this.storesRepository.findStoreById(storeId);
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
@@ -74,9 +69,7 @@ export class WaitingsService {
     peopleCnt: number,
     user: Users,
   ): Promise<void> {
-    const existsStore = await this.storesRepository.findOne({
-      where: { storeId },
-    });
+    const existsStore = await this.storesRepository.findStoreById(storeId);
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
@@ -101,9 +94,7 @@ export class WaitingsService {
     if (user.StoreId !== storeId) {
       throw new UnauthorizedException('권한이 없습니다');
     }
-    const existsStore = await this.storesRepository.findOne({
-      where: { storeId },
-    });
+    const existsStore = await this.storesRepository.findStoreById(storeId);
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
@@ -140,9 +131,7 @@ export class WaitingsService {
     waitingId: number,
     user: Users,
   ): Promise<void> {
-    const existsStore = await this.storesRepository.findOne({
-      where: { storeId },
-    });
+    const existsStore = await this.storesRepository.findStoreById(storeId);
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
@@ -182,9 +171,7 @@ export class WaitingsService {
     waitingId: number,
     user: Users,
   ): Promise<number> {
-    const existsStore = await this.storesRepository.findOne({
-      where: { storeId },
-    });
+    const existsStore = await this.storesRepository.findStoreById(storeId);
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
@@ -216,7 +203,7 @@ export class WaitingsService {
         storeId,
         peopleCnt,
       );
-    const waitingIdsArr = waitingPeople.map((e) => e.waitingId);
+    const waitingIdsArr = waitingPeople.map((error) => error.waitingId);
 
     // status 가 WAITING 인 사람 중에서 내가 몇등인지
     const myTurn = waitingIdsArr.indexOf(Number(waitingId)) + 1;
