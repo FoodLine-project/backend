@@ -22,6 +22,7 @@ export class WaitingsService {
     private tablesRepository: TablesRepository,
   ) {}
 
+  //storeId에 따른 현재 웨이팅 수
   async getCurrentWaitingsCnt(storeId: number): Promise<number> {
     const existsStore = await this.storesRepository.findOne({
       where: { storeId },

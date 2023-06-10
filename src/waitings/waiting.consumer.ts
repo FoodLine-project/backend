@@ -118,4 +118,12 @@ export class WaitingConsumer {
     await this.storesRepository.incrementCurrentWaitingCnt(storeId);
     return;
   }
+
+  @Process('incrementTables')
+  async incrementTable(job: Job): Promise<void> {
+    const { storeId, peopleCnt } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.tablesRepository.incrementTables(storeId, peopleCnt);
+    return;
+  }
 }

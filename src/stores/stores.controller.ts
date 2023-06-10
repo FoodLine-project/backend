@@ -17,19 +17,20 @@ import { Stores } from './stores.entity';
 import * as path from 'path';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { Public } from 'src/auth/common/decorators';
+import { Cron } from '@nestjs/schedule';
 
 @Controller('places')
 export class StoresController {
   constructor(
     private storesService: StoresService,
     private locationService: LocationService,
-  ) { }
+  ) {}
 
   @Public()
   @Post('/coordinates')
   async searchRestaurants(
     @Body() coordinatesData: any,
-    @Query('sort')
+    @Query('sortBy')
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
   ): Promise<{ 근처식당목록: Stores[] }> {
     console.log(coordinatesData);
@@ -55,9 +56,13 @@ export class StoresController {
   ///api/stores/search?keyword=햄버거 간단한 검색기능
   @Public()
   @Get('/search')
-  searchStores(@Query('keyword') keyword: string, @Query('b') sort: 'ASC' | 'DESC', @Query('a') column: string): Promise<StoresSearchDto[]> {
-    console.log(column)
-    return this.storesService.searchStores2(keyword, sort, column);
+  searchStores(
+    @Query('keyword') keyword: string,
+    @Query('b') sort: 'ASC' | 'DESC',
+    @Query('a') column: string,
+  ): Promise<StoresSearchDto[]> {
+    console.log(column);
+    return this.storesService.searchStores(keyword, sort, column);
   }
 
   //CSV파일 postgres 업로드
@@ -93,9 +98,17 @@ export class StoresController {
     return this.storesService.createStore(createStoreDto);
   }
 
+  // @Patch('/:storeId/rating')
+  // updateRating(@Param('storeId', ParseIntPipe) storeId: number): Promise<void> {
+  //   return this.storesService.updateRating(storeId);
+  // }
+
+  @Public()
+  @Cron('0 0 * * *')
   @Patch('/:storeId/rating')
   updateRating(@Param('storeId', ParseIntPipe) storeId: number): Promise<void> {
-    return this.storesService.updateRating(storeId);
+    const averageRating = this.storesService.updateRating(storeId);
+    return averageRating;
   }
 }
 

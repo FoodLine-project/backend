@@ -1,7 +1,6 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { RedisCacheService } from './../cache/redis.service';
 import { ReviewsRepository } from './../reviews/reviews.repository';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Stores } from './stores.entity';
 import { CreateStoresDto } from './dto/create-stores.dto';
@@ -10,6 +9,10 @@ import { StoresRepository } from './stores.repository';
 import { createReadStream } from 'fs';
 import * as csvParser from 'csv-parser';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { InjectRedis } from '@liaoliaots/nestjs-redis';
+import { Redis } from 'ioredis';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class StoresService {
@@ -18,12 +21,18 @@ export class StoresService {
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
     private readonly elasticsearchService: ElasticsearchService,
+    @InjectRedis() private readonly client: Redis,
   ) {}
 
-  async useRedis() {
-    await this.RedisCacheService.set('key', 'value', { ttl: 1000 });
-    const value = await this.RedisCacheService.get('key');
-    console.log(value);
+  async updateRating(storeId: number): Promise<void> {
+    // const averageRating = await this.reviewsRepository.getAverageRating(
+    // storeId,
+    // );
+    console.log('데이터가 저장되었습니다.');
+    const sample = 'shitty world';
+    await this.client.set(`a:${storeId}`, sample);
+    // this.storesRepository.updateRating(storeId, averageRating);
+    return;
   }
 
   async searchRestaurants(
@@ -37,11 +46,11 @@ export class StoresService {
     const cacheKey = `searchRestaurants:${southWestLatitude},${southWestLongitude},${northEastLatitude},${northEastLongitude},${sortBy}`;
     console.log(cacheKey);
 
-    const cachedData = await this.RedisCacheService.get(cacheKey);
-    if (cachedData) {
-      console.log('Data found in cache');
-      return { 근처식당목록: cachedData };
-    }
+    // const cachedData = await this.redisCacheService.get(cacheKey);
+    // if (cachedData) {
+    //   console.log('Data found in cache');
+    //   return { 근처식당목록: cachedData };
+    // }
     const restaurants = await this.storesRepository.findAll();
 
     const restaurantsWithinRadius = restaurants.filter((restaurant) => {
@@ -104,9 +113,11 @@ export class StoresService {
       }
       return 0;
     });
+    const top10Restaurants = restaurantsWithinRadius.slice(0, 10);
 
-    await this.RedisCacheService.set(cacheKey, restaurantsWithinRadius);
-    return { 근처식당목록: restaurantsWithinRadius };
+    // await this.redisCacheService.set(cacheKey, restaurantsWithinRadius);
+    // console.log(restaurantsWithinRadius[0]);
+    return { 근처식당목록: top10Restaurants };
   }
 
   //sorting //쿼리 searching 따로
@@ -269,12 +280,12 @@ export class StoresService {
     }
   }
 
-  async updateRating(storeId: number): Promise<void> {
-    const averageRating = await this.reviewsRepository.getAverageRating(
-      storeId,
-    );
-    return this.storesRepository.updateRating(storeId, averageRating);
-  }
+  // async updateRating(storeId: number): Promise<void> {
+  //   const averageRating = await this.reviewsRepository.getAverageRating(
+  //     storeId,
+  //   );
+  //   return this.storesRepository.updateRating(storeId, averageRating);
+  // }
 
   async searchStores2(
     keyword: string,

@@ -1,3 +1,4 @@
+import { RedisCacheModule } from 'src/cache/redis.module';
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { StoresModule } from './stores/stores.module';
@@ -9,6 +10,9 @@ import { typeORMConfig } from './configs/typeorm.config';
 import { LocationService } from './location/location.service';
 import { APP_GUARD } from '@nestjs/core';
 import { AccessTokenGuard } from './auth/guards';
+import { CacheModule } from '@nestjs/cache-manager';
+import { RedisCacheService } from './cache/redis.service';
+import { RedisController } from './cache/redis.controller';
 
 @Module({
   imports: [
@@ -18,8 +22,12 @@ import { AccessTokenGuard } from './auth/guards';
     WaitingsModule,
     ReviewsModule,
     TablesModule,
+    CacheModule.register(),
+    RedisCacheModule,
   ],
+  controllers: [RedisController],
   providers: [
+    RedisCacheService,
     LocationService,
     {
       provide: APP_GUARD, // APP_GUARD: 애플리케이션의 전역 가드를 설정하는 토큰

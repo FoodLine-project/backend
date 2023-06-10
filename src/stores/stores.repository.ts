@@ -39,10 +39,21 @@ export class StoresRepository extends Repository<Stores> {
     return result;
   }
 
-  async searchStores(keyword: string, sort: 'ASC' | 'DESC', column: string): Promise<StoresSearchDto[]> {
+  async searchStores(
+    keyword: string,
+    sort: 'ASC' | 'DESC',
+    column: string,
+  ): Promise<StoresSearchDto[]> {
     const start = performance.now();
     const searchStores = await this.find({
-      select: ['storeId', 'storeName', 'category', 'maxWaitingCnt', 'address', 'rating'],
+      select: [
+        'storeId',
+        'storeName',
+        'category',
+        'maxWaitingCnt',
+        'address',
+        'rating',
+      ],
       where: [
         { storeName: ILike(`${keyword}%`) },
         { address: ILike(`%${keyword}%`) },
@@ -57,30 +68,38 @@ export class StoresRepository extends Repository<Stores> {
     const end = performance.now();
     const executionTime = end - start;
 
-
-    console.log(searchStores)
-    console.log(searchStores.length)
-    console.log(column)
+    console.log(searchStores);
+    console.log(searchStores.length);
+    console.log(column);
     console.log(`Execution Time: ${executionTime} milliseconds`);
     return searchStores;
   }
-  async searchByCategory(keyword: string, sort: 'ASC' | 'DESC', column: string): Promise<StoresSearchDto[]> {
+  async searchByCategory(
+    keyword: string,
+    sort: 'ASC' | 'DESC',
+    column: string,
+  ): Promise<StoresSearchDto[]> {
     const start = performance.now();
     //const query = await this.query(`SELECT * FROM "stores" WHERE "category" LIKE '한식'`);
     //const query2 = await this.query(`SELECT * FROM pg_indexes WHERE tablename = 'stores'`)
     //const query3 = await this.query(`EXPLAIN SELECT * FROM "stores" WHERE "category" LIKE '한식'`);
     const query = await this.find({
-      select: ['storeId', 'storeName', 'category', 'maxWaitingCnt', 'address', 'rating'],
-      where: [
-        { category: ILike(`${keyword}%`) },
+      select: [
+        'storeId',
+        'storeName',
+        'category',
+        'maxWaitingCnt',
+        'address',
+        'rating',
       ],
+      where: [{ category: ILike(`${keyword}%`) }],
       order: column && sort ? { [column]: sort } : {},
-      take: 10000
+      take: 10000,
     });
     //      .where(`to_tsvector('simple', store.category) @@ to_tsquery('simple', :keyword)`, { keyword })
 
-    //    .where(`store.category ILIKE :keyword OR 
-    //     (store.category ILIKE '%양식%' AND :keyword ILIKE '경양식') OR 
+    //    .where(`store.category ILIKE :keyword OR
+    //     (store.category ILIKE '%양식%' AND :keyword ILIKE '경양식') OR
     //     (store.category ILIKE '%중_식%')`, { keyword: `%${keyword}%` })
     // if (column && sort) {
     //   query.orderBy(`store.${column}`, sort);
@@ -92,11 +111,11 @@ export class StoresRepository extends Repository<Stores> {
     //  console.log(query)
     // console.log(query2)
     // console.log(query3)
-    console.log(keyword, column, sort)
+    console.log(keyword, column, sort);
     console.log(`Execution Time: ${executionTime} milliseconds`);
 
     //   console.log(result.length)
-    return query
+    return query;
   }
   async getCycleTimeByStoreId(storeId: number): Promise<number> {
     const store = await this.findOne({
