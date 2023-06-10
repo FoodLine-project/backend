@@ -9,7 +9,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { WaitingsService } from './waitings.service';
-import { Users } from 'src/auth/users.entity';
+import { Users } from '../auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
 import { GetUser, Public } from 'src/auth/common/decorators';
 import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.pipe';

@@ -1,5 +1,4 @@
 import {
-  Equals,
   IsNotEmpty,
   IsString,
   Matches,
@@ -48,14 +47,9 @@ export class SignupDto {
 export class LoginDto {
   @IsNotEmpty()
   @IsString()
-  @Matches(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, {
-    message: '이메일 형식이 올바르지 않습니다.',
-  })
   email: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(8, { message: `비밀번호의 최소 길이는 8자입니다.` })
-  @MaxLength(20, { message: `비밀번호의 최대 길이는 20자입니다.` })
   password: string;
 }

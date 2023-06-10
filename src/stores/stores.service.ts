@@ -14,11 +14,11 @@ import { ElasticsearchService } from '@nestjs/elasticsearch';
 @Injectable()
 export class StoresService {
   constructor(
-    @InjectRepository(StoresRepository)
+    // @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
-    private readonly elasticsearchService: ElasticsearchService
-  ) { }
+    private readonly elasticsearchService: ElasticsearchService,
+  ) {}
 
   async searchRestaurants(
     southWestLatitude: number,
@@ -96,61 +96,65 @@ export class StoresService {
   //sorting //쿼리 searching 따로
 
   //키워드로 검색부분 //sorting 추가 //전국 식당으로 //가장 가까운 순으로?
-  async searchStores(keyword: string, sort: 'ASC' | 'DESC', column: string): Promise<StoresSearchDto[]> {
-    const category = ['한식', '양식', '중식', '일식', "양식", "기타", "분식", "까페", "통닭", "식육", "횟집", "인도", "패스트푸드",
-      "패밀리레스트랑", "김밥(도시락)", "소주방"];
-    console.log(keyword, column, sort)
+  async searchStores(
+    keyword: string,
+    sort: 'ASC' | 'DESC',
+    column: string,
+  ): Promise<StoresSearchDto[]> {
+    const category = [
+      '한식',
+      '양식',
+      '중식',
+      '일식',
+      '양식',
+      '기타',
+      '분식',
+      '까페',
+      '통닭',
+      '식육',
+      '횟집',
+      '인도',
+      '패스트푸드',
+      '패밀리레스트랑',
+      '김밥(도시락)',
+      '소주방',
+    ];
+    console.log(keyword, column, sort);
     if (category.includes(keyword)) {
-      console.log("카테고리별 조회")
-      if (keyword === "중식") {
-        keyword = "중국식"
-      } else if (keyword === "양식") {
-        keyword = "경양식"
+      console.log('카테고리별 조회');
+      if (keyword === '중식') {
+        keyword = '중국식';
+      } else if (keyword === '양식') {
+        keyword = '경양식';
       }
-      const searchByCategory = await this.storesRepository.searchByCategory(keyword, sort, column)
-      return searchByCategory
+      const searchByCategory = await this.storesRepository.searchByCategory(
+        keyword,
+        sort,
+        column,
+      );
+      return searchByCategory;
     } else {
-      console.log("가게이름, 도로주소 조회")
-      const searchStores = await this.storesRepository.searchStores(keyword, sort, column);
+      console.log('가게이름, 도로주소 조회');
+      const searchStores = await this.storesRepository.searchStores(
+        keyword,
+        sort,
+        column,
+      );
       return searchStores;
     }
-
   }
   //상세조회 + 댓글
   async getOneStore(storeId: number): Promise<Stores> {
-    const getOneStore = await this.storesRepository.findOne({
-      where: { storeId: storeId },
-      relations: ['reviews'],
-    });
-    console.log(getOneStore);
-    return getOneStore;
+    const store = await this.storesRepository.getOneStore(storeId);
+    console.log(store);
+
+    return store;
   }
 
   //임시
   async createStore(createUserDto: CreateStoresDto): Promise<Stores> {
-    const {
-      storeName,
-      category,
-      description,
-      maxWaitingCnt,
-      currentWaitingCnt,
-      Ma,
-      La,
-      tableForTwo,
-      tableForFour,
-    } = createUserDto;
-    const store = this.storesRepository.create({
-      storeName,
-      category,
-      description,
-      maxWaitingCnt,
-      currentWaitingCnt,
-      Ma,
-      La,
-      tableForTwo,
-      tableForFour,
-    });
-    await this.storesRepository.save(store);
+    const store = await this.storesRepository.createStore(createUserDto);
+
     return store;
   }
 
@@ -233,12 +237,11 @@ export class StoresService {
     return this.storesRepository.updateRating(storeId, averageRating);
   }
 
-
-
-
-
-
-  async searchStores2(keyword: string, sort: 'ASC' | 'DESC', column: string): Promise<StoresSearchDto[]> {
+  async searchStores2(
+    keyword: string,
+    sort: 'ASC' | 'DESC',
+    column: string,
+  ): Promise<StoresSearchDto[]> {
     const start = performance.now();
     const result = await this.elasticsearchService.search<StoresSearchDto>({
       index: 'idx_stores',
@@ -249,16 +252,15 @@ export class StoresService {
       },
       size: 10000,
     });
-    console.log(result)
+    console.log(result);
     const end = performance.now();
     const executionTime = end - start;
 
-    console.log(keyword, column, sort)
+    console.log(keyword, column, sort);
     console.log(`Execution Time: ${executionTime} milliseconds`);
     return result.hits.hits.map((hit) => hit._source);
   }
 }
-
 
 // private readonly API_KEY = 'e84edcba09907dc19727de566a994a88';
 
