@@ -1,0 +1,75 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: CI/CD Docker
+
+on:
+  push:
+    branches: [develop]
+
+env:
+  DOCKER_IMAGE: ghcr.io/22-project/backend
+  VERSION: ${{ github.sha }}
+  NAME: backend
+
+jobs:
+#   test:
+
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - uses: actions/checkout@v3
+#     - name: Setup node.js 18.x
+#       uses: actions/setup-node@v3
+#       with:
+#         node-version: ${{ matrix.node-version }}
+#         cache: 'npm'
+#     - run: npm ci
+#     - run: npm test
+  
+  build:
+#     needs: test
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v3
+      - name: Set up docker buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Cache docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ env.VERSION }} # runner 설정에서 읽어들일거에요.
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: Login to ghcr
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: 22-project
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v3
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          push: true
+          tags: ${{ env.DOCKER_IMAGE }}:latest
+
+  deploy:
+    needs: build
+    name: Deploy
+    runs-on: [ self-hosted, label-go ]
+    steps:
+      - name: Login to ghcr
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: 22-project
+          password: ${{ secrets.GHCR_TOKEN }}
+      - name: Docker run
+        run: |
+          docker stop ${{ env.NAME }} && docker rm ${{ env.NAME }} && docker rmi ${{ env.DOCKER_IMAGE }}:latest
+          docker run -d -p 3300:3000 --name ${{ env.NAME }} --restart always ${{ env.DOCKER_IMAGE }}:latest

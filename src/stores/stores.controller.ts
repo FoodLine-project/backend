@@ -23,7 +23,7 @@ export class StoresController {
   constructor(
     private storesService: StoresService,
     private locationService: LocationService,
-  ) { }
+  ) {}
 
   @Public()
   @Post('/coordinates')
@@ -55,8 +55,12 @@ export class StoresController {
   ///api/stores/search?keyword=햄버거 간단한 검색기능
   @Public()
   @Get('/search')
-  searchStores(@Query('keyword') keyword: string, @Query('b') sort: 'ASC' | 'DESC', @Query('a') column: string): Promise<StoresSearchDto[]> {
-    console.log(column)
+  searchStores(
+    @Query('keyword') keyword: string,
+    @Query('b') sort: 'ASC' | 'DESC',
+    @Query('a') column: string,
+  ): Promise<StoresSearchDto[]> {
+    console.log(column);
     return this.storesService.searchStores2(keyword, sort, column);
   }
 

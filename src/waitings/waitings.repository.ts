@@ -1,4 +1,3 @@
-import { NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Waitings } from './waitings.entity';
 import { In, Repository } from 'typeorm';
@@ -10,12 +9,22 @@ export class WaitingsRepository {
   ) {}
 
   async getCurrentWaitingCnt(storeId: number): Promise<number> {
+    const waitingStatuses = [
+      WaitingStatus.WAITING,
+      WaitingStatus.CALLED,
+      WaitingStatus.DELAYED,
+    ];
+
     const waitingCounts = await this.waitings
       .createQueryBuilder('waitings')
       .leftJoin('waitings.store', 'store')
       .where('store.storeId = :storeId', { storeId })
-      .andWhere('waitings.status = :status', { status: WaitingStatus.WAITING })
+      .andWhere('waitings.status IN (:...statuses)', {
+        statuses: waitingStatuses,
+      })
       .getCount();
+
+    console.log(waitingCounts, '여기야');
     return waitingCounts;
   }
 
@@ -28,6 +37,9 @@ export class WaitingsRepository {
           WaitingStatus.CALLED,
           WaitingStatus.DELAYED,
         ]),
+      },
+      order: {
+        createdAt: 'ASC',
       },
     });
   }
@@ -98,9 +110,14 @@ export class WaitingsRepository {
     const exited = await this.waitings.findOne({
       where: { waitingId },
     });
-    exited.status = WaitingStatus.EXITED;
-    await this.waitings.save(exited);
-    if (exited.peopleCnt === 1 || 2) {
+    await this.waitings
+      .createQueryBuilder('waitings')
+      .update(Waitings)
+      .set({ status: WaitingStatus.NOTFILLED, updatedAt: () => 'updatedAt' })
+      .where('waitingId = :waitingId', { waitingId })
+      .setParameter('updatedAt', exited.updatedAt)
+      .execute();
+    if (exited.peopleCnt == 1 || exited.peopleCnt == 2) {
       const called = await this.waitings.findOne({
         where: {
           StoreId: storeId,
@@ -133,14 +150,18 @@ export class WaitingsRepository {
     });
     delayed.status = WaitingStatus.DELAYED;
     await this.waitings.save(delayed);
-    if (delayed.peopleCnt === 1 || 2) {
+    if (delayed.peopleCnt == 1 || delayed.peopleCnt == 2) {
       const called = await this.waitings.findOne({
         where: {
           StoreId: storeId,
           status: WaitingStatus.WAITING,
           peopleCnt: In([1, 2]),
         },
+        order: {
+          createdAt: 'ASC',
+        },
       });
+      if (!called) return;
       called.status = WaitingStatus.CALLED;
       await this.waitings.save(called);
       return;
@@ -151,7 +172,11 @@ export class WaitingsRepository {
           status: WaitingStatus.WAITING,
           peopleCnt: In([3, 4]),
         },
+        order: {
+          createdAt: 'ASC',
+        },
       });
+      if (!called) return;
       called.status = WaitingStatus.CALLED;
       await this.waitings.save(called);
       return;
@@ -168,6 +193,39 @@ export class WaitingsRepository {
     });
     entered.status = status;
     await this.waitings.save(entered);
+    if (entered.peopleCnt == 1 || entered.peopleCnt == 2) {
+      const notFilled = await this.waitings.findOne({
+        where: {
+          StoreId: storeId,
+          status: WaitingStatus.NOTFILLED,
+          peopleCnt: In([1, 2]),
+        },
+        order: {
+          updatedAt: 'ASC',
+        },
+      });
+      console.log(notFilled);
+      if (!notFilled) return;
+      notFilled.status = WaitingStatus.EXITED;
+      await this.waitings.save(notFilled);
+      return;
+    } else {
+      const notFilled = await this.waitings.findOne({
+        where: {
+          StoreId: storeId,
+          status: WaitingStatus.NOTFILLED,
+          peopleCnt: In([3, 4]),
+        },
+        order: {
+          updatedAt: 'ASC',
+        },
+      });
+      console.log(notFilled);
+      if (!notFilled) return;
+      notFilled.status = WaitingStatus.EXITED;
+      await this.waitings.save(notFilled);
+      return;
+    }
     return;
   }
 
@@ -195,8 +253,13 @@ export class WaitingsRepository {
     storeId: number,
     peopleCnt: number,
   ): Promise<Waitings[]> {
-    if (peopleCnt === 2) {
+    // <<<<<<< HEAD
+    //     if (peopleCnt === 2) {
+    //       return this.waitings.find({
+    // =======
+    if (peopleCnt == 1 || peopleCnt == 2) {
       return this.waitings.find({
+        // >>>>>>> 1b4ff43efc6c59311d3d8a83d72abbae6210cb1b
         where: {
           StoreId: storeId,
           status: In([
@@ -236,56 +299,36 @@ export class WaitingsRepository {
       return this.waitings.find({
         where: {
           StoreId: storeId,
-          status: WaitingStatus.ENTERED,
+          status: In([WaitingStatus.ENTERED, WaitingStatus.NOTFILLED]),
           peopleCnt: In([1, 2]),
         },
         order: {
-          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+          updatedAt: 'ASC', // update 기준 오름차순 정렬
         },
       });
     } else {
       return this.waitings.find({
         where: {
           StoreId: storeId,
-          status: WaitingStatus.ENTERED,
+          status: In([WaitingStatus.ENTERED, WaitingStatus.NOTFILLED]),
           peopleCnt: In([3, 4]),
         },
         order: {
-          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+          updatedAt: 'ASC', // update 기준 오름차순 정렬
         },
       });
     }
   }
 
-  async getTableTotalCnt(
-    storeId: number,
-    getPeopleCnt: number,
-  ): Promise<number> {
+  async getTableTotalCnt(storeId: number, peopleCnt: number): Promise<number> {
     const stores = await this.waitings.findOne({
       where: { store: { storeId: storeId } },
       relations: ['store'],
     });
-    if (getPeopleCnt === 2) {
+    if (peopleCnt === 1 || peopleCnt === 0) {
       return stores.store.tableForTwo;
     } else {
       return stores.store.tableForFour;
     }
-  }
-
-  async getPeopleCnt(
-    storeId: number,
-    waitingId: number,
-    user: Users,
-  ): Promise<number> {
-    const findWaitingById = await this.waitings.findOne({
-      where: { waitingId, StoreId: storeId, UserId: user.userId },
-    });
-    if (!findWaitingById) {
-      throw new NotFoundException(`Can't find waiting with id`);
-    } else if (findWaitingById.status !== 'WAITING') {
-      throw new NotFoundException('이미 입장한 상태입니다.');
-    }
-    if (findWaitingById.peopleCnt > 2) return 4;
-    else return 2;
   }
 }
