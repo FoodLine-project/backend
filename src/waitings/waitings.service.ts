@@ -156,7 +156,7 @@ export class WaitingsService {
       await this.waitingQueue.add('patchToExited', { storeId, waitingId });
       await this.waitingQueue.add('incrementTables', { storeId, peopleCnt });
       return;
-    } // ENTERED 를 NOTFILLED로 처리하고 그 인원수에 맞는 대기열을 CALLED 처리 한다 => 매장용
+    } // ENTERED 를 EXITED_AND_READY로 처리하고 그 인원수에 맞는 대기열을 CALLED 처리 한다 => 매장용
     // 대기열이 없으면 부르지 않는다
 
     if (status === 'DELAYED') {
@@ -195,6 +195,9 @@ export class WaitingsService {
       throw new ConflictException('웨이팅이 존재하지 않습니다');
     }
     const waitingId = waiting.waitingId;
+    if (waiting.StoreId !== storeId) {
+      throw new BadRequestException('잘못된 요청입니다');
+    }
     if (
       waiting.status == WaitingStatus.CALLED ||
       waiting.status == WaitingStatus.DELAYED ||
@@ -290,7 +293,10 @@ export class WaitingsService {
     const currentTime = new Date();
     const updatedTime = enteredPeople[leftCnt - 1].updatedAt;
     console.log(enteredPeople[leftCnt - 1].waitingId, '얘랑 비교');
-    if (bigCycle == 1 && enteredPeople[leftCnt - 1].status == 'NOTFILLED') {
+    if (
+      bigCycle == 1 &&
+      enteredPeople[leftCnt - 1].status == 'EXITED_AND_READY'
+    ) {
       return 0;
     }
     // 내가 앉을 테이블에 앉은 사람이 먹은지 몇분 됐는지
