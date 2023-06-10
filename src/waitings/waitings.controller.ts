@@ -20,6 +20,12 @@ import { Waitings } from './waitings.entity';
 export class WaitingsController {
   constructor(private waitingsService: WaitingsService) {}
 
+  @Public()
+  @Post('/test')
+  async redisTest(@Body('value') value: string): Promise<any> {
+    return this.waitingsService.testRedis(value);
+  }
+
   // 웨이팅 시간 조회 ( for user )
   @Public()
   @Get('/:storeId/waitings')

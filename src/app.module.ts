@@ -10,6 +10,7 @@ import { LocationService } from './location/location.service';
 import { APP_GUARD } from '@nestjs/core';
 import { AccessTokenGuard } from './auth/guards';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
     WaitingsModule,
     ReviewsModule,
     TablesModule,
+    RedisModule,
   ],
   providers: [
     LocationService,

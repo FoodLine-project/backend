@@ -14,6 +14,7 @@ import { BullModule } from '@nestjs/bull';
 import { RedisOptions } from 'ioredis';
 import { WaitingConsumer } from './waiting.consumer';
 import { config } from 'dotenv';
+import { RedisModule } from 'src/redis/redis.module';
 
 const result = config();
 if (result.error) {
@@ -32,6 +33,7 @@ const redisOptions: RedisOptions = {
       type: 'spanner',
       maxQueryExecutionTime: 50000,
     }),
+    RedisModule,
     AuthModule,
     ScheduleModule.forRoot(),
     BullModule.forRoot({
