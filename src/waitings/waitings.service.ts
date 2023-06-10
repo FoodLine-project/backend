@@ -1,3 +1,4 @@
+import { RedisService } from './../redis/redis.service';
 import { StoresRepository } from './../stores/stores.repository';
 import { Users } from '../auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
@@ -21,7 +22,13 @@ export class WaitingsService {
     private waitingsRepository: WaitingsRepository,
     private storesRepository: StoresRepository,
     private tablesRepository: TablesRepository,
+    private redisService: RedisService,
   ) {}
+
+  async testRedis(value: string): Promise<string> {
+    this.redisService.set('hi3', value);
+    return 'test complete';
+  }
 
   async getCurrentWaitingsCnt(storeId: number): Promise<number> {
     const existsStore = await this.storesRepository.findStoreById(storeId);
