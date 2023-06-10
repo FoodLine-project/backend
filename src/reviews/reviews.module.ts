@@ -10,9 +10,13 @@ import { UsersRepository } from '../auth/users.repository';
 import { StoresRepository } from '../stores/stores.repository';
 import { Tables } from '../tables/tables.entity';
 import { TablesRepository } from '../tables/tables.repository';
+import { Stores } from 'src/stores/stores.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Reviews, Users, Tables]), AuthModule],
+  imports: [
+    TypeOrmModule.forFeature([Reviews, Users, Stores, Tables]),
+    AuthModule,
+  ],
   controllers: [ReviewsController],
   providers: [
     ReviewsService,

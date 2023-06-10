@@ -35,7 +35,7 @@ export class StoresRepository {
 
   constructor(
     @InjectRepository(Stores) private stores: Repository<Stores>,
-    @InjectRepository(TablesRepository)
+    // @InjectRepository(TablesRepository)
     private tablesRepository: TablesRepository,
   ) {}
 
