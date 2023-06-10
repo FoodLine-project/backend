@@ -23,8 +23,6 @@ export class WaitingsRepository {
         statuses: waitingStatuses,
       })
       .getCount();
-
-    console.log(waitingCounts, '여기야');
     return waitingCounts;
   }
 
@@ -113,7 +111,10 @@ export class WaitingsRepository {
     await this.waitings
       .createQueryBuilder('waitings')
       .update(Waitings)
-      .set({ status: WaitingStatus.NOTFILLED, updatedAt: () => 'updatedAt' })
+      .set({
+        status: WaitingStatus.EXITED_AND_READY,
+        updatedAt: () => 'updatedAt',
+      })
       .where('waitingId = :waitingId', { waitingId })
       .setParameter('updatedAt', exited.updatedAt)
       .execute();
@@ -197,14 +198,13 @@ export class WaitingsRepository {
       const notFilled = await this.waitings.findOne({
         where: {
           StoreId: storeId,
-          status: WaitingStatus.NOTFILLED,
+          status: WaitingStatus.EXITED_AND_READY,
           peopleCnt: In([1, 2]),
         },
         order: {
           updatedAt: 'ASC',
         },
       });
-      console.log(notFilled);
       if (!notFilled) return;
       notFilled.status = WaitingStatus.EXITED;
       await this.waitings.save(notFilled);
@@ -213,14 +213,13 @@ export class WaitingsRepository {
       const notFilled = await this.waitings.findOne({
         where: {
           StoreId: storeId,
-          status: WaitingStatus.NOTFILLED,
+          status: WaitingStatus.EXITED_AND_READY,
           peopleCnt: In([3, 4]),
         },
         order: {
           updatedAt: 'ASC',
         },
       });
-      console.log(notFilled);
       if (!notFilled) return;
       notFilled.status = WaitingStatus.EXITED;
       await this.waitings.save(notFilled);
@@ -299,7 +298,7 @@ export class WaitingsRepository {
       return this.waitings.find({
         where: {
           StoreId: storeId,
-          status: In([WaitingStatus.ENTERED, WaitingStatus.NOTFILLED]),
+          status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
           peopleCnt: In([1, 2]),
         },
         order: {
@@ -310,7 +309,7 @@ export class WaitingsRepository {
       return this.waitings.find({
         where: {
           StoreId: storeId,
-          status: In([WaitingStatus.ENTERED, WaitingStatus.NOTFILLED]),
+          status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
           peopleCnt: In([3, 4]),
         },
         order: {
