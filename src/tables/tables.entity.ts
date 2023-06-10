@@ -1,4 +1,4 @@
-import { Stores } from 'src/stores/stores.entity';
+import { Stores } from '../stores/stores.entity';
 import {
   BaseEntity,
   Column,

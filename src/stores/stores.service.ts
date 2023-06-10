@@ -17,7 +17,7 @@ import { Cache } from 'cache-manager';
 @Injectable()
 export class StoresService {
   constructor(
-    @InjectRepository(StoresRepository)
+    // @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
     private readonly elasticsearchService: ElasticsearchService,
@@ -172,39 +172,16 @@ export class StoresService {
   }
   //상세조회 + 댓글
   async getOneStore(storeId: number): Promise<Stores> {
-    const getOneStore = await this.storesRepository.findOne({
-      where: { storeId: storeId },
-      relations: ['reviews'],
-    });
-    console.log(getOneStore);
-    return getOneStore;
+    const store = await this.storesRepository.getOneStore(storeId);
+    console.log(store);
+
+    return store;
   }
 
   //임시
   async createStore(createUserDto: CreateStoresDto): Promise<Stores> {
-    const {
-      storeName,
-      category,
-      description,
-      maxWaitingCnt,
-      currentWaitingCnt,
-      Ma,
-      La,
-      tableForTwo,
-      tableForFour,
-    } = createUserDto;
-    const store = this.storesRepository.create({
-      storeName,
-      category,
-      description,
-      maxWaitingCnt,
-      currentWaitingCnt,
-      Ma,
-      La,
-      tableForTwo,
-      tableForFour,
-    });
-    await this.storesRepository.save(store);
+    const store = await this.storesRepository.createStore(createUserDto);
+
     return store;
   }
 

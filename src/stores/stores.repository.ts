@@ -1,10 +1,11 @@
 import { TablesRepository } from './../tables/tables.repository';
 import { Injectable } from '@nestjs/common';
-import { Repository, DataSource, ILike } from 'typeorm';
+import { Repository, ILike } from 'typeorm';
 import { Stores } from './stores.entity';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CreateStoresDto } from './dto/create-stores.dto';
 
 // @Injectable()
 // export class StoresRepository extends Repository<Stores, Tables> {
@@ -22,18 +23,25 @@ import { InjectRepository } from '@nestjs/typeorm';
 //   }
 
 @Injectable()
-export class StoresRepository extends Repository<Stores> {
+export class StoresRepository {
+  // extends Repository<Stores> {
+  // constructor(
+  //   @InjectRepository(TablesRepository)
+  //   private tablesRepository: TablesRepository,
+  //   dataSource: DataSource,
+  // ) {
+  //   super(Stores, dataSource.createEntityManager());
+  // }
+
   constructor(
-    @InjectRepository(TablesRepository)
+    @InjectRepository(Stores) private stores: Repository<Stores>,
+    // @InjectRepository(TablesRepository)
     private tablesRepository: TablesRepository,
-    dataSource: DataSource,
-  ) {
-    super(Stores, dataSource.createEntityManager());
-  }
+  ) {}
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
-    const result = await this.find({ order: { storeId: 'ASC' } });
+    const result = await this.stores.find({ order: { storeId: 'ASC' } });
     // order: { storeId: 'ASC' },
     // console.log(result); 잘 읽히는것 확인
     return result;
@@ -45,7 +53,7 @@ export class StoresRepository extends Repository<Stores> {
     column: string,
   ): Promise<StoresSearchDto[]> {
     const start = performance.now();
-    const searchStores = await this.find({
+    const searchStores = await this.stores.find({
       select: [
         'storeId',
         'storeName',
@@ -83,7 +91,7 @@ export class StoresRepository extends Repository<Stores> {
     //const query = await this.query(`SELECT * FROM "stores" WHERE "category" LIKE '한식'`);
     //const query2 = await this.query(`SELECT * FROM pg_indexes WHERE tablename = 'stores'`)
     //const query3 = await this.query(`EXPLAIN SELECT * FROM "stores" WHERE "category" LIKE '한식'`);
-    const query = await this.find({
+    const query = await this.stores.find({
       select: [
         'storeId',
         'storeName',
@@ -118,7 +126,7 @@ export class StoresRepository extends Repository<Stores> {
     return query;
   }
   async getCycleTimeByStoreId(storeId: number): Promise<number> {
-    const store = await this.findOne({
+    const store = await this.stores.findOne({
       where: { storeId },
     });
     return store.cycleTime;
@@ -140,7 +148,7 @@ export class StoresRepository extends Repository<Stores> {
         const address = rowData['도로명전체주소'];
         const oldAddress = rowData['소재지전체주소'];
 
-        const store = this.create({
+        const store = this.stores.create({
           storeName,
           description,
           maxWaitingCnt,
@@ -155,7 +163,7 @@ export class StoresRepository extends Repository<Stores> {
         });
 
         try {
-          const result = await this.save(store);
+          const result = await this.stores.save(store);
           this.tablesRepository.createTable(result);
           console.log('Inserted', result, 'row:', store);
         } catch (error) {
@@ -166,7 +174,7 @@ export class StoresRepository extends Repository<Stores> {
   }
   //좌표를 위한 주소와 아이디
   async getStoreAddressId() {
-    return await this.find({
+    return await this.stores.find({
       select: ['storeId', 'address', 'oldAddress'],
       where: { Ma: 0, La: 0 },
       order: { storeId: 'ASC' },
@@ -205,24 +213,63 @@ export class StoresRepository extends Repository<Stores> {
   }
   //저장
   async updateCoord(La: number, Ma: number, storeId: number): Promise<any> {
-    await this.update(storeId, { La, Ma });
+    await this.stores.update(storeId, { La, Ma });
   }
 
   async findStoreById(storeId: number): Promise<Stores> {
-    return await this.findOne({ where: { storeId } });
+    return await this.stores.findOne({ where: { storeId } });
   }
 
   async updateRating(storeId: number, rating: number): Promise<void> {
-    await this.update(storeId, { rating });
+    await this.stores.update(storeId, { rating });
   }
 
   async decrementCurrentWaitingCnt(storeId: number): Promise<void> {
-    this.decrement({ storeId }, 'currentWaitingCnt', 1);
+    this.stores.decrement({ storeId }, 'currentWaitingCnt', 1);
     return;
   }
 
   async incrementCurrentWaitingCnt(storeId: number): Promise<void> {
-    this.increment({ storeId }, 'currentWaitingCnt', 1);
+    this.stores.increment({ storeId }, 'currentWaitingCnt', 1);
     return;
+  }
+
+  async getOneStore(storeId: number): Promise<Stores> {
+    const store = await this.stores.findOne({
+      where: { storeId },
+      relations: ['reviews'],
+    });
+
+    return store;
+  }
+
+  async createStore(createStoreDto: CreateStoresDto): Promise<Stores> {
+    const {
+      storeName,
+      category,
+      description,
+      maxWaitingCnt,
+      currentWaitingCnt,
+      Ma,
+      La,
+      tableForTwo,
+      tableForFour,
+    } = createStoreDto;
+
+    const store = this.stores.create({
+      storeName,
+      category,
+      description,
+      maxWaitingCnt,
+      currentWaitingCnt,
+      Ma,
+      La,
+      tableForTwo,
+      tableForFour,
+    });
+
+    await this.stores.save(store);
+
+    return store;
   }
 }

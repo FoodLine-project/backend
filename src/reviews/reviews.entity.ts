@@ -1,5 +1,5 @@
-import { Stores } from 'src/stores/stores.entity';
-import { Users } from 'src/auth/users.entity';
+import { Stores } from '../stores/stores.entity';
+import { Users } from '../auth/users.entity';
 
 import {
   BaseEntity,

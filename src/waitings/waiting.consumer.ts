@@ -1,12 +1,12 @@
-import { StoresRepository } from 'src/stores/stores.repository';
-import { TablesRepository } from 'src/tables/tables.repository';
+import { StoresRepository } from '../stores/stores.repository';
+import { TablesRepository } from '../tables/tables.repository';
 import { WaitingsRepository } from './waitings.repository';
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Waitings } from './waitings.entity';
 import { EventEmitter } from 'events';
 
-EventEmitter.defaultMaxListeners = 15;
+EventEmitter.defaultMaxListeners = 100;
 @Processor('waitingQueue')
 export class WaitingConsumer {
   constructor(
@@ -17,7 +17,7 @@ export class WaitingConsumer {
 
   @Process('getCurrentWaitingCnt')
   async getCurrentWaitingCnt(job: Job): Promise<number> {
-    const { storeId } = job.data;
+    const storeId = job.data;
     console.log(`${job.id}의 작업을 수행하였습니다`);
     return await this.waitingsRepository.getCurrentWaitingCnt(storeId);
   }
@@ -38,27 +38,9 @@ export class WaitingConsumer {
     return;
   }
 
-  @Process('decrementTablesAndIncrementCurrentWaitingCnt')
-  async decrementTables(job: Job): Promise<void> {
-    const { storeId, peopleCnt } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
-    await this.storesRepository.incrementCurrentWaitingCnt(storeId);
-    await this.tablesRepository.decrementTables(storeId, peopleCnt);
-    return;
-  }
-
-  @Process('incrementTablesAndDecrementCurrentWaitingCnt')
-  async incrementTables(job: Job): Promise<void> {
-    const { storeId, peopleCnt } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
-    await this.storesRepository.decrementCurrentWaitingCnt(storeId);
-    await this.tablesRepository.incrementTables(storeId, peopleCnt);
-    return;
-  }
-
   @Process('getWaitingListById')
   async getWaitingList(job: Job): Promise<Waitings[]> {
-    const { storeId } = job.data;
+    const storeId = job.data;
     console.log(`${job.id}의 작업을 수행하였습니다`);
     return await this.waitingsRepository.getWaitingListById(storeId);
   }
@@ -105,7 +87,7 @@ export class WaitingConsumer {
 
   @Process('decrementCurrentWaitingCnt')
   async decrementWaitingCnt(job: Job): Promise<void> {
-    const { storeId } = job.data;
+    const storeId = job.data;
     console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.storesRepository.decrementCurrentWaitingCnt(storeId);
     return;
@@ -113,9 +95,25 @@ export class WaitingConsumer {
 
   @Process('incrementCurrentWaitingCnt')
   async incrementWaitingCnt(job: Job): Promise<void> {
-    const { storeId } = job.data;
+    const storeId = job.data;
     console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.storesRepository.incrementCurrentWaitingCnt(storeId);
+    return;
+  }
+
+  @Process('incrementTables')
+  async incrementTable(job: Job): Promise<void> {
+    const { storeId, peopleCnt } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.tablesRepository.incrementTables(storeId, peopleCnt);
+    return;
+  }
+
+  @Process('decrementTables')
+  async decrementTable(job: Job): Promise<void> {
+    const { storeId, peopleCnt } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.tablesRepository.decrementTables(storeId, peopleCnt);
     return;
   }
 

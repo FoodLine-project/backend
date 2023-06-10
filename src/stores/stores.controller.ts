@@ -12,11 +12,11 @@ import {
 } from '@nestjs/common';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import { StoresService } from './stores.service';
-import { LocationService } from 'src/location/location.service';
+import { LocationService } from '../location/location.service';
 import { Stores } from './stores.entity';
 import * as path from 'path';
 import { CreateStoresDto } from './dto/create-stores.dto';
-import { Public } from 'src/auth/common/decorators';
+import { Public } from '../auth/common/decorators';
 import { Cron } from '@nestjs/schedule';
 
 @Controller('places')
@@ -62,14 +62,14 @@ export class StoresController {
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
     console.log(column);
-    return this.storesService.searchStores(keyword, sort, column);
+    return this.storesService.searchStores2(keyword, sort, column);
   }
 
   //CSV파일 postgres 업로드
   @Public()
   @Post('/process')
   async processCSV(): Promise<void> {
-    const inputFile = path.resolve('src/stores/csv/111.csv');
+    const inputFile = path.resolve('../stores/csv/111.csv');
     await this.storesService.processCSVFile(inputFile);
   }
 
