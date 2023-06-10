@@ -1,4 +1,4 @@
-import { Reviews } from 'src/reviews/reviews.entity';
+import { Reviews } from '../reviews/reviews.entity';
 import { Waitings } from '../waitings/waitings.entity';
 import {
   BaseEntity,
@@ -12,7 +12,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Stores } from 'src/stores/stores.entity';
+import { Stores } from '../stores/stores.entity';
 import { UnauthorizedException } from '@nestjs/common';
 
 @Entity()

@@ -4,15 +4,19 @@ import { ReviewsService } from './reviews.service';
 import { ReviewsRepository } from './reviews.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Reviews } from './reviews.entity';
-import { AuthModule } from 'src/auth/auth.module';
-import { Users } from 'src/auth/users.entity';
-import { UsersRepository } from 'src/auth/users.repository';
-import { StoresRepository } from 'src/stores/stores.repository';
-import { Tables } from 'src/tables/tables.entity';
-import { TablesRepository } from 'src/tables/tables.repository';
+import { AuthModule } from '../auth/auth.module';
+import { Users } from '../auth/users.entity';
+import { UsersRepository } from '../auth/users.repository';
+import { StoresRepository } from '../stores/stores.repository';
+import { Tables } from '../tables/tables.entity';
+import { TablesRepository } from '../tables/tables.repository';
+import { Stores } from 'src/stores/stores.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Reviews, Users, Tables]), AuthModule],
+  imports: [
+    TypeOrmModule.forFeature([Reviews, Users, Stores, Tables]),
+    AuthModule,
+  ],
   controllers: [ReviewsController],
   providers: [
     ReviewsService,

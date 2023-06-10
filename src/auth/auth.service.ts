@@ -1,29 +1,28 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
-import { InjectRepository } from '@nestjs/typeorm';
 import { SignupDto, LoginDto } from './dto';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { Tokens } from './types';
 import { Users } from './users.entity';
-import { StoresRepository } from 'src/stores/stores.repository';
+// import { StoresRepository } from '../stores/stores.repository';
 
 @Injectable()
 export class AuthService {
+  private logger = new Logger('AuthService');
+
   constructor(
-    @InjectRepository(UsersRepository)
     private usersRepository: UsersRepository,
-    private storesRepository: StoresRepository,
+    // private storesRepository: StoresRepository,
     private jwtService: JwtService,
   ) {}
 
-  // target 문자열을 해시해서 반환하는 메소드
-  // - password와 refreshToken을 db에 저장 전 해싱 하기 위해
   async hash(target: string): Promise<string> {
     const salt = await bcrypt.genSalt();
     return await bcrypt.hash(target, salt);
@@ -78,10 +77,12 @@ export class AuthService {
 
   async signUp(signupDto: SignupDto): Promise<void> {
     if (signupDto.password.includes(signupDto.nickname)) {
+      // this.logger.error(`비밀번호에 닉네임을 포함할 수 없습니다.`);
       throw new BadRequestException(`비밀번호에 닉네임을 포함할 수 없습니다.`);
     }
 
     if (signupDto.password !== signupDto.confirm) {
+      // this.logger.error(`비밀번호와 비밀번호 확인이 일치하지 않습니다.`);
       throw new BadRequestException(
         `비밀번호와 비밀번호 확인이 일치하지 않습니다.`,
       );
@@ -89,7 +90,14 @@ export class AuthService {
 
     const hashedPassword = await this.hash(signupDto.password);
 
-    return await this.usersRepository.createUser(signupDto, hashedPassword);
+    try {
+      await this.usersRepository.createUser(signupDto, hashedPassword);
+    } catch (error) {
+      // this.logger.error(`회원가입 실패 - Error: ${error}`);
+      throw error;
+    }
+
+    // this.logger.verbose(`회원가입 성공 - Email: ${signupDto.email}`);
   }
 
   async login(loginDto: LoginDto): Promise<Tokens> {
@@ -97,35 +105,51 @@ export class AuthService {
 
     const user = await this.usersRepository.findUserByEmail(email);
     if (!user) {
+      // this.logger.error(`존재하지 않는 이메일입니다. - Email: ${email}`);
       throw new NotFoundException(`존재하지 않는 이메일입니다.`);
     }
 
     const passwordMatches = await bcrypt.compare(password, user.password);
     if (!passwordMatches) {
+      // this.logger.error(`비밀번호가 일치하지 않습니다. - Email: ${email}`);
       throw new UnauthorizedException(`비밀번호가 일치하지 않습니다.`);
     }
 
-    const tokens = await this.getTokens(user);
-    const hashedRefreshToken = await this.hash(tokens.refreshToken);
-    await this.usersRepository.updateRefreshToken(
-      user.userId,
-      hashedRefreshToken,
-    );
+    try {
+      const tokens = await this.getTokens(user);
+      const hashedRefreshToken = await this.hash(tokens.refreshToken);
+      await this.usersRepository.updateRefreshToken(
+        user.userId,
+        hashedRefreshToken,
+      );
 
-    return tokens;
+      // this.logger.verbose(`로그인 성공 - Email: ${email}`);
+
+      return tokens;
+    } catch (error) {
+      // this.logger.error(`로그인 실패 - Error: ${error}`);
+      throw error;
+    }
   }
 
   async logout(userId: number): Promise<void> {
-    await this.usersRepository.updateRefreshToken(userId, null);
+    try {
+      await this.usersRepository.updateRefreshToken(userId, null);
+      // this.logger.verbose(`로그아웃 성공 - userId: ${userId}`);
+    } catch (error) {
+      // this.logger.error(`로그아웃 실패 - userId: ${userId}, Error: ${error}`);
+      throw error;
+    }
   }
 
   async refreshAccessToken(
     userId: number,
     refreshToken: string,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<string> {
     const user = await this.usersRepository.findUserById(userId);
 
     if (!user.refreshToken) {
+      // this.logger.error(`로그인이 필요합니다. - userId: ${userId}`);
       throw new NotFoundException(`로그인이 필요합니다.`);
     }
 
@@ -134,22 +158,32 @@ export class AuthService {
       user.refreshToken,
     );
     if (!refreshTokenMatches) {
+      // this.logger.error(`로그인이 필요합니다. - userId: ${userId}`);
       throw new UnauthorizedException(`로그인이 필요합니다.`);
     }
 
-    const accessToken = await this.getAccessToken(user);
+    try {
+      const accessToken = await this.getAccessToken(user);
 
-    return { accessToken };
+      // this.logger.verbose(`토큰 재발급 성공 - userId: ${userId}`);
+
+      return accessToken;
+    } catch (error) {
+      // this.logger.error(
+      //   `토큰 재발급 실패 - userId: ${userId}, Error: ${error}`,
+      // );
+      throw error;
+    }
   }
 
   async getUserInfo(userId: number): Promise<Users> {
     return await this.usersRepository.findUserById(userId);
   }
 
-  async genRandomAdminUsers() {
-    const storeCount = (await this.storesRepository.findAll()).length;
-    console.log(storeCount);
+  // async genRandomAdminUsers() {
+  //   const storeCount = (await this.storesRepository.findAll()).length;
+  //   console.log(storeCount);
 
-    await this.usersRepository.createAdminUsers(storeCount);
-  }
+  //   await this.usersRepository.createAdminUsers(storeCount);
+  // }
 }
