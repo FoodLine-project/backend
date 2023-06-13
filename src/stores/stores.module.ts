@@ -11,6 +11,7 @@ import { TablesRepository } from '../tables/tables.repository';
 import { ReviewsRepository } from '../reviews/reviews.repository';
 import { Reviews } from '../reviews/reviews.entity';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
+import { GeospatialService } from 'src/geospatial/geospatial.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Stores, Tables, Reviews]),
@@ -26,6 +27,7 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
   providers: [
     StoresService,
     LocationService,
+    GeospatialService,
     StoresRepository,
     TablesRepository,
     ReviewsRepository,

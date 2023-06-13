@@ -1,6 +1,6 @@
 import { ReviewsRepository } from './../reviews/reviews.repository';
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+// import { InjectRepository } from '@nestjs/typeorm';
 
 import { Stores } from './stores.entity';
 import { CreateStoresDto } from './dto/create-stores.dto';
@@ -10,6 +10,8 @@ import { StoresRepository } from './stores.repository';
 import { createReadStream } from 'fs';
 import * as csvParser from 'csv-parser';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { GeospatialService } from 'src/geospatial/geospatial.service';
+// import { RedisService } from '@liaoliaots/nestjs-redis';
 
 @Injectable()
 export class StoresService {
@@ -18,6 +20,7 @@ export class StoresService {
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
     private readonly elasticsearchService: ElasticsearchService,
+    private readonly geospatialService: GeospatialService,
   ) {}
 
   async searchRestaurants(
@@ -259,6 +262,136 @@ export class StoresService {
     console.log(keyword, column, sort);
     console.log(`Execution Time: ${executionTime} milliseconds`);
     return result.hits.hits.map((hit) => hit._source);
+  }
+
+  async addStoresToRedis(): Promise<void> {
+    const stores = await this.storesRepository.findAll();
+    console.log('전체 음식점 조회 완료');
+
+    // 150003부터
+    for (const store of stores) {
+      await this.geospatialService.addStore(
+        store.La,
+        store.Ma,
+        String(store.storeId),
+      );
+
+      // FOR TEST
+      console.log(`${store.storeId}번 음식점 redis에 저장 완료`);
+    }
+  }
+
+  async getStorePos(
+    storeId: number,
+  ): Promise<[longitude: string, latitude: string][]> {
+    return await this.geospatialService.getStorePos(String(storeId));
+  }
+
+  getDistanceWithCoordinates(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number,
+  ): number {
+    function toRadians(degrees: number): number {
+      return degrees * (Math.PI / 180);
+    }
+    const R = 6371;
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRadians(lat1)) *
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+  }
+
+  async getStoresNearby(
+    coordinates: {
+      longitude: number;
+      latitude: number;
+    },
+    sortBy?: string,
+  ): Promise<Stores[]> {
+    const { latitude, longitude } = coordinates;
+
+    let nearbyStoresIds: string[];
+    if (sortBy === 'distance') {
+      nearbyStoresIds = await this.geospatialService.getStoresWithinRadius(
+        latitude,
+        longitude,
+        5,
+        sortBy,
+      );
+    }
+
+    const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
+
+    return stores;
+  }
+
+  async getStoresNearby2(
+    coordinates: {
+      swLatlng: { La: number; Ma: number };
+      neLatlng: { La: number; Ma: number };
+    },
+    sortBy?: string,
+  ): Promise<Stores[]> {
+    const { swLatlng, neLatlng } = coordinates;
+
+    const userLatitude: number = (swLatlng.La + neLatlng.La) / 2;
+    const userLongitude: number = (swLatlng.Ma + neLatlng.Ma) / 2;
+
+    const width = this.getDistanceWithCoordinates(
+      swLatlng.La,
+      swLatlng.Ma,
+      swLatlng.La,
+      neLatlng.Ma,
+    );
+    const height = this.getDistanceWithCoordinates(
+      swLatlng.La,
+      swLatlng.Ma,
+      neLatlng.La,
+      swLatlng.Ma,
+    );
+
+    // FOR TEST
+    console.log(userLatitude, userLongitude);
+
+    const nearbyStores = await this.geospatialService.getStoresWithinBox(
+      userLongitude,
+      userLatitude,
+      width,
+      height,
+      sortBy,
+    );
+
+    const nearbyStoresIds = nearbyStores.map((store) => store[0]);
+    const nearbyStoresDistances = nearbyStores.map((store) => Number(store[1]));
+
+    const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
+
+    // FOR TEST
+    {
+      console.log(`주변 식당 수: ${stores.length}`);
+
+      const storeNames = [];
+      let i = 0;
+      for (const store of stores) {
+        store.distance = nearbyStoresDistances[i++];
+        storeNames.push({
+          이름: store.storeName,
+          거리: Math.floor(store.distance * 1000),
+        });
+      }
+      console.log(storeNames);
+    }
+
+    return stores;
   }
 }
 

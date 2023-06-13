@@ -272,4 +272,11 @@ export class StoresRepository {
 
     return store;
   }
+
+  async findStoresByIds(ids: string[]): Promise<Stores[]> {
+    return await this.stores
+      .createQueryBuilder('store')
+      .where('store.storeId = ANY(:ids)', { ids })
+      .getMany();
+  }
 }
