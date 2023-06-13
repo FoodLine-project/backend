@@ -11,6 +11,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AccessTokenGuard } from './auth/guards';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 import { RedisModule } from './redis/redis.module';
+import { RtRedisModule } from './redis/refresh-token.redis.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { RedisModule } from './redis/redis.module';
     ReviewsModule,
     TablesModule,
     RedisModule,
+    RtRedisModule,
   ],
   providers: [
     LocationService,

@@ -1,23 +1,13 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Logger,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignupDto, LoginDto } from './dto';
 import { Tokens } from './types';
-import { GetUser, GetUserId, Public } from './common/decorators';
+import { GetUser, Public } from './common/decorators';
 import { RefreshTokenGuard } from './guards';
 import { Users } from './users.entity';
 
 @Controller('auth')
 export class AuthController {
-  private logger = new Logger('AuthController');
-
   constructor(private authService: AuthService) {}
 
   @Public()
@@ -26,14 +16,8 @@ export class AuthController {
     try {
       await this.authService.signUp(signupDto);
 
-      // this.logger.log(`회원가입 성공 - Payload: ${JSON.stringify(signupDto)}`);
-
       return { message: '회원가입에 성공했습니다.' };
     } catch (error) {
-      // this.logger.error(
-      //   `회원가입 실패 - Payload: ${JSON.stringify(signupDto)}
-      //     Error: ${error}`,
-      // );
       throw error;
     }
   }
@@ -42,29 +26,22 @@ export class AuthController {
   @Post('/login')
   async login(@Body() loginDto: LoginDto): Promise<Tokens> {
     try {
-      const tokens = await this.authService.login(loginDto);
-      // this.logger.log(`로그인 성공 - Payload: ${JSON.stringify(loginDto)}`);
-      return tokens;
+      return await this.authService.login(loginDto);
     } catch (error) {
-      // this.logger.error(
-      //   `로그인 실패 - Payload: ${JSON.stringify(loginDto)}
-      //   Error: ${error}`,
-      // );
       throw error;
     }
   }
 
-  @Patch('/logout')
-  async logout(@GetUserId() userId: number): Promise<{ message: string }> {
+  // @Public()
+  // @UseGuards(AccessTokenGuard)
+  @Delete('/logout')
+  async logout(@GetUser() user: Users): Promise<{ message: string }> {
     try {
-      await this.authService.logout(userId);
-      // this.logger.log(`로그아웃 성공 - userId: ${userId}`);
+      await this.authService.logout(user);
+
       return { message: '로그아웃 되었습니다.' };
     } catch (error) {
-      // this.logger.error(
-      //   `로그아웃 실패 - userId: ${userId}
-      //   Error: ${error}`,
-      // );
+      // return { message: error.message };
       throw error;
     }
   }
@@ -73,27 +50,18 @@ export class AuthController {
   @UseGuards(RefreshTokenGuard)
   @Post('/refresh')
   async refreshAccessToken(
-    @GetUserId() userId: number,
-    @GetUser('refreshToken') refreshToken: string,
+    @GetUser() user: Users,
   ): Promise<{ accessToken: string }> {
     try {
-      const accessToken = await this.authService.refreshAccessToken(
-        userId,
-        refreshToken,
-      );
-      // this.logger.log(`액세스 토큰 재발급 성공 - userId: ${userId}`);
+      const accessToken = await this.authService.refreshAccessToken(user);
 
       return { accessToken };
     } catch (error) {
-      // this.logger.error(
-      //   `액세스 토큰 재발급 실패 - userId: ${userId}
-      //   Error: ${error}`,
-      // );
       throw error;
     }
   }
 
-  @Get('/test')
+  @Get('/profile')
   async getMyProfile(@GetUser() user: Users): Promise<Users> {
     return user;
   }
