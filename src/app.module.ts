@@ -12,6 +12,7 @@ import { AccessTokenGuard } from './auth/guards';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 import { RedisModule } from './redis/redis.module';
 import { RtRedisModule } from './redis/refresh-token.redis.module';
+import { GeospatialModule } from './geospatial/geospatial.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RtRedisModule } from './redis/refresh-token.redis.module';
     TablesModule,
     RedisModule,
     RtRedisModule,
+    GeospatialModule,
   ],
   providers: [
     LocationService,
