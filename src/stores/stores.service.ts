@@ -266,17 +266,16 @@ export class StoresService {
     const stores = await this.storesRepository.findAll();
     console.log('전체 음식점 조회 완료');
 
-    // 150003부터
-    for (const store of stores) {
+    for (let i = 206449; i < stores.length; i++) {
       await this.client.geoadd(
         'stores',
-        store.Ma,
-        store.La,
-        String(store.storeId),
+        stores[i].La,
+        stores[i].Ma,
+        String(stores[i].storeId),
       );
 
       // FOR TEST
-      console.log(`${store.storeId}번 음식점 redis에 저장 완료`);
+      console.log(`${stores[i].storeId}번 음식점 redis에 저장 완료`);
     }
   }
 
@@ -311,36 +310,50 @@ export class StoresService {
 
   async getStoresNearby(
     coordinates: {
-      longitude: number;
-      latitude: number;
+      Ma: number;
+      La: number;
     },
     sortBy?: string,
   ): Promise<Stores[]> {
-    const { latitude, longitude } = coordinates;
+    const { Ma, La } = coordinates;
 
-    let nearbyStoresIds: any[];
-    if (sortBy === 'distance') {
-      nearbyStoresIds = await this.client.georadius(
-        'stores',
-        latitude,
-        longitude,
-        5,
-        'km',
-        'withdist',
-        'asc',
-      );
-    }
-    nearbyStoresIds = await this.client.georadius(
+    const nearbyStores = await this.client.georadius(
       'stores',
-      latitude,
-      longitude,
+      Ma,
+      La,
       5,
       'km',
+      'withdist',
     );
+
+    const nearbyStoresIds = nearbyStores.map((store) => store[0]);
+    const nearbyStoresDistances = nearbyStores.map((store) => Number(store[1]));
 
     const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
 
-    return stores;
+    for (const store of stores) {
+      store.distance = Math.ceil(
+        nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
+          1000,
+      );
+    }
+
+    return stores.sort((a, b) => {
+      if (sortBy === 'name') {
+        if (a.storeName < b.storeName) {
+          return -1;
+        } else {
+          return 1;
+        }
+      } else if (sortBy === 'waitingCnt') {
+        return a.currentWaitingCnt - b.currentWaitingCnt;
+      } else if (sortBy === 'waitingCnt2') {
+        return b.currentWaitingCnt - a.currentWaitingCnt;
+      } else if (sortBy === 'rating') {
+        return b.rating - a.rating;
+      }
+      return a.distance - b.distance;
+    });
   }
 
   async getStoresNearby2(
@@ -369,25 +382,9 @@ export class StoresService {
     );
 
     // FOR TEST
-    console.log(userLatitude, userLongitude);
+    // console.log(userLatitude, userLongitude);
 
-    let nearbyStores: any[];
-    if (sortBy === 'distance') {
-      nearbyStores = await this.client.geosearch(
-        'stores',
-        'FROMLONLAT',
-        userLongitude,
-        userLatitude,
-        'BYBOX',
-        width,
-        height,
-        'km',
-        'withdist',
-        'asc',
-      );
-    }
-
-    nearbyStores = await this.client.geosearch(
+    const nearbyStores = await this.client.geosearch(
       'stores',
       'FROMLONLAT',
       userLongitude,
@@ -404,23 +401,29 @@ export class StoresService {
 
     const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
 
-    // FOR TEST
-    {
-      console.log(`주변 식당 수: ${stores.length}`);
-
-      const storeNames = [];
-      let i = 0;
-      for (const store of stores) {
-        store.distance = nearbyStoresDistances[i++];
-        storeNames.push({
-          이름: store.storeName,
-          거리: Math.floor(store.distance * 1000),
-        });
-      }
-      console.log(storeNames);
+    for (const store of stores) {
+      store.distance = Math.ceil(
+        nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
+          1000,
+      );
     }
 
-    return stores;
+    return stores.sort((a, b) => {
+      if (sortBy === 'name') {
+        if (a.storeName < b.storeName) {
+          return -1;
+        } else {
+          return 1;
+        }
+      } else if (sortBy === 'waitingCnt') {
+        return a.currentWaitingCnt - b.currentWaitingCnt;
+      } else if (sortBy === 'waitingCnt2') {
+        return b.currentWaitingCnt - a.currentWaitingCnt;
+      } else if (sortBy === 'rating') {
+        return b.rating - a.rating;
+      }
+      return a.distance - b.distance;
+    });
   }
 }
 

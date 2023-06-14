@@ -57,6 +57,7 @@ export class StoresController {
         storeNames.push({
           이름: restaurant.storeName,
           거리: restaurant.distance,
+          ID: restaurant.storeId,
         });
       }
       console.log(storeNames);
@@ -97,11 +98,31 @@ export class StoresController {
   @Public()
   @Get('/nearby-stores')
   async getStoresNearby(
-    @Body() coordinates: { latitude: number; longitude: number },
+    @Body() coordinates: { Ma: number; La: number },
     @Query('sort')
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
   ) {
-    return await this.storesService.getStoresNearby(coordinates, sortBy);
+    const stores = await this.storesService.getStoresNearby(
+      coordinates,
+      sortBy,
+    );
+
+    {
+      console.log(`주변 식당 수: ${stores.length}`);
+
+      const storeNames = [];
+      for (const store of stores) {
+        storeNames.push({
+          ID: store.storeId,
+          이름: store.storeName,
+          주소: store.address,
+          거리: Math.floor(store.distance * 1000),
+        });
+      }
+      console.log(storeNames);
+    }
+
+    return stores;
   }
 
   @Public()
@@ -115,7 +136,27 @@ export class StoresController {
     @Query('sort')
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
   ) {
-    return await this.storesService.getStoresNearby2(coordinates, sortBy);
+    const stores = await this.storesService.getStoresNearby2(
+      coordinates,
+      sortBy,
+    );
+
+    {
+      console.log(`주변 식당 수: ${stores.length}`);
+
+      const storeNames = [];
+      for (const store of stores) {
+        storeNames.push({
+          ID: store.storeId,
+          이름: store.storeName,
+          주소: store.address,
+          거리: Math.floor(store.distance * 1000),
+        });
+      }
+      console.log(storeNames);
+    }
+
+    return stores;
   }
 
   //상세조회 (정보+댓글)
