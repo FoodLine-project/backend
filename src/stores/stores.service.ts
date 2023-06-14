@@ -308,20 +308,21 @@ export class StoresService {
     return distance;
   }
 
-  async getStoresNearby(
+  async getNearbyStoresByRadius(
     coordinates: {
       Ma: number;
       La: number;
     },
     sortBy?: string,
   ): Promise<Stores[]> {
-    const { Ma, La } = coordinates;
+    const latitude = coordinates.Ma,
+      longitude = coordinates.La;
 
     const nearbyStores = await this.client.georadius(
       'stores',
-      Ma,
-      La,
-      5,
+      longitude,
+      latitude,
+      1,
       'km',
       'withdist',
     );
@@ -356,7 +357,7 @@ export class StoresService {
     });
   }
 
-  async getStoresNearby2(
+  async getNearbyStoresByBox(
     coordinates: {
       swLatlng: { La: number; Ma: number };
       neLatlng: { La: number; Ma: number };

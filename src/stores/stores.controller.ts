@@ -96,13 +96,13 @@ export class StoresController {
   }
 
   @Public()
-  @Get('/nearby-stores')
-  async getStoresNearby(
+  @Get('/nearby-stores-byradius')
+  async getNearbyStoresByRadius(
     @Body() coordinates: { Ma: number; La: number },
     @Query('sort')
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
   ) {
-    const stores = await this.storesService.getStoresNearby(
+    const stores = await this.storesService.getNearbyStoresByRadius(
       coordinates,
       sortBy,
     );
@@ -126,8 +126,8 @@ export class StoresController {
   }
 
   @Public()
-  @Get('/nearby-stores2')
-  async getStoresNearby2(
+  @Get('/nearby-stores-bybox')
+  async getNearbyStoresByBox(
     @Body()
     coordinates: {
       swLatlng: { La: number; Ma: number };
@@ -136,7 +136,7 @@ export class StoresController {
     @Query('sort')
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
   ) {
-    const stores = await this.storesService.getStoresNearby2(
+    const stores = await this.storesService.getNearbyStoresByBox(
       coordinates,
       sortBy,
     );
