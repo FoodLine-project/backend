@@ -21,9 +21,9 @@ export class WaitingsController {
   constructor(private waitingsService: WaitingsService) {}
 
   @Public()
-  @Post('/test')
-  async redisTest(@Body('value') value: string): Promise<any> {
-    return this.waitingsService.testRedis(value);
+  @Post('test')
+  async setHashes(@Body('value') value: object): Promise<void> {
+    await this.waitingsService.setHashes(value);
   }
 
   // 웨이팅 시간 조회 ( for user )

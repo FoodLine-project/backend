@@ -17,7 +17,6 @@ import { Stores } from './stores.entity';
 import * as path from 'path';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { Public } from '../auth/common/decorators';
-
 @Controller('places')
 export class StoresController {
   constructor(
@@ -90,7 +89,7 @@ export class StoresController {
   //주소로 카카오에서 좌표 받아서 postgres업데이트
 
   @Public()
-  @Post('/update-coordinates')
+  @Post('update-coordinates')
   async updateCoordinates(): Promise<string> {
     await this.storesService.updateCoordinates();
     return 'Coordinates updated successfully';

@@ -1,7 +1,5 @@
 import { ReviewsRepository } from './../reviews/reviews.repository';
 import { Injectable } from '@nestjs/common';
-// import { InjectRepository } from '@nestjs/typeorm';
-
 import { Stores } from './stores.entity';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { StoresSearchDto } from './dto/search-stores.dto';
@@ -10,17 +8,16 @@ import { StoresRepository } from './stores.repository';
 import { createReadStream } from 'fs';
 import * as csvParser from 'csv-parser';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { GeospatialService } from 'src/geospatial/geospatial.service';
-// import { RedisService } from '@liaoliaots/nestjs-redis';
-
+import { InjectRedis } from '@liaoliaots/nestjs-redis';
+import { Redis } from 'ioredis';
 @Injectable()
 export class StoresService {
   constructor(
+    @InjectRedis('store') private readonly client: Redis,
     // @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
     private readonly elasticsearchService: ElasticsearchService,
-    private readonly geospatialService: GeospatialService,
   ) {}
 
   async searchRestaurants(
@@ -146,6 +143,7 @@ export class StoresService {
       return searchStores;
     }
   }
+
   //상세조회 + 댓글
   async getOneStore(storeId: number): Promise<Stores> {
     const store = await this.storesRepository.getOneStore(storeId);
@@ -268,9 +266,9 @@ export class StoresService {
     const stores = await this.storesRepository.findAll();
     console.log('전체 음식점 조회 완료');
 
-    // 150003부터
-    for (let i = 201250; i < stores.length; i++) {
-      await this.geospatialService.addStore(
+    for (let i = 206449; i < stores.length; i++) {
+      await this.client.geoadd(
+        'stores',
         stores[i].La,
         stores[i].Ma,
         String(stores[i].storeId),
@@ -284,7 +282,7 @@ export class StoresService {
   async getStorePos(
     storeId: number,
   ): Promise<[longitude: string, latitude: string][]> {
-    return await this.geospatialService.getStorePos(String(storeId));
+    return await this.client.geopos('stores', String(storeId));
   }
 
   getDistanceWithCoordinates(
@@ -319,11 +317,13 @@ export class StoresService {
   ): Promise<Stores[]> {
     const { Ma, La } = coordinates;
 
-    const nearbyStores = await this.geospatialService.getStoresWithinRadius(
-      La,
+    const nearbyStores = await this.client.georadius(
+      'stores',
       Ma,
-      0.2,
-      sortBy,
+      La,
+      5,
+      'km',
+      'withdist',
     );
 
     const nearbyStoresIds = nearbyStores.map((store) => store[0]);
@@ -338,7 +338,22 @@ export class StoresService {
       );
     }
 
-    return stores.sort((a, b) => a.distance - b.distance);
+    return stores.sort((a, b) => {
+      if (sortBy === 'name') {
+        if (a.storeName < b.storeName) {
+          return -1;
+        } else {
+          return 1;
+        }
+      } else if (sortBy === 'waitingCnt') {
+        return a.currentWaitingCnt - b.currentWaitingCnt;
+      } else if (sortBy === 'waitingCnt2') {
+        return b.currentWaitingCnt - a.currentWaitingCnt;
+      } else if (sortBy === 'rating') {
+        return b.rating - a.rating;
+      }
+      return a.distance - b.distance;
+    });
   }
 
   async getStoresNearby2(
@@ -369,12 +384,16 @@ export class StoresService {
     // FOR TEST
     // console.log(userLatitude, userLongitude);
 
-    const nearbyStores = await this.geospatialService.getStoresWithinBox(
+    const nearbyStores = await this.client.geosearch(
+      'stores',
+      'FROMLONLAT',
       userLongitude,
       userLatitude,
+      'BYBOX',
       width,
       height,
-      sortBy,
+      'km',
+      'withdist',
     );
 
     const nearbyStoresIds = nearbyStores.map((store) => store[0]);
@@ -389,7 +408,22 @@ export class StoresService {
       );
     }
 
-    return stores.sort((a, b) => a.distance - b.distance);
+    return stores.sort((a, b) => {
+      if (sortBy === 'name') {
+        if (a.storeName < b.storeName) {
+          return -1;
+        } else {
+          return 1;
+        }
+      } else if (sortBy === 'waitingCnt') {
+        return a.currentWaitingCnt - b.currentWaitingCnt;
+      } else if (sortBy === 'waitingCnt2') {
+        return b.currentWaitingCnt - a.currentWaitingCnt;
+      } else if (sortBy === 'rating') {
+        return b.rating - a.rating;
+      }
+      return a.distance - b.distance;
+    });
   }
 }
 
