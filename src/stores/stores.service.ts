@@ -269,15 +269,15 @@ export class StoresService {
     console.log('전체 음식점 조회 완료');
 
     // 150003부터
-    for (const store of stores) {
+    for (let i = 201250; i < stores.length; i++) {
       await this.geospatialService.addStore(
-        store.La,
-        store.Ma,
-        String(store.storeId),
+        stores[i].La,
+        stores[i].Ma,
+        String(stores[i].storeId),
       );
 
       // FOR TEST
-      console.log(`${store.storeId}번 음식점 redis에 저장 완료`);
+      console.log(`${stores[i].storeId}번 음식점 redis에 저장 완료`);
     }
   }
 
@@ -312,26 +312,33 @@ export class StoresService {
 
   async getStoresNearby(
     coordinates: {
-      longitude: number;
-      latitude: number;
+      Ma: number;
+      La: number;
     },
     sortBy?: string,
   ): Promise<Stores[]> {
-    const { latitude, longitude } = coordinates;
+    const { Ma, La } = coordinates;
 
-    let nearbyStoresIds: string[];
-    if (sortBy === 'distance') {
-      nearbyStoresIds = await this.geospatialService.getStoresWithinRadius(
-        latitude,
-        longitude,
-        5,
-        sortBy,
-      );
-    }
+    const nearbyStores = await this.geospatialService.getStoresWithinRadius(
+      La,
+      Ma,
+      0.2,
+      sortBy,
+    );
+
+    const nearbyStoresIds = nearbyStores.map((store) => store[0]);
+    const nearbyStoresDistances = nearbyStores.map((store) => Number(store[1]));
 
     const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
 
-    return stores;
+    for (const store of stores) {
+      store.distance = Math.ceil(
+        nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
+          1000,
+      );
+    }
+
+    return stores.sort((a, b) => a.distance - b.distance);
   }
 
   async getStoresNearby2(
@@ -360,7 +367,7 @@ export class StoresService {
     );
 
     // FOR TEST
-    console.log(userLatitude, userLongitude);
+    // console.log(userLatitude, userLongitude);
 
     const nearbyStores = await this.geospatialService.getStoresWithinBox(
       userLongitude,
@@ -375,23 +382,14 @@ export class StoresService {
 
     const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
 
-    // FOR TEST
-    {
-      console.log(`주변 식당 수: ${stores.length}`);
-
-      const storeNames = [];
-      let i = 0;
-      for (const store of stores) {
-        store.distance = nearbyStoresDistances[i++];
-        storeNames.push({
-          이름: store.storeName,
-          거리: Math.floor(store.distance * 1000),
-        });
-      }
-      console.log(storeNames);
+    for (const store of stores) {
+      store.distance = Math.ceil(
+        nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
+          1000,
+      );
     }
 
-    return stores;
+    return stores.sort((a, b) => a.distance - b.distance);
   }
 }
 

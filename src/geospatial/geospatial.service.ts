@@ -15,16 +15,16 @@ export class GeospatialService {
   }
 
   async getStoresWithinRadius(
-    latitude: number,
     longitude: number,
+    latitude: number,
     radius: number,
     sortBy?: string,
   ): Promise<any[]> {
     if (sortBy === 'distance') {
       return await this.client.georadius(
         'stores',
-        latitude,
         longitude,
+        latitude,
         radius,
         'km',
         'withdist',
@@ -33,10 +33,11 @@ export class GeospatialService {
     }
     return await this.client.georadius(
       'stores',
-      latitude,
       longitude,
+      latitude,
       radius,
       'km',
+      'withdist',
     );
   }
 
