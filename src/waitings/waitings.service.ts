@@ -1,4 +1,4 @@
-import { RedisService } from './../redis/redis.service';
+// import { RedisService } from './../redis/redis.service';
 import { StoresRepository } from './../stores/stores.repository';
 import { Users } from '../auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
@@ -14,20 +14,21 @@ import {
 import { TablesRepository } from '../tables/tables.repository';
 import { InjectQueue } from '@nestjs/bull/dist/decorators';
 import { Queue } from 'bull';
+import { InjectRedis } from '@liaoliaots/nestjs-redis';
+import { Redis } from 'ioredis';
 @Injectable()
 export class WaitingsService {
   constructor(
+    @InjectRedis('waitingManager') private readonly client: Redis,
     @InjectQueue('waitingQueue')
     private waitingQueue: Queue,
     private waitingsRepository: WaitingsRepository,
     private storesRepository: StoresRepository,
-    private tablesRepository: TablesRepository,
-    private redisService: RedisService,
+    private tablesRepository: TablesRepository, // private redisService: RedisService,
   ) {}
 
-  async testRedis(value: string): Promise<string> {
-    this.redisService.set('hi3', value);
-    return 'test complete';
+  async setHashes(value: object): Promise<void> {
+    await this.client.hset('key1', value);
   }
 
   async getCurrentWaitingsCnt(storeId: number): Promise<number> {

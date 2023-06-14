@@ -10,14 +10,12 @@ import { AccessTokenStrategy } from './strategies';
 import { RefreshTokenStrategy } from './strategies';
 import { Stores } from '../stores/stores.entity';
 import { Tables } from '../tables/tables.entity';
-import { RtRedisModule } from '../redis/refresh-token.redis.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({}),
     TypeOrmModule.forFeature([Users, Stores, Tables]),
-    RtRedisModule,
   ],
   controllers: [AuthController],
   providers: [

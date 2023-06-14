@@ -10,9 +10,7 @@ import { LocationService } from './location/location.service';
 import { APP_GUARD } from '@nestjs/core';
 import { AccessTokenGuard } from './auth/guards';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
-import { RedisModule } from './redis/redis.module';
-import { RtRedisModule } from './redis/refresh-token.redis.module';
-import { GeospatialModule } from './geospatial/geospatial.module';
+import { CustomRedisModule } from './redis/custom-redis.module';
 
 @Module({
   imports: [
@@ -22,9 +20,7 @@ import { GeospatialModule } from './geospatial/geospatial.module';
     WaitingsModule,
     ReviewsModule,
     TablesModule,
-    RedisModule,
-    RtRedisModule,
-    GeospatialModule,
+    CustomRedisModule,
   ],
   providers: [
     LocationService,

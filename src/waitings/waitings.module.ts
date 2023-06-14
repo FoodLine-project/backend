@@ -14,7 +14,8 @@ import { BullModule } from '@nestjs/bull';
 import { RedisOptions } from 'ioredis';
 import { WaitingConsumer } from './waiting.consumer';
 import { config } from 'dotenv';
-import { RedisModule } from 'src/redis/redis.module';
+// import { RedisControllModule } from 'src/redis/redis.module';
+// import { RedisService } from 'src/redis/redis.service';
 
 const result = config();
 if (result.error) {
@@ -22,10 +23,10 @@ if (result.error) {
 }
 
 const redisOptions: RedisOptions = {
-  host: `${process.env.REDIS_HOST}`,
+  host: `${process.env.WAITING_REDIS_HOST}`,
   port: 10555,
-  username: `${process.env.REDIS_USERNAME}`,
-  password: `${process.env.REDIS_PASSWORD}`,
+  username: `${process.env.WAITING_REDIS_USERNAME}`,
+  password: `${process.env.WAITING_REDIS_PASSWORD}`,
 };
 @Module({
   imports: [
@@ -33,7 +34,6 @@ const redisOptions: RedisOptions = {
       type: 'spanner',
       maxQueryExecutionTime: 50000,
     }),
-    RedisModule,
     AuthModule,
     ScheduleModule.forRoot(),
     BullModule.forRoot({

@@ -1,7 +1,5 @@
 import { ReviewsRepository } from './../reviews/reviews.repository';
 import { Injectable } from '@nestjs/common';
-// import { InjectRepository } from '@nestjs/typeorm';
-
 import { Stores } from './stores.entity';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { StoresSearchDto } from './dto/search-stores.dto';
@@ -10,17 +8,16 @@ import { StoresRepository } from './stores.repository';
 import { createReadStream } from 'fs';
 import * as csvParser from 'csv-parser';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { GeospatialService } from 'src/geospatial/geospatial.service';
-// import { RedisService } from '@liaoliaots/nestjs-redis';
-
+import { InjectRedis } from '@liaoliaots/nestjs-redis';
+import { Redis } from 'ioredis';
 @Injectable()
 export class StoresService {
   constructor(
+    @InjectRedis('store') private readonly client: Redis,
     // @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
     private readonly elasticsearchService: ElasticsearchService,
-    private readonly geospatialService: GeospatialService,
   ) {}
 
   async searchRestaurants(
@@ -146,6 +143,7 @@ export class StoresService {
       return searchStores;
     }
   }
+
   //상세조회 + 댓글
   async getOneStore(storeId: number): Promise<Stores> {
     const store = await this.storesRepository.getOneStore(storeId);
@@ -270,9 +268,10 @@ export class StoresService {
 
     // 150003부터
     for (const store of stores) {
-      await this.geospatialService.addStore(
-        store.La,
+      await this.client.geoadd(
+        'stores',
         store.Ma,
+        store.La,
         String(store.storeId),
       );
 
@@ -284,7 +283,7 @@ export class StoresService {
   async getStorePos(
     storeId: number,
   ): Promise<[longitude: string, latitude: string][]> {
-    return await this.geospatialService.getStorePos(String(storeId));
+    return await this.client.geopos('stores', String(storeId));
   }
 
   getDistanceWithCoordinates(
@@ -319,15 +318,25 @@ export class StoresService {
   ): Promise<Stores[]> {
     const { latitude, longitude } = coordinates;
 
-    let nearbyStoresIds: string[];
+    let nearbyStoresIds: any[];
     if (sortBy === 'distance') {
-      nearbyStoresIds = await this.geospatialService.getStoresWithinRadius(
+      nearbyStoresIds = await this.client.georadius(
+        'stores',
         latitude,
         longitude,
         5,
-        sortBy,
+        'km',
+        'withdist',
+        'asc',
       );
     }
+    nearbyStoresIds = await this.client.georadius(
+      'stores',
+      latitude,
+      longitude,
+      5,
+      'km',
+    );
 
     const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
 
@@ -362,12 +371,32 @@ export class StoresService {
     // FOR TEST
     console.log(userLatitude, userLongitude);
 
-    const nearbyStores = await this.geospatialService.getStoresWithinBox(
+    let nearbyStores: any[];
+    if (sortBy === 'distance') {
+      nearbyStores = await this.client.geosearch(
+        'stores',
+        'FROMLONLAT',
+        userLongitude,
+        userLatitude,
+        'BYBOX',
+        width,
+        height,
+        'km',
+        'withdist',
+        'asc',
+      );
+    }
+
+    nearbyStores = await this.client.geosearch(
+      'stores',
+      'FROMLONLAT',
       userLongitude,
       userLatitude,
+      'BYBOX',
       width,
       height,
-      sortBy,
+      'km',
+      'withdist',
     );
 
     const nearbyStoresIds = nearbyStores.map((store) => store[0]);
