@@ -10,16 +10,17 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { Tokens } from './types';
 import { Users } from './users.entity';
-import { RtRedisService } from 'src/redis/refresh-token.redis.service';
+import { InjectRedis } from '@liaoliaots/nestjs-redis';
+import { Redis } from 'ioredis';
 // import { StoresRepository } from '../stores/stores.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @InjectRedis('store') private readonly client: Redis,
     private usersRepository: UsersRepository,
     // private storesRepository: StoresRepository,
     private jwtService: JwtService,
-    private redisService: RtRedisService,
   ) {}
 
   async hash(target: string): Promise<string> {
@@ -106,14 +107,14 @@ export class AuthService {
     const tokens = await this.getTokens(user);
     const hashedRefreshToken = await this.hash(tokens.refreshToken);
 
-    const refreshTokenFromRedis = await this.redisService.get(
+    const refreshTokenFromRedis = await this.client.get(
       `user:${user.userId}:refresh_token`,
     );
     if (refreshTokenFromRedis) {
       throw new BadRequestException(`이미 로그인되었습니다.`);
     }
 
-    await this.redisService.set(
+    await this.client.set(
       `user:${user.userId}:refresh_token`,
       hashedRefreshToken,
     );
@@ -122,20 +123,18 @@ export class AuthService {
   }
 
   async logout(user: Users): Promise<void> {
-    const value = await this.redisService.get(
-      `user:${user.userId}:refresh_token`,
-    );
+    const value = await this.client.get(`user:${user.userId}:refresh_token`);
     if (!value) {
       throw new BadRequestException(`로그인 정보가 없습니다`);
     }
 
-    await this.redisService.del(`user:${user.userId}:refresh_token`);
+    await this.client.del(`user:${user.userId}:refresh_token`);
   }
 
   async refreshAccessToken(user: Users): Promise<string> {
     const refreshToken = user.refreshToken;
 
-    const refreshTokenFromRedis = await this.redisService.get(
+    const refreshTokenFromRedis = await this.client.get(
       `user:${user.userId}:refresh_token`,
     );
 
