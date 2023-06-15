@@ -6,7 +6,7 @@ import { ReviewDto } from './dto';
 export class ReviewsRepository {
   constructor(
     @InjectRepository(Reviews) private reviews: Repository<Reviews>,
-  ) {}
+  ) { }
 
   async findReviewById(reviewId: number): Promise<Reviews> {
     return await this.reviews.findOne({ where: { reviewId } });
@@ -59,6 +59,10 @@ export class ReviewsRepository {
 
   async getAverageRating(storeId: number): Promise<number> {
     const reviews = await this.findAllReviews(storeId);
+
+    if (reviews.length === 0) { //없을때 0으로
+      return 0;
+    }
 
     const ratings = reviews.map((review) => {
       return review.rating;
