@@ -96,6 +96,12 @@ export class StoresController {
   }
 
   @Public()
+  @Post('fill-coordinates')
+  async fillCoordinates() {
+    await this.storesService.fillCoordinates();
+  }
+
+  @Public()
   @Get('/nearby-stores-byradius')
   async getNearbyStoresByRadius(
     @Body() coordinates: { Ma: number; La: number },

@@ -231,6 +231,21 @@ export class StoresService {
     }
   }
 
+  async fillCoordinates() {
+    const stores = await this.storesRepository.findAll();
+
+    console.log(`Stores length: ${stores.length}`);
+
+    for (let i = 0; i < stores.length; i++) {
+      await this.storesRepository.fillCoordinates(
+        stores[i],
+        stores[i].Ma,
+        stores[i].La,
+      );
+      console.log(`updated coordinates of ${stores[i].storeId}`);
+    }
+  }
+
   async updateRating(storeId: number): Promise<void> {
     const averageRating = await this.reviewsRepository.getAverageRating(
       storeId,
