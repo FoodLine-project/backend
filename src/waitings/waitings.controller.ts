@@ -7,6 +7,7 @@ import {
   Body,
   Query,
   ParseIntPipe,
+  UseInterceptors,
 } from '@nestjs/common';
 import { WaitingsService } from './waitings.service';
 import { Users } from '../auth/users.entity';
@@ -15,8 +16,12 @@ import { GetUser, Public } from 'src/auth/common/decorators';
 import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.pipe';
 import { Cron } from '@nestjs/schedule';
 import { Waitings } from './waitings.entity';
+import { CacheInterceptor } from 'src/cache/cache.interceptor';
+import { CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('stores')
+// @UseInterceptors(CacheInterceptor)
+// @CacheTTL(5000)
 export class WaitingsController {
   constructor(private waitingsService: WaitingsService) {}
 
@@ -56,12 +61,8 @@ export class WaitingsController {
   ): Promise<string> {
     return this.waitingsService
       .postWaitings(storeId, peopleCnt, user)
-      .then((result) => {
-        if (result === 'full') {
-          return '웨이팅 최대 인원을 초과했습니다';
-        } else {
-          return `${peopleCnt}명의 웨이팅을 등록하였습니다`;
-        }
+      .then(() => {
+        return `${peopleCnt}명의 웨이팅을 등록하였습니다`;
       });
   } // Bullqueue
 

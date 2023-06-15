@@ -14,6 +14,7 @@ import { BullModule } from '@nestjs/bull';
 import { RedisOptions } from 'ioredis';
 import { WaitingConsumer } from './waiting.consumer';
 import { config } from 'dotenv';
+import { CustomCacheModule } from 'src/cache/cache.module';
 // import { RedisControllModule } from 'src/redis/redis.module';
 // import { RedisService } from 'src/redis/redis.service';
 
@@ -28,6 +29,12 @@ const redisOptions: RedisOptions = {
   username: `${process.env.WAITING_REDIS_USERNAME}`,
   password: `${process.env.WAITING_REDIS_PASSWORD}`,
 };
+
+const redisOptions2: RedisOptions = {
+  host: 'localhost',
+  port: 6379,
+};
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Waitings, Stores, Tables], {
@@ -37,11 +44,15 @@ const redisOptions: RedisOptions = {
     AuthModule,
     ScheduleModule.forRoot(),
     BullModule.forRoot({
-      redis: redisOptions,
+      redis: redisOptions2,
     }),
     BullModule.registerQueue({
       name: 'waitingQueue',
+      defaultJobOptions: {
+        removeOnComplete: true,
+      },
     }),
+    CustomCacheModule,
   ],
   controllers: [WaitingsController],
   providers: [

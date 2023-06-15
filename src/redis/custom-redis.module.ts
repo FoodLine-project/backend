@@ -29,9 +29,9 @@ if (result.error) {
           host: process.env.RATINGS_REDIS_HOST,
           port: Number(process.env.RATINGS_REDIS_PORT),
           password: process.env.RATINGS_REDIS,
-        }
+        },
       ],
     }),
   ],
 })
-export class CustomRedisModule { }
+export class CustomRedisModule {}
