@@ -9,6 +9,7 @@ import {
   Entity,
   OneToMany,
   OneToOne,
+  Point,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -59,6 +60,13 @@ export class Stores extends BaseEntity {
 
   @Column({ type: 'float', default: 0 })
   rating: number;
+
+  @Column('geometry', {
+    spatialFeatureType: 'Point',
+    srid: 4326,
+    nullable: true,
+  })
+  coordinates: Point;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

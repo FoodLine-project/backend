@@ -20,7 +20,7 @@ export class StoresService {
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
     private readonly elasticsearchService: ElasticsearchService,
-  ) { }
+  ) {}
 
   async searchRestaurants(
     southWestLatitude: number,
@@ -233,6 +233,21 @@ export class StoresService {
     }
   }
 
+  async fillCoordinates() {
+    const stores = await this.storesRepository.findAll();
+
+    console.log(`Stores length: ${stores.length}`);
+
+    for (let i = 0; i < stores.length; i++) {
+      await this.storesRepository.fillCoordinates(
+        stores[i],
+        stores[i].Ma,
+        stores[i].La,
+      );
+      console.log(`updated coordinates of ${stores[i].storeId}`);
+    }
+  }
+
   async updateRating(storeId: number): Promise<number> {
     const averageRating = await this.reviewsRepository.getAverageRating(
       storeId,
@@ -267,24 +282,28 @@ export class StoresService {
       },
       size: 10000,
     });
-    console.log(stores.hits.hits.map(async (hit) => hit._source))
-    const TTL_SECONDS = 15
+    console.log(stores.hits.hits.map(async (hit) => hit._source));
+    const TTL_SECONDS = 15;
     const storesData = stores.hits.hits.map(async (hit) => {
       const storeDatas = hit._source;
-      const storeId: number = storeDatas.storeid
+      const storeId: number = storeDatas.storeid;
       //const redisRating = await this.client.get(`ratings:${storeId}`)
-      const redisRating = await this.ratings_client.get(`ratings:${storeId}`)
+      const redisRating = await this.ratings_client.get(`ratings:${storeId}`);
       if (redisRating == null) {
-        const average: number = await this.updateRating(storeId)
+        const average: number = await this.updateRating(storeId);
         //await this.client.setex(`ratings:${storeId}`, TTL_SECONDS, average);
-        await this.ratings_client.setex(`ratings:${storeId}`, TTL_SECONDS, average);
-        const redisRating = await this.ratings_client.get(`ratings:${storeId}`)
-        return { ...storeDatas, redisRating }
+        await this.ratings_client.setex(
+          `ratings:${storeId}`,
+          TTL_SECONDS,
+          average,
+        );
+        const redisRating = await this.ratings_client.get(`ratings:${storeId}`);
+        return { ...storeDatas, redisRating };
       }
-      return { ...storeDatas, redisRating }
+      return { ...storeDatas, redisRating };
     });
-    const resolvedStoredDatas = await Promise.all(storesData)
-    console.log(resolvedStoredDatas)
+    const resolvedStoredDatas = await Promise.all(storesData);
+    console.log(resolvedStoredDatas);
     const end = performance.now();
     const executionTime = end - start;
     console.log(keyword, column, sort);
@@ -298,7 +317,7 @@ export class StoresService {
     northEastLatitude: number,
     northEastLongitude: number,
     userLatitude: number,
-    userLongitude: number
+    userLongitude: number,
   ): Promise<any[]> {
     const stores = await this.elasticsearchService.search<any>({
       index: 'geo_test',
@@ -308,25 +327,25 @@ export class StoresService {
           location: {
             top_left: {
               lat: northEastLatitude,
-              lon: southWestLongitude
+              lon: southWestLongitude,
             },
             bottom_right: {
               lat: southWestLatitude,
-              lon: northEastLongitude
-            }
-          }
-        }
-      }
+              lon: northEastLongitude,
+            },
+          },
+        },
+      },
     });
     const result = stores.hits.hits.map((hit: any) => {
       const storesFound = hit._source;
-      const latitude = storesFound.location.lat
-      const longitude = storesFound.location.lon
+      const latitude = storesFound.location.lat;
+      const longitude = storesFound.location.lon;
       const start = { latitude: userLatitude, longitude: userLongitude };
-      const end = { latitude: latitude, longitude: longitude }
+      const end = { latitude: latitude, longitude: longitude };
       const distance = geolib.getDistance(start, end);
-      console.log(distance)
-      return { ...storesFound, distance: distance + "m" }
+      console.log(distance);
+      return { ...storesFound, distance: distance + 'm' };
     });
     // const result = stores.hits.hits.map((hit: any) => hit._source)
     result.sort((a, b) => {
@@ -339,7 +358,6 @@ export class StoresService {
     console.log(result.length);
     return result;
   }
-
 
   async addStoresToRedis(): Promise<void> {
     const stores = await this.storesRepository.findAll();
@@ -379,9 +397,9 @@ export class StoresService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
@@ -414,7 +432,7 @@ export class StoresService {
     for (const store of stores) {
       store.distance = Math.ceil(
         nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-        1000,
+          1000,
       );
     }
 
@@ -484,7 +502,7 @@ export class StoresService {
     for (const store of stores) {
       store.distance = Math.ceil(
         nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-        1000,
+          1000,
       );
     }
 
@@ -520,10 +538,10 @@ export class StoresService {
       body: {
         properties: {
           location: {
-            type: 'geo_point'
-          }
-        }
-      }
+            type: 'geo_point',
+          },
+        },
+      },
     } as IndicesPutMappingRequest;
 
     await this.elasticsearchService.indices.putMapping(params);

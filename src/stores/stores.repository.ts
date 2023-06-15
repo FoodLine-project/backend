@@ -1,6 +1,6 @@
 import { TablesRepository } from './../tables/tables.repository';
 import { Injectable } from '@nestjs/common';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, Point } from 'typeorm';
 import { Stores } from './stores.entity';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import axios from 'axios';
@@ -272,5 +272,16 @@ export class StoresRepository {
       .createQueryBuilder('store')
       .where('store.storeId = ANY(:ids)', { ids })
       .getMany();
+  }
+
+  async fillCoordinates(store: Stores, Ma: number, La: number) {
+    const coordinates: Point = {
+      type: 'Point',
+      coordinates: [Ma, La],
+    };
+
+    store.coordinates = coordinates;
+    await store.save();
+    // await this.stores.save(store);
   }
 }
