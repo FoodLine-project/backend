@@ -4,16 +4,18 @@ import { Stores } from './stores.entity';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import { StoresRepository } from './stores.repository';
-// import axios from 'axios';
+import * as geolib from 'geolib';
 import { createReadStream } from 'fs';
 import * as csvParser from 'csv-parser';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
+import { IndicesPutMappingRequest } from '@elastic/elasticsearch/lib/api/types';
 @Injectable()
 export class StoresService {
   constructor(
     @InjectRedis('store') private readonly client: Redis,
+    @InjectRedis('ratings') private readonly ratings_client: Redis,
     // @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
@@ -246,35 +248,115 @@ export class StoresService {
     }
   }
 
-  async updateRating(storeId: number): Promise<void> {
+  async updateRating(storeId: number): Promise<number> {
     const averageRating = await this.reviewsRepository.getAverageRating(
       storeId,
     );
-    return this.storesRepository.updateRating(storeId, averageRating);
+    return averageRating;
   }
 
-  async searchStores2(
+  async searchByKeyword(
     keyword: string,
     sort: 'ASC' | 'DESC',
     column: string,
-  ): Promise<StoresSearchDto[]> {
+  ): Promise<any[]> {
     const start = performance.now();
-    const result = await this.elasticsearchService.search<StoresSearchDto>({
+    const stores = await this.elasticsearchService.search<any>({
       index: 'idx_stores',
+      _source: ['storeid', 'storename', 'category'],
       query: {
-        match: {
-          category: keyword,
+        bool: {
+          should: [
+            {
+              wildcard: {
+                storename: `*${keyword}*`,
+              },
+            },
+            {
+              wildcard: {
+                address: `*${keyword}*`,
+              },
+            },
+          ],
         },
       },
       size: 10000,
     });
-    console.log(result);
+    console.log(stores.hits.hits.map(async (hit) => hit._source));
+    const TTL_SECONDS = 15;
+    const storesData = stores.hits.hits.map(async (hit) => {
+      const storeDatas = hit._source;
+      const storeId: number = storeDatas.storeid;
+      //const redisRating = await this.client.get(`ratings:${storeId}`)
+      const redisRating = await this.ratings_client.get(`ratings:${storeId}`);
+      if (redisRating == null) {
+        const average: number = await this.updateRating(storeId);
+        //await this.client.setex(`ratings:${storeId}`, TTL_SECONDS, average);
+        await this.ratings_client.setex(
+          `ratings:${storeId}`,
+          TTL_SECONDS,
+          average,
+        );
+        const redisRating = await this.ratings_client.get(`ratings:${storeId}`);
+        return { ...storeDatas, redisRating };
+      }
+      return { ...storeDatas, redisRating };
+    });
+    const resolvedStoredDatas = await Promise.all(storesData);
+    console.log(resolvedStoredDatas);
     const end = performance.now();
     const executionTime = end - start;
-
     console.log(keyword, column, sort);
     console.log(`Execution Time: ${executionTime} milliseconds`);
-    return result.hits.hits.map((hit) => hit._source);
+    return resolvedStoredDatas;
+  }
+
+  async searchByCoord(
+    southWestLatitude: number,
+    southWestLongitude: number,
+    northEastLatitude: number,
+    northEastLongitude: number,
+    userLatitude: number,
+    userLongitude: number,
+  ): Promise<any[]> {
+    const stores = await this.elasticsearchService.search<any>({
+      index: 'geo_test',
+      size: 20,
+      query: {
+        geo_bounding_box: {
+          location: {
+            top_left: {
+              lat: northEastLatitude,
+              lon: southWestLongitude,
+            },
+            bottom_right: {
+              lat: southWestLatitude,
+              lon: northEastLongitude,
+            },
+          },
+        },
+      },
+    });
+    const result = stores.hits.hits.map((hit: any) => {
+      const storesFound = hit._source;
+      const latitude = storesFound.location.lat;
+      const longitude = storesFound.location.lon;
+      const start = { latitude: userLatitude, longitude: userLongitude };
+      const end = { latitude: latitude, longitude: longitude };
+      const distance = geolib.getDistance(start, end);
+      console.log(distance);
+      return { ...storesFound, distance: distance + 'm' };
+    });
+    // const result = stores.hits.hits.map((hit: any) => hit._source)
+    result.sort((a, b) => {
+      const distanceA = parseFloat(a.distance);
+      const distanceB = parseFloat(b.distance);
+      return distanceA - distanceB;
+    });
+
+    console.log(result);
+    console.log(result.length);
+    return result;
   }
 
   async addStoresToRedis(): Promise<void> {
@@ -440,6 +522,29 @@ export class StoresService {
       }
       return a.distance - b.distance;
     });
+  }
+
+  //임시
+  async updateMapping() {
+    const mapping = {
+      properties: {
+        location: {
+          type: 'geo_point',
+        },
+      },
+    };
+    const params = {
+      index: 'category_index3',
+      body: {
+        properties: {
+          location: {
+            type: 'geo_point',
+          },
+        },
+      },
+    } as IndicesPutMappingRequest;
+
+    await this.elasticsearchService.indices.putMapping(params);
   }
 }
 

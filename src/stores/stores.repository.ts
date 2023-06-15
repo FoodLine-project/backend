@@ -37,7 +37,7 @@ export class StoresRepository {
     @InjectRepository(Stores) private stores: Repository<Stores>,
     // @InjectRepository(TablesRepository)
     private tablesRepository: TablesRepository,
-  ) {}
+  ) { }
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
@@ -88,9 +88,6 @@ export class StoresRepository {
     column: string,
   ): Promise<StoresSearchDto[]> {
     const start = performance.now();
-    //const query = await this.query(`SELECT * FROM "stores" WHERE "category" LIKE '한식'`);
-    //const query2 = await this.query(`SELECT * FROM pg_indexes WHERE tablename = 'stores'`)
-    //const query3 = await this.query(`EXPLAIN SELECT * FROM "stores" WHERE "category" LIKE '한식'`);
     const query = await this.stores.find({
       select: [
         'storeId',
@@ -116,9 +113,6 @@ export class StoresRepository {
     //    const result = await query.getMany();
     const end = performance.now();
     const executionTime = end - start;
-    //  console.log(query)
-    // console.log(query2)
-    // console.log(query3)
     console.log(keyword, column, sort);
     console.log(`Execution Time: ${executionTime} milliseconds`);
 

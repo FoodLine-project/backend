@@ -22,7 +22,18 @@ export class StoresController {
   constructor(
     private storesService: StoresService,
     private locationService: LocationService,
-  ) {}
+  ) { }
+
+
+  //임시
+  @Public()
+  @Get("/updateMapping")
+  updateMapping() {
+    console.log("check")
+    return this.storesService.updateMapping()
+  }
+
+
 
   @Public()
   @Post('/coordinates')
@@ -66,7 +77,31 @@ export class StoresController {
     return restaurants;
   }
 
-  ///api/stores/search?keyword=햄버거 간단한 검색기능
+  //elastic 좌표로 
+  @Public()
+  @Post("/coordinate")
+  async searchByCoordinates(
+    @Body() coordinatesData: any,
+  ): Promise<any[]> {
+    const { swLatlng, neLatlng, userLatlng } = coordinatesData;
+    const southWestLatitude = swLatlng.La;
+    const southWestLongitude = swLatlng.Ma;
+    const northEastLatitude = neLatlng.La;
+    const northEastLongitude = neLatlng.Ma;
+    const userLatitude = userLatlng.La;
+    const userLongitude = userLatlng.Ma;
+    const restaurants = await this.storesService.searchByCoord(
+      southWestLatitude,
+      southWestLongitude,
+      northEastLatitude,
+      northEastLongitude,
+      userLatitude,
+      userLongitude
+    );
+
+    return restaurants;
+  }
+  ///api/stores/search?keyword=햄버거 간단한 검색기능 elastic으로 검색
   @Public()
   @Get('/search')
   searchStores(
@@ -75,7 +110,7 @@ export class StoresController {
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
     console.log(column);
-    return this.storesService.searchStores2(keyword, sort, column);
+    return this.storesService.searchByKeyword(keyword, sort, column);
   }
 
   //CSV파일 postgres 업로드
@@ -183,7 +218,7 @@ export class StoresController {
   }
 
   @Patch('/:storeId/rating')
-  updateRating(@Param('storeId', ParseIntPipe) storeId: number): Promise<void> {
+  updateRating(@Param('storeId', ParseIntPipe) storeId: number): Promise<number> {
     return this.storesService.updateRating(storeId);
   }
 
