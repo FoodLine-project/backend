@@ -11,6 +11,7 @@ import { TablesRepository } from '../tables/tables.repository';
 import { ReviewsRepository } from '../reviews/reviews.repository';
 import { Reviews } from '../reviews/reviews.entity';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
+import { CustomCacheModule } from 'src/cache/cache.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
       pingTimeout: 60000,
       sniffOnStart: true,
     }),
+    CustomCacheModule,
   ],
   controllers: [StoresController],
   providers: [

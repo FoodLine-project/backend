@@ -20,7 +20,7 @@ export class TablesRepository {
   }
 
   async incrementTables(storeId: number, peopleCnt: number): Promise<void> {
-    if (peopleCnt === 1 || 2) {
+    if (peopleCnt === 1 || peopleCnt === 2) {
       this.tables.increment({ StoreId: storeId }, 'availableTableForTwo', 1);
     } else {
       this.tables.increment({ StoreId: storeId }, 'availableTableForFour', 1);
@@ -28,7 +28,7 @@ export class TablesRepository {
   }
 
   async decrementTables(storeId: number, peopleCnt: number): Promise<void> {
-    if (peopleCnt === 1 || 2) {
+    if (peopleCnt === 1 || peopleCnt === 2) {
       this.tables.decrement({ StoreId: storeId }, 'availableTableForTwo', 1);
     } else {
       this.tables.decrement({ StoreId: storeId }, 'availableTableForFour', 1);

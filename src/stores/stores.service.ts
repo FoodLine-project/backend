@@ -15,7 +15,7 @@ import { IndicesPutMappingRequest } from '@elastic/elasticsearch/lib/api/types';
 export class StoresService {
   constructor(
     @InjectRedis('store') private readonly client: Redis,
-    @InjectRedis('ratings') private readonly ratings_client: Redis,
+    @InjectRedis('waitingManager') private readonly redisClient: Redis,
     // @InjectRepository(StoresRepository)
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
@@ -283,21 +283,27 @@ export class StoresService {
       size: 10000,
     });
     console.log(stores.hits.hits.map(async (hit) => hit._source));
-    const TTL_SECONDS = 15;
     const storesData = stores.hits.hits.map(async (hit) => {
       const storeDatas = hit._source;
       const storeId: number = storeDatas.storeid;
       //const redisRating = await this.client.get(`ratings:${storeId}`)
-      const redisRating = await this.ratings_client.get(`ratings:${storeId}`);
+      const redisRating = await this.redisClient.hget(
+        `store:${storeId}`,
+        'rating',
+      );
       if (redisRating == null) {
         const average: number = await this.updateRating(storeId);
-        //await this.client.setex(`ratings:${storeId}`, TTL_SECONDS, average);
-        await this.ratings_client.setex(
-          `ratings:${storeId}`,
-          TTL_SECONDS,
-          average,
-        );
-        const redisRating = await this.ratings_client.get(`ratings:${storeId}`);
+        const datas = {
+          maxWaitingCnt: storeDatas.maxWaitingCnt,
+          cycleTime: storeDatas.cycleTime,
+          tableForTwo: storeDatas.tableForTwo,
+          tableForFour: storeDatas.tableForFour,
+          availableTableForTwo: storeDatas.tableForTwo,
+          availableTableForFour: storeDatas.tableForFour,
+          rating: average,
+        };
+        await this.redisClient.hset(`store:${storeId}`, datas);
+        const redisRating = average;
         return { ...storeDatas, redisRating };
       }
       return { ...storeDatas, redisRating };

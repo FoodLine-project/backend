@@ -11,6 +11,13 @@ import { APP_GUARD } from '@nestjs/core';
 import { AccessTokenGuard } from './auth/guards';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 import { CustomRedisModule } from './redis/custom-redis.module';
+import { config } from 'dotenv';
+import { CustomCacheModule } from './cache/cache.module';
+
+const result = config();
+if (result.error) {
+  throw result.error;
+}
 
 @Module({
   imports: [
@@ -21,6 +28,7 @@ import { CustomRedisModule } from './redis/custom-redis.module';
     ReviewsModule,
     TablesModule,
     CustomRedisModule,
+    CustomCacheModule,
   ],
   providers: [
     LocationService,

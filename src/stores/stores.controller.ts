@@ -9,6 +9,7 @@ import {
   ValidationPipe,
   ParseIntPipe,
   Patch,
+  UseInterceptors,
 } from '@nestjs/common';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import { StoresService } from './stores.service';
@@ -17,7 +18,10 @@ import { Stores } from './stores.entity';
 import * as path from 'path';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { Public } from '../auth/common/decorators';
+import { CacheInterceptor } from '@nestjs/cache-manager';
+
 @Controller('places')
+@UseInterceptors(CacheInterceptor)
 export class StoresController {
   constructor(
     private storesService: StoresService,

@@ -25,13 +25,13 @@ if (result.error) {
           password: process.env.WAITING_REDIS_PASSWORD,
         },
         {
-          namespace: 'ratings',
-          host: process.env.RATINGS_REDIS_HOST,
-          port: Number(process.env.RATINGS_REDIS_PORT),
-          password: process.env.RATINGS_REDIS,
-        }
+          namespace: 'local',
+          host: 'localhost',
+          port: 6379,
+          // password: '',
+        },
       ],
     }),
   ],
 })
-export class CustomRedisModule { }
+export class CustomRedisModule {}

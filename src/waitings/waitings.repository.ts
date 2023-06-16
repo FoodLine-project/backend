@@ -34,6 +34,7 @@ export class WaitingsRepository {
           WaitingStatus.WAITING,
           WaitingStatus.CALLED,
           WaitingStatus.DELAYED,
+          WaitingStatus.ENTERED,
         ]),
       },
       order: {

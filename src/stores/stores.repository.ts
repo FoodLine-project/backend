@@ -37,7 +37,7 @@ export class StoresRepository {
     @InjectRepository(Stores) private stores: Repository<Stores>,
     // @InjectRepository(TablesRepository)
     private tablesRepository: TablesRepository,
-  ) { }
+  ) {}
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
