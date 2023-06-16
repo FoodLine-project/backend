@@ -16,7 +16,9 @@ export class ReviewsRepository {
     return await this.reviews.find({
       where: { StoreId },
       order: {
-        reviewId: 'ASC',
+        // reviewId: 'ASC',
+        createdAt: 'ASC',
+        updatedAt: 'ASC',
       },
     });
   }
@@ -25,7 +27,7 @@ export class ReviewsRepository {
     UserId: number,
     StoreId: number,
     reviewDto: ReviewDto,
-  ): Promise<void> {
+  ): Promise<Reviews> {
     const { review, rating } = reviewDto;
 
     const newReview = this.reviews.create({
@@ -36,6 +38,7 @@ export class ReviewsRepository {
     });
 
     await this.reviews.save(newReview);
+    return newReview;
   }
 
   async updateReview(
