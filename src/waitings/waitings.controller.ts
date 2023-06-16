@@ -25,13 +25,7 @@ import { CacheTTL } from '@nestjs/cache-manager';
 export class WaitingsController {
   constructor(private waitingsService: WaitingsService) {}
 
-  @Public()
-  @Post('test')
-  async setHashes(@Body('value') value: object): Promise<void> {
-    await this.waitingsService.setHashes(value);
-  }
-
-  // 웨이팅 시간 조회 ( for user )
+  // 웨이팅 수 조회 ( for user )
   @Public()
   @Get('/:storeId/waitings')
   async getCurrentWaitingsCnt(
@@ -56,7 +50,7 @@ export class WaitingsController {
   @Post('/:storeId/waitings')
   async postWaitings(
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Body('peopleCnt') peopleCnt: number,
+    @Body('peopleCnt', ParseIntPipe) peopleCnt: number,
     @GetUser() user: Users,
   ): Promise<string> {
     return this.waitingsService
@@ -71,7 +65,7 @@ export class WaitingsController {
   async postEntered(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('userId', ParseIntPipe) userId: number,
-    @Body('peopleCnt') peopleCnt: number,
+    @Body('peopleCnt', ParseIntPipe) peopleCnt: number,
     @GetUser() user: Users,
   ): Promise<string> {
     return this.waitingsService

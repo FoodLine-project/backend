@@ -13,6 +13,7 @@ EventEmitter.defaultMaxListeners = 100;
 export class WaitingConsumer {
   constructor(
     @InjectRedis('waitingManager') private readonly redisClient: Redis,
+    // @InjectRedis('local') private readonly redisClient: Redis,
     private readonly waitingsRepository: WaitingsRepository,
     private readonly tablesRepository: TablesRepository,
     private readonly storesRepository: StoresRepository,
@@ -122,44 +123,23 @@ export class WaitingConsumer {
 
   // with Redis
 
-  @Process('addStoresHashes')
+  @Process('getCurrentWaitingCntInRedis')
+  async getCurrentWaitingCntInRedis(job: Job): Promise<number> {
+    const storeId = job.data;
+    const currentWaitingCnt = await this.redisClient.hget(
+      `store:${storeId}`,
+      'currentWaitingCnt',
+    );
+    console.log('currentWaitingCnt:', currentWaitingCnt);
+    if (currentWaitingCnt) return Number(currentWaitingCnt);
+    else return 0;
+  }
+
+  @Process('addStoreHashes')
   async addStoreHashes(job: Job): Promise<void> {
-    const { storeId, peopleCnt, maxWaitingCnt, cycleTime } = job.data;
+    const { storeId, ...data } = job.data;
     console.log(`${job.id}의 작업을 수행하였습니다`);
-    let availableTableForTwo: number;
-    let availableTableForFour: number;
-    let tableForTwo: number;
-    let tableForFour: number;
-    const existsRedisStore = await this.redisClient.hgetall(`store:${storeId}`);
-    if (existsRedisStore.maxWaitingCnt) {
-      availableTableForTwo = Number(existsRedisStore.availableTableForTwo);
-      availableTableForFour = Number(existsRedisStore.availableTableForFour);
-    } else {
-      availableTableForTwo = job.data.availableTableForTwo;
-      availableTableForFour = job.data.availableTableForFour;
-      tableForTwo = job.data.availableTableForTwo;
-      tableForFour = job.data.availableTableForFour;
-    }
-    if (peopleCnt == 1 || peopleCnt == 2)
-      availableTableForTwo = availableTableForTwo - 1;
-    else availableTableForFour = availableTableForFour - 1;
-    if (tableForTwo) {
-      await this.redisClient.hset(`store:${storeId}`, {
-        cycleTime,
-        tableForTwo,
-        availableTableForTwo,
-        tableForFour,
-        availableTableForFour,
-        maxWaitingCnt,
-        currentWaitingCnt: 0,
-      });
-      return;
-    } else {
-      await this.redisClient.hset(`store:${storeId}`, {
-        availableTableForTwo,
-        availableTableForFour,
-      });
-    }
+    await this.redisClient.hset(`store:${storeId}`, data);
   }
 
   @Process('incrementCurrentWaitingCntInRedis')
@@ -202,5 +182,74 @@ export class WaitingConsumer {
   async getStoreHashesFromRedis(job: Job): Promise<any> {
     const storeId = job.data;
     return await this.redisClient.hgetall(`store:${storeId}`);
+  }
+
+  // one add at one api
+
+  @Process('postWaitingWithRedis')
+  async postWaitingWithRedis(job: Job): Promise<void> {
+    const { storeId, peopleCnt, user } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.waitingsRepository.postWaitings(storeId, peopleCnt, user);
+    await this.redisClient.hincrby(`store:${storeId}`, 'currentWaitingCnt', 1);
+    return;
+  }
+
+  @Process('addStoreHashAndPostEntered')
+  async addStoreHashAndPostEntered(job: Job): Promise<void> {
+    const { storeId, userId, peopleCnt, ...data } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.redisClient.hset(`store:${storeId}`, data);
+    await this.waitingsRepository.postEntered(storeId, userId, peopleCnt);
+  }
+
+  @Process('exitedAndIncrementTable')
+  async patchToExitedAndIncrementTable(job: Job): Promise<void> {
+    const { storeId, peopleCnt, waitingId } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.waitingsRepository.patchToExited(storeId, waitingId);
+    let availableTable: string;
+    if (peopleCnt == 1 || peopleCnt == 2) {
+      availableTable = 'availableTableForTwo';
+    } else {
+      availableTable = 'availableTableForFour';
+    }
+    await this.redisClient.hincrby(`store:${storeId}`, availableTable, 1);
+    return;
+  }
+
+  @Process('enteredAndDecrementCnts')
+  async enteredAndDecrementCnts(job: Job): Promise<void> {
+    const { storeId, waitingId, status, peopleCnt } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.waitingsRepository.patchToEntered(storeId, waitingId, status);
+    let availableTable: string;
+    if (peopleCnt == 1 || peopleCnt == 2) {
+      availableTable = 'availableTableForTwo';
+    } else {
+      availableTable = 'availableTableForFour';
+    }
+    await this.redisClient.hincrby(`store:${storeId}`, availableTable, -1);
+    await this.redisClient.hincrby(`store:${storeId}`, 'currentWaitingCnt', -1);
+    return;
+  }
+
+  @Process('canceledAndDecrementWaitingCnt')
+  async canceledAndDecrementWaitingCnt(job: Job): Promise<void> {
+    const { storeId, waitingId } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.waitingsRepository.patchToCanceled(storeId, waitingId);
+    await this.redisClient.hincrby(`store:${storeId}`, 'currentWaitingCnt', -1);
+    return;
+  }
+
+  @Process('saveNoshowAndDecrementWaitingCnt')
+  async saveNoshowAndDecrementWaitingCnt(job: Job): Promise<void> {
+    const { entity } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
+    await this.waitingsRepository.saveNoshow(entity);
+    const storeId = entity.StoreId;
+    await this.redisClient.hincrby(`store:${storeId}`, 'currentWaitingCnt', -1);
+    return;
   }
 }

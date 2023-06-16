@@ -15,6 +15,8 @@ import { RedisOptions } from 'ioredis';
 import { WaitingConsumer } from './waiting.consumer';
 import { config } from 'dotenv';
 import { CustomCacheModule } from 'src/cache/cache.module';
+import { ReviewsRepository } from 'src/reviews/reviews.repository';
+import { Reviews } from 'src/reviews/reviews.entity';
 // import { RedisControllModule } from 'src/redis/redis.module';
 // import { RedisService } from 'src/redis/redis.service';
 
@@ -37,7 +39,7 @@ const redisOptions2: RedisOptions = {
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Waitings, Stores, Tables], {
+    TypeOrmModule.forFeature([Waitings, Stores, Tables, Reviews], {
       type: 'spanner',
       maxQueryExecutionTime: 50000,
     }),
@@ -61,6 +63,7 @@ const redisOptions2: RedisOptions = {
     StoresRepository,
     TablesRepository,
     WaitingConsumer,
+    ReviewsRepository,
   ],
 })
 export class WaitingsModule {}
