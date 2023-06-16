@@ -16,7 +16,7 @@ import { Stores } from './stores.entity';
 import * as path from 'path';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { Public } from '../auth/common/decorators';
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { CacheInterceptor } from 'src/cache/cache.interceptor';
 
 @Controller('places')
 @UseInterceptors(CacheInterceptor)
