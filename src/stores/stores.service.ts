@@ -18,7 +18,7 @@ export class StoresService {
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
     private readonly elasticsearchService: ElasticsearchService,
-  ) {}
+  ) { }
 
   async searchRestaurants(
     southWestLatitude: number,
@@ -168,12 +168,13 @@ export class StoresService {
   //햄버거로 찾기
   async searchByKeyword(
     keyword: string,
-    sort: 'ASC' | 'DESC',
+    sort: 'ASC' | 'DESC' = 'ASC',
     column: string,
   ): Promise<any[]> {
     const stores = await this.elasticsearchService.search<any>({
-      index: 'idx_stores',
+      index: 'stores_index',
       _source: ['storeid', 'storename', 'category'],
+      sort: column ? [{ [column.toLocaleLowerCase()]: { order: sort === 'ASC' ? 'asc' : 'desc' } }] : undefined,
       query: {
         bool: {
           should: [
@@ -210,7 +211,7 @@ export class StoresService {
           availableTableForFour: storeDatas.tableForFour,
           rating: average,
         };
-        await this.redisClient.hset(`store:${storeId}`, datas);
+        await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
         const redisRating = average;
         return { ...storeDatas, redisRating };
       }
@@ -220,28 +221,37 @@ export class StoresService {
     return resolvedStoredDatas;
   }
 
-  //elastic 좌표로 주변 음식점 검색
+  //elastic 좌표로 주변 음식점 검색 (거리순)
   async searchByCoord(
+    sort: 'ASC' | 'DESC' = 'ASC',
+    column: string,
+    page: number,
     southWestLatitude: number,
     southWestLongitude: number,
     northEastLatitude: number,
     northEastLongitude: number,
-    userLatitude: number,
-    userLongitude: number,
+    myLatitude: string,
+    myLongitude: string
   ): Promise<any[]> {
+    const pageSize = 20;
+    // const from = (page - 1) * pageSize;
     const stores = await this.elasticsearchService.search<any>({
       index: 'geo_test',
-      size: 20,
+      size: pageSize,
+      //  from: from,
+      sort: column ? [
+        { [column.toLocaleLowerCase()]: { order: sort === 'ASC' ? 'asc' : 'desc' } }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
+      ] : undefined,
       query: {
         geo_bounding_box: {
           location: {
             top_left: {
-              lat: northEastLatitude,
-              lon: southWestLongitude,
+              lat: northEastLatitude, // 37.757791370664556
+              lon: southWestLongitude,//126.79520112345595 
             },
             bottom_right: {
-              lat: southWestLatitude,
-              lon: northEastLongitude,
+              lat: southWestLatitude,  // 37.754606432266826
+              lon: northEastLongitude,//126.77778001399787 
             },
           },
         },
@@ -249,9 +259,9 @@ export class StoresService {
     });
     const result = stores.hits.hits.map((hit: any) => {
       const storesFound = hit._source;
-      const latitude = storesFound.location.lat;
-      const longitude = storesFound.location.lon;
-      const start = { latitude: userLatitude, longitude: userLongitude };
+      const latitude: number = storesFound.location.lat;
+      const longitude: number = storesFound.location.lon;
+      const start = { latitude: myLatitude, longitude: myLongitude };
       const end = { latitude: latitude, longitude: longitude };
       const distance = geolib.getDistance(start, end);
       return { ...storesFound, distance: distance + 'm' };
@@ -261,8 +271,12 @@ export class StoresService {
       const distanceB = parseFloat(b.distance);
       return distanceA - distanceB;
     });
+
     return result;
   }
+
+
+
 
   //redis 에 storeId 랑 좌표 넣기
   async addStoresToRedis(): Promise<void> {
@@ -293,9 +307,9 @@ export class StoresService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRadians(lat1)) *
-        Math.cos(toRadians(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
@@ -329,7 +343,7 @@ export class StoresService {
     for (const store of stores) {
       store.distance = Math.ceil(
         nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-          1000,
+        1000,
       );
     }
 
@@ -393,7 +407,7 @@ export class StoresService {
     for (const store of stores) {
       store.distance = Math.ceil(
         nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-          1000,
+        1000,
       );
     }
 

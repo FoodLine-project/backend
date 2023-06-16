@@ -15,11 +15,11 @@ import { CustomCacheModule } from 'src/cache/cache.module';
   imports: [
     TypeOrmModule.forFeature([Stores, Tables, Reviews]),
     ElasticsearchModule.register({
-      node: 'http://localhost:9200',
+      node: 'http://15.165.32.246:9200',
       maxRetries: 10,
       requestTimeout: 60000,
       pingTimeout: 60000,
-      sniffOnStart: true,
+
     }),
     CustomCacheModule,
   ],
@@ -31,4 +31,4 @@ import { CustomCacheModule } from 'src/cache/cache.module';
     ReviewsRepository,
   ],
 })
-export class StoresModule {}
+export class StoresModule { }

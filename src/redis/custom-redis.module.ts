@@ -26,12 +26,12 @@ if (result.error) {
         },
         {
           namespace: 'local',
-          host: 'localhost',
-          port: 6379,
-          // password: '',
+          host: 'redis-18535.c267.us-east-1-4.ec2.cloud.redislabs.com',
+          port: 18535,
+          password: 'KbFBdma9QCj0zuwcQkGcPRVPWh0467jX',
         },
       ],
     }),
   ],
 })
-export class CustomRedisModule {}
+export class CustomRedisModule { }

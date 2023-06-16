@@ -21,7 +21,7 @@ import { CacheInterceptor } from '@nestjs/cache-manager';
 @Controller('places')
 @UseInterceptors(CacheInterceptor)
 export class StoresController {
-  constructor(private storesService: StoresService) {}
+  constructor(private storesService: StoresService) { }
 
   @Public()
   @Post('/coordinates')
@@ -51,21 +51,27 @@ export class StoresController {
   //elastic 좌표로
   @Public()
   @Post('/coordinate')
-  async searchByCoordinates(@Body() coordinatesData: any): Promise<any[]> {
-    const { swLatlng, neLatlng, userLatlng } = coordinatesData;
-    const southWestLatitude = swLatlng.La;
-    const southWestLongitude = swLatlng.Ma;
-    const northEastLatitude = neLatlng.La;
-    const northEastLongitude = neLatlng.Ma;
-    const userLatitude = userLatlng.La;
-    const userLongitude = userLatlng.Ma;
+  async searchByCoordinates(@Body() coordinatesData: any,
+    @Query('a') sort: 'ASC' | 'DESC' = 'ASC',
+    @Query('b') column: string,
+    @Query('c') page: number): Promise<any[]> {
+    const { swLatlng, neLatlng, myLatitude, myLongitude } = coordinatesData;
+    const southWestLatitude = swLatlng.Ma;
+    const southWestLongitude = swLatlng.La;
+    const northEastLatitude = neLatlng.Ma;
+    const northEastLongitude = neLatlng.La;
+    myLatitude;
+    myLongitude;
     const restaurants = await this.storesService.searchByCoord(
+      sort,
+      column,
+      page,
       southWestLatitude,
       southWestLongitude,
       northEastLatitude,
       northEastLongitude,
-      userLatitude,
-      userLongitude,
+      myLatitude,
+      myLongitude
     );
     return restaurants;
   }
@@ -75,7 +81,7 @@ export class StoresController {
   @Get('/search')
   searchStores(
     @Query('keyword') keyword: string,
-    @Query('b') sort: 'ASC' | 'DESC',
+    @Query('b') sort: 'ASC' | 'DESC' = 'ASC',
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
     return this.storesService.searchByKeyword(keyword, sort, column);
