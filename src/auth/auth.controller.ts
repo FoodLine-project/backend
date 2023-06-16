@@ -32,8 +32,6 @@ export class AuthController {
     }
   }
 
-  // @Public()
-  // @UseGuards(AccessTokenGuard)
   @Delete('/logout')
   async logout(@GetUser() user: Users): Promise<{ message: string }> {
     try {
@@ -41,7 +39,6 @@ export class AuthController {
 
       return { message: '로그아웃 되었습니다.' };
     } catch (error) {
-      // return { message: error.message };
       throw error;
     }
   }

@@ -30,10 +30,8 @@ export class ReviewsController {
   async createReview(
     @GetUser() user: Users,
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Body()
-    reviewDto: ReviewDto,
+    @Body(ParseIntPipe) reviewDto: ReviewDto,
   ): Promise<{ message: string }> {
-    console.log('작성');
     await this.reviewsService.createReview(user, storeId, reviewDto);
     return { message: '리뷰를 작성했습니다.' };
   }
@@ -43,7 +41,7 @@ export class ReviewsController {
     @GetUser() user: Users,
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('reviewId', ParseIntPipe) reviewId: number,
-    @Body() reviewDto: ReviewDto,
+    @Body(ParseIntPipe) reviewDto: ReviewDto,
   ): Promise<{ message: string }> {
     await this.reviewsService.updateReview(user, storeId, reviewId, reviewDto);
     return { message: '리뷰가 수정되었습니다.' };

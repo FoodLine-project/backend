@@ -6,14 +6,19 @@ import { ReviewDto } from './dto';
 export class ReviewsRepository {
   constructor(
     @InjectRepository(Reviews) private reviews: Repository<Reviews>,
-  ) { }
+  ) {}
 
   async findReviewById(reviewId: number): Promise<Reviews> {
     return await this.reviews.findOne({ where: { reviewId } });
   }
 
   async findAllReviews(StoreId: number): Promise<Reviews[]> {
-    return await this.reviews.find({ where: { StoreId } });
+    return await this.reviews.find({
+      where: { StoreId },
+      order: {
+        reviewId: 'ASC',
+      },
+    });
   }
 
   async createReview(
@@ -60,7 +65,8 @@ export class ReviewsRepository {
   async getAverageRating(storeId: number): Promise<number> {
     const reviews = await this.findAllReviews(storeId);
 
-    if (reviews.length === 0) { //없을때 0으로
+    if (reviews.length === 0) {
+      //없을때 0으로
       return 0;
     }
 
