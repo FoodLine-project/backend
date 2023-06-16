@@ -30,10 +30,13 @@ export class ReviewsController {
   async createReview(
     @GetUser() user: Users,
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Body(ParseIntPipe) reviewDto: ReviewDto,
-  ): Promise<{ message: string }> {
-    await this.reviewsService.createReview(user, storeId, reviewDto);
-    return { message: '리뷰를 작성했습니다.' };
+    @Body('rating', ParseIntPipe) rating: number,
+    @Body('review') review: string
+    //@Body() reviewDto: ReviewDto,
+  ): Promise<{ message: string, reviewId: number }> {
+    const reviewDto = { rating, review };
+    const createdReview = await this.reviewsService.createReview(user, storeId, reviewDto);
+    return { message: '리뷰를 작성했습니다.', reviewId: createdReview.reviewId };
   }
 
   @Patch('/:reviewId')
@@ -41,8 +44,11 @@ export class ReviewsController {
     @GetUser() user: Users,
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('reviewId', ParseIntPipe) reviewId: number,
-    @Body(ParseIntPipe) reviewDto: ReviewDto,
+    @Body('rating', ParseIntPipe) rating: number,
+    @Body('review') review: string
+    //@Body() reviewDto: ReviewDto,
   ): Promise<{ message: string }> {
+    const reviewDto = { rating, review };
     await this.reviewsService.updateReview(user, storeId, reviewId, reviewDto);
     return { message: '리뷰가 수정되었습니다.' };
   }

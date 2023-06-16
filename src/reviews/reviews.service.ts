@@ -24,7 +24,7 @@ export class ReviewsService {
     user: Users,
     storeId: number,
     reviewDto: ReviewDto,
-  ): Promise<void> {
+  ): Promise<Reviews> {
     const store = await this.storesRepository.findStoreById(storeId);
     if (!store) {
       throw new NotFoundException(`존재하지 않는 음식점입니다.`);
@@ -36,11 +36,13 @@ export class ReviewsService {
       );
     }
 
-    await this.reviewsRepository.createReview(
+    const review = await this.reviewsRepository.createReview(
       user.userId,
       store.storeId,
       reviewDto,
     );
+
+    return review;
   }
 
   async updateReview(
