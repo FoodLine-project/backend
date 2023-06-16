@@ -7,52 +7,25 @@ import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateStoresDto } from './dto/create-stores.dto';
 
-// @Injectable()
-// export class StoresRepository extends Repository<Stores, Tables> {
-//   // constructor(dataSource: DataSource) {
-//   //   super(Stores, dataSource.createEntityManager());
-//   // }
-//   constructor(
-//     @InjectRepository(Stores) private storesDataSource: DataSource,
-//     @InjectRepository(Tables) private tablesDataSource: DataSource,
-//   ) {
-//     super(
-//       [Stores, Tables],
-//       [storesDataSource.manager, tablesDataSource.manager],
-//     );
-//   }
-
 @Injectable()
 export class StoresRepository {
-  // extends Repository<Stores> {
-  // constructor(
-  //   @InjectRepository(TablesRepository)
-  //   private tablesRepository: TablesRepository,
-  //   dataSource: DataSource,
-  // ) {
-  //   super(Stores, dataSource.createEntityManager());
-  // }
-
   constructor(
     @InjectRepository(Stores) private stores: Repository<Stores>,
-    // @InjectRepository(TablesRepository)
     private tablesRepository: TablesRepository,
   ) {}
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
     const result = await this.stores.find({ order: { storeId: 'ASC' } });
-    // order: { storeId: 'ASC' },
-    // console.log(result); 잘 읽히는것 확인
     return result;
   }
 
+  //1차 햄버거 조회
   async searchStores(
     keyword: string,
     sort: 'ASC' | 'DESC',
     column: string,
   ): Promise<StoresSearchDto[]> {
-    const start = performance.now();
     const searchStores = await this.stores.find({
       select: [
         'storeId',
@@ -69,25 +42,15 @@ export class StoresRepository {
       order: column && sort ? { [column]: sort } : {},
     });
 
-    // storeName: 가게 이름 오름차순
-    // waitingAsc: 현재 대기 팀 수 오름차순
-    // waitingDesc: 현재 대기 팀 수 내림차순
-    // rating: 평점 내림차순
-    const end = performance.now();
-    const executionTime = end - start;
-
-    console.log(searchStores);
-    console.log(searchStores.length);
-    console.log(column);
-    console.log(`Execution Time: ${executionTime} milliseconds`);
     return searchStores;
   }
+
+  //카테고리 검색
   async searchByCategory(
     keyword: string,
     sort: 'ASC' | 'DESC',
     column: string,
   ): Promise<StoresSearchDto[]> {
-    const start = performance.now();
     const query = await this.stores.find({
       select: [
         'storeId',
@@ -101,29 +64,91 @@ export class StoresRepository {
       order: column && sort ? { [column]: sort } : {},
       take: 10000,
     });
-    //      .where(`to_tsvector('simple', store.category) @@ to_tsquery('simple', :keyword)`, { keyword })
-
-    //    .where(`store.category ILIKE :keyword OR
-    //     (store.category ILIKE '%양식%' AND :keyword ILIKE '경양식') OR
-    //     (store.category ILIKE '%중_식%')`, { keyword: `%${keyword}%` })
-    // if (column && sort) {
-    //   query.orderBy(`store.${column}`, sort);
-    // }
-
-    //    const result = await query.getMany();
-    const end = performance.now();
-    const executionTime = end - start;
-    console.log(keyword, column, sort);
-    console.log(`Execution Time: ${executionTime} milliseconds`);
-
-    //   console.log(result.length)
     return query;
   }
+
+  //cycleTime 가져오기
   async getCycleTimeByStoreId(storeId: number): Promise<number> {
     const store = await this.stores.findOne({
       where: { storeId },
     });
     return store.cycleTime;
+  }
+
+  //한개 찾기
+  async findStoreById(storeId: number): Promise<Stores> {
+    return await this.stores.findOne({ where: { storeId } });
+  }
+
+  //많이 찾기
+  async findStoresByIds(ids: string[]): Promise<Stores[]> {
+    return await this.stores
+      .createQueryBuilder('store')
+      .where('store.storeId = ANY(:ids)', { ids })
+      .getMany();
+  }
+
+  //현재 대기팀 감소
+  async decrementCurrentWaitingCnt(storeId: number): Promise<void> {
+    this.stores.decrement({ storeId }, 'currentWaitingCnt', 1);
+    return;
+  }
+
+  //현재 대기팀 증가
+  async incrementCurrentWaitingCnt(storeId: number): Promise<void> {
+    this.stores.increment({ storeId }, 'currentWaitingCnt', 1);
+    return;
+  }
+
+  //상세 조회
+  async getOneStore(storeId: number): Promise<Stores> {
+    const store = await this.stores.findOne({
+      where: { storeId },
+      relations: ['reviews'],
+    });
+
+    return store;
+  }
+
+  //상점 추가
+  async createStore(createStoreDto: CreateStoresDto): Promise<Stores> {
+    const {
+      storeName,
+      category,
+      description,
+      maxWaitingCnt,
+      currentWaitingCnt,
+      Ma,
+      La,
+      tableForTwo,
+      tableForFour,
+    } = createStoreDto;
+
+    const store = this.stores.create({
+      storeName,
+      category,
+      description,
+      maxWaitingCnt,
+      currentWaitingCnt,
+      Ma,
+      La,
+      tableForTwo,
+      tableForFour,
+    });
+
+    await this.stores.save(store);
+    return store;
+  }
+
+  //postgres 에서 좌표 넣기
+  async fillCoordinates(store: Stores, Ma: number, La: number) {
+    const coordinates: Point = {
+      type: 'Point',
+      coordinates: [Ma, La],
+    };
+
+    store.coordinates = coordinates;
+    await this.stores.save(store);
   }
 
   //CSV 저장
@@ -208,80 +233,5 @@ export class StoresRepository {
   //저장
   async updateCoord(La: number, Ma: number, storeId: number): Promise<any> {
     await this.stores.update(storeId, { La, Ma });
-  }
-
-  async findStoreById(storeId: number): Promise<Stores> {
-    return await this.stores.findOne({ where: { storeId } });
-  }
-
-  async updateRating(storeId: number, rating: number): Promise<void> {
-    await this.stores.update(storeId, { rating });
-  }
-
-  async decrementCurrentWaitingCnt(storeId: number): Promise<void> {
-    this.stores.decrement({ storeId }, 'currentWaitingCnt', 1);
-    return;
-  }
-
-  async incrementCurrentWaitingCnt(storeId: number): Promise<void> {
-    this.stores.increment({ storeId }, 'currentWaitingCnt', 1);
-    return;
-  }
-
-  async getOneStore(storeId: number): Promise<Stores> {
-    const store = await this.stores.findOne({
-      where: { storeId },
-      relations: ['reviews'],
-    });
-
-    return store;
-  }
-
-  async createStore(createStoreDto: CreateStoresDto): Promise<Stores> {
-    const {
-      storeName,
-      category,
-      description,
-      maxWaitingCnt,
-      currentWaitingCnt,
-      Ma,
-      La,
-      tableForTwo,
-      tableForFour,
-    } = createStoreDto;
-
-    const store = this.stores.create({
-      storeName,
-      category,
-      description,
-      maxWaitingCnt,
-      currentWaitingCnt,
-      Ma,
-      La,
-      tableForTwo,
-      tableForFour,
-    });
-
-    await this.stores.save(store);
-
-    return store;
-  }
-
-  async findStoresByIds(ids: string[]): Promise<Stores[]> {
-    return await this.stores
-      .createQueryBuilder('store')
-      .where('store.storeId = ANY(:ids)', { ids })
-      .getMany();
-  }
-
-  async fillCoordinates(store: Stores, Ma: number, La: number) {
-    const coordinates: Point = {
-      type: 'Point',
-      coordinates: [Ma, La],
-    };
-
-    store.coordinates = coordinates;
-    await store.save();
-    // await this.stores.save(store);
   }
 }

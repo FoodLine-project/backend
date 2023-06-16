@@ -26,10 +26,11 @@ export class WaitingsService {
     private waitingQueue: Queue,
     private waitingsRepository: WaitingsRepository,
     private storesRepository: StoresRepository,
-    private tablesRepository: TablesRepository, // private redisService: RedisService,
+    private tablesRepository: TablesRepository,
     private reviewsRepository: ReviewsRepository,
   ) {}
 
+  //웨이팅 팀 수 조회
   async getCurrentWaitingsCnt(storeId: number): Promise<number> {
     const existsStore = await this.storesRepository.findStoreById(storeId);
     if (!existsStore) {
@@ -44,6 +45,7 @@ export class WaitingsService {
     return result;
   }
 
+  //웨이팅 리스트 조회 ( for admin )
   async getWaitingList(storeId: number, user: Users): Promise<Waitings[]> {
     if (user.StoreId !== storeId) {
       throw new UnauthorizedException('권한이 없습니다.');
@@ -57,6 +59,7 @@ export class WaitingsService {
     return result;
   }
 
+  //대기열 추가
   async postWaitings(
     storeId: number,
     peopleCnt: number,
@@ -65,10 +68,10 @@ export class WaitingsService {
     if (peopleCnt > 4) {
       throw new BadRequestException('최대 4명까지 신청할 수 있습니다');
     }
-    // const existsStore = await this.storesRepository.findStoreById(storeId);
-    // if (!existsStore) {
-    //   throw new NotFoundException('음식점이 존재하지 않습니다');
-    // }
+    const existsStore = await this.storesRepository.findStoreById(storeId);
+    if (!existsStore) {
+      throw new NotFoundException('음식점이 존재하지 않습니다');
+    }
     // if (existsStore.maxWaitingCnt === existsStore.currentWaitingCnt) {
     //   return 'full';
     // }
@@ -117,6 +120,7 @@ export class WaitingsService {
     return 'success';
   }
 
+  //대기열 추가 없이 입장
   async postEntered(
     storeId: number,
     userId: number,
@@ -153,8 +157,8 @@ export class WaitingsService {
       `store:${storeId}`,
     );
 
+    // 이미 redis 에 hash 가 있을때
     if (tablesOfStoreInRedis.tableForTwo !== undefined) {
-      // 이미 redis 에 hash 가 있을때
       let availableTableForTwo: number;
       let availableTableForFour: number;
       if (peopleCnt == 1 || peopleCnt == 2) {
@@ -280,6 +284,7 @@ export class WaitingsService {
     // });
   }
 
+  //웨이팅 상태 변경
   async patchStatusOfWaitings(
     storeId: number,
     waitingId: number,
@@ -300,6 +305,7 @@ export class WaitingsService {
       throw new ConflictException('웨이팅이 존재하지 않습니다');
     }
     const peopleCnt = waiting.peopleCnt;
+    // 퇴장
     if (status === 'EXITED') {
       if (waiting.status !== WaitingStatus.ENTERED) {
         throw new BadRequestException('적절하지 않은 status 입니다');
@@ -324,6 +330,7 @@ export class WaitingsService {
     } // ENTERED 를 EXITED_AND_READY로 처리하고 그 인원수에 맞는 대기열을 CALLED 처리 한다 => 매장용
     // 대기열이 없으면 부르지 않는다
 
+    // 연기
     if (status === 'DELAYED') {
       if (waiting.status !== WaitingStatus.CALLED) {
         throw new BadRequestException('적절하지 않은 status 입니다');
@@ -332,6 +339,7 @@ export class WaitingsService {
       return;
     } // 최근의 CALLED 된 사람을 DELAYED 로 바꾸고 다음 사람을 CALLED 한다 => 매장용
 
+    // 입장
     if (status === 'ENTERED') {
       if (
         waiting.status == WaitingStatus.DELAYED ||
@@ -370,10 +378,10 @@ export class WaitingsService {
       } else {
         throw new BadRequestException('적절하지 않은 status 입니다');
       }
-      return;
     } // DELAYED, CALLED, WAITING 을 ENTERED 로 바꾸고 입장시킨다 => 매장용
   }
 
+  //웨이팅 취소
   async patchStatusToCanceled(storeId: number, user: Users): Promise<void> {
     const existsStore = await this.storesRepository.findStoreById(storeId);
     if (!existsStore) {
@@ -411,6 +419,7 @@ export class WaitingsService {
     }
   }
 
+  //노쇼 처리
   async checkAndPatchNoshow(): Promise<void> {
     console.log('실행중');
     const delayed = await this.waitingsRepository.getAllDelayed();
@@ -445,6 +454,7 @@ export class WaitingsService {
     return;
   }
 
+  //예상 대기 시간 조회
   async getWaitingTime(storeId: number, user: Users): Promise<number> {
     const existsStore = await this.storesRepository.findStoreById(storeId);
     if (!existsStore) {
@@ -492,17 +502,13 @@ export class WaitingsService {
       );
 
     const waitingIdsArr = waitingPeople.map((error) => error.waitingId);
-    console.log(waitingIdsArr, '여기다');
-    // status 가 WAITING 인 사람 중에서 내가 몇등인지
     const myTurn = waitingIdsArr.indexOf(Number(existsWaiting.waitingId)) + 1;
-    console.log(myTurn);
 
     const enteredPeople: Waitings[] =
       await this.waitingsRepository.getWaitingsStatusEntered(
         storeId,
         peopleCnt,
       );
-    console.log(enteredPeople.map((e) => e.waitingId));
     if (tableCnt > enteredPeople.length || enteredPeople.length === 0) {
       if (waitingIdsArr.length === 0) return 0;
     }
@@ -511,27 +517,20 @@ export class WaitingsService {
 
     const leftCnt: number = left === 0 ? tableCnt : left;
 
-    console.log(bigCycle, leftCnt);
-
     const currentTime = new Date();
     if (!enteredPeople[leftCnt - 1]) {
       throw new BadRequestException('비교할 대상이 존재하지 않습니다');
     }
     const updatedTime = enteredPeople[leftCnt - 1].updatedAt;
-    console.log(enteredPeople[leftCnt - 1].waitingId, '얘랑 비교');
     if (
       bigCycle == 1 &&
       enteredPeople[leftCnt - 1].status == 'EXITED_AND_READY'
     ) {
       return 0;
     }
-    // 내가 앉을 테이블에 앉은 사람이 먹은지 몇분 됐는지
+
     const prePersonEatingTime = Math.floor(
       (currentTime.getTime() - updatedTime.getTime()) / 1000 / 60,
-    );
-    console.log(
-      '해당 테이블에 있는 사람이 입장한지 몇분 지났는지?',
-      prePersonEatingTime,
     );
 
     return bigCycle * cycleTime - prePersonEatingTime;

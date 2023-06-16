@@ -8,12 +8,10 @@ import {
   UsePipes,
   ValidationPipe,
   ParseIntPipe,
-  Patch,
   UseInterceptors,
 } from '@nestjs/common';
 import { StoresSearchDto } from './dto/search-stores.dto';
 import { StoresService } from './stores.service';
-import { LocationService } from '../location/location.service';
 import { Stores } from './stores.entity';
 import * as path from 'path';
 import { CreateStoresDto } from './dto/create-stores.dto';
@@ -23,21 +21,7 @@ import { CacheInterceptor } from '@nestjs/cache-manager';
 @Controller('places')
 @UseInterceptors(CacheInterceptor)
 export class StoresController {
-  constructor(
-    private storesService: StoresService,
-    private locationService: LocationService,
-  ) { }
-
-
-  //임시
-  @Public()
-  @Get("/updateMapping")
-  updateMapping() {
-    console.log("check")
-    return this.storesService.updateMapping()
-  }
-
-
+  constructor(private storesService: StoresService) {}
 
   @Public()
   @Post('/coordinates')
@@ -46,7 +30,6 @@ export class StoresController {
     @Query('sort')
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
   ): Promise<{ 근처식당목록: Stores[] }> {
-    console.log(coordinatesData);
     const { swLatlng, neLatlng } = coordinatesData;
     const southWestLatitude = swLatlng.La;
     const southWestLongitude = swLatlng.Ma;
@@ -62,31 +45,13 @@ export class StoresController {
       northEastLongitude,
       sortBy,
     );
-
-    // FOR TEST
-    {
-      console.log(`주변 식당 수: ${restaurants.근처식당목록.length}`);
-
-      const storeNames = [];
-      for (const restaurant of restaurants.근처식당목록) {
-        storeNames.push({
-          이름: restaurant.storeName,
-          거리: restaurant.distance,
-          ID: restaurant.storeId,
-        });
-      }
-      console.log(storeNames);
-    }
-
     return restaurants;
   }
 
-  //elastic 좌표로 
+  //elastic 좌표로
   @Public()
-  @Post("/coordinate")
-  async searchByCoordinates(
-    @Body() coordinatesData: any,
-  ): Promise<any[]> {
+  @Post('/coordinate')
+  async searchByCoordinates(@Body() coordinatesData: any): Promise<any[]> {
     const { swLatlng, neLatlng, userLatlng } = coordinatesData;
     const southWestLatitude = swLatlng.La;
     const southWestLongitude = swLatlng.Ma;
@@ -100,11 +65,11 @@ export class StoresController {
       northEastLatitude,
       northEastLongitude,
       userLatitude,
-      userLongitude
+      userLongitude,
     );
-
     return restaurants;
   }
+
   ///api/stores/search?keyword=햄버거 간단한 검색기능 elastic으로 검색
   @Public()
   @Get('/search')
@@ -113,33 +78,17 @@ export class StoresController {
     @Query('b') sort: 'ASC' | 'DESC',
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
-    console.log(column);
     return this.storesService.searchByKeyword(keyword, sort, column);
   }
 
-  //CSV파일 postgres 업로드
-  @Public()
-  @Post('/process')
-  async processCSV(): Promise<void> {
-    const inputFile = path.resolve('../stores/csv/111.csv');
-    await this.storesService.processCSVFile(inputFile);
-  }
-
-  //주소로 카카오에서 좌표 받아서 postgres업데이트
-
-  @Public()
-  @Post('update-coordinates')
-  async updateCoordinates(): Promise<string> {
-    await this.storesService.updateCoordinates();
-    return 'Coordinates updated successfully';
-  }
-
+  //postgres 의 coordinate 값을 채우는 api
   @Public()
   @Post('fill-coordinates')
   async fillCoordinates() {
     await this.storesService.fillCoordinates();
   }
 
+  // 중앙 좌표의 반경 n km 음식점 조회
   @Public()
   @Get('/nearby-stores-byradius')
   async getNearbyStoresByRadius(
@@ -151,25 +100,10 @@ export class StoresController {
       coordinates,
       sortBy,
     );
-
-    {
-      console.log(`주변 식당 수: ${stores.length}`);
-
-      const storeNames = [];
-      for (const store of stores) {
-        storeNames.push({
-          ID: store.storeId,
-          이름: store.storeName,
-          주소: store.address,
-          거리: Math.floor(store.distance * 1000),
-        });
-      }
-      console.log(storeNames);
-    }
-
     return stores;
   }
 
+  // 좌하단 우상단 좌표 내의 음식점 조회
   @Public()
   @Get('/nearby-stores-bybox')
   async getNearbyStoresByBox(
@@ -185,26 +119,11 @@ export class StoresController {
       coordinates,
       sortBy,
     );
-
-    {
-      console.log(`주변 식당 수: ${stores.length}`);
-
-      const storeNames = [];
-      for (const store of stores) {
-        storeNames.push({
-          ID: store.storeId,
-          이름: store.storeName,
-          주소: store.address,
-          거리: Math.floor(store.distance * 1000),
-        });
-      }
-      console.log(storeNames);
-    }
-
     return stores;
   }
 
   //상세조회 (정보+댓글)
+  @UseInterceptors(CacheInterceptor)
   @Public()
   @Get('/:storeId')
   getOneStore(
@@ -213,7 +132,7 @@ export class StoresController {
     return this.storesService.getOneStore(storeId);
   }
 
-  //(임시) 만약 추가요청이 들어올시// 추후 수정 예정
+  // 상점 추가
   @Public()
   @Post('/')
   @UsePipes(ValidationPipe)
@@ -221,23 +140,27 @@ export class StoresController {
     return this.storesService.createStore(createStoreDto);
   }
 
-  @Patch('/:storeId/rating')
-  updateRating(@Param('storeId', ParseIntPipe) storeId: number): Promise<number> {
-    return this.storesService.updateRating(storeId);
-  }
-
+  // postgres 의 storeId 와 LA,MA 를 redis 에 저장
   @Public()
   @Post('/to-redis')
   async addStoresToRedis(): Promise<void> {
     return await this.storesService.addStoresToRedis();
   }
 
+  //CSV파일 postgres 업로드
   @Public()
-  @Get('/from-redis/:storeId')
-  async getStorePos(
-    @Param('storeId', ParseIntPipe) storeId: number,
-  ): Promise<[longitude: string, latitude: string][]> {
-    return await this.storesService.getStorePos(storeId);
+  @Post('/process')
+  async processCSV(): Promise<void> {
+    const inputFile = path.resolve('../stores/csv/111.csv');
+    await this.storesService.processCSVFile(inputFile);
+  }
+
+  //주소로 카카오에서 좌표 받아서 postgres업데이트
+  @Public()
+  @Post('update-coordinates')
+  async updateCoordinates(): Promise<string> {
+    await this.storesService.updateCoordinates();
+    return 'Coordinates updated successfully';
   }
 }
 

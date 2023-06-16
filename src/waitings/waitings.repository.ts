@@ -8,6 +8,7 @@ export class WaitingsRepository {
     @InjectRepository(Waitings) private waitings: Repository<Waitings>,
   ) {}
 
+  //웨이팅 팀 수 조회
   async getCurrentWaitingCnt(storeId: number): Promise<number> {
     const waitingStatuses = [
       WaitingStatus.WAITING,
@@ -26,6 +27,7 @@ export class WaitingsRepository {
     return waitingCounts;
   }
 
+  //웨이팅 리스트 조회
   async getWaitingListById(storeId: number): Promise<Waitings[]> {
     return await this.waitings.find({
       where: {
@@ -43,6 +45,7 @@ export class WaitingsRepository {
     });
   }
 
+  //웨이팅 조회 By User
   async getWaitingByUser(user: Users): Promise<Waitings> {
     return await this.waitings.findOne({
       where: {
@@ -57,6 +60,7 @@ export class WaitingsRepository {
     });
   }
 
+  //웨이팅 조회 By UserId
   async getWaitingByUserId(userId: number): Promise<Waitings> {
     return await this.waitings.findOne({
       where: {
@@ -71,12 +75,14 @@ export class WaitingsRepository {
     });
   }
 
+  //웨이팅 조회 By WaitingId
   async getWaitingByWaitingId(waitingId: number): Promise<Waitings> {
     return await this.waitings.findOne({
       where: { waitingId },
     });
   }
 
+  //웨이팅 등록
   async postWaitings(
     storeId: number,
     peopleCnt: number,
@@ -90,6 +96,7 @@ export class WaitingsRepository {
     return await this.waitings.save(waiting);
   }
 
+  //웨이팅 등록 없이 입장
   async postEntered(
     storeId: number,
     userId: number,
@@ -105,6 +112,7 @@ export class WaitingsRepository {
     return;
   }
 
+  //퇴장
   async patchToExited(storeId: number, waitingId: number): Promise<void> {
     const exited = await this.waitings.findOne({
       where: { waitingId },
@@ -146,6 +154,7 @@ export class WaitingsRepository {
     }
   }
 
+  //연기
   async patchToDelayed(storeId: number, waitingId: number): Promise<void> {
     const delayed = await this.waitings.findOne({
       where: { waitingId },
@@ -185,6 +194,7 @@ export class WaitingsRepository {
     }
   }
 
+  //입장
   async patchToEntered(
     storeId: number,
     waitingId: number,
@@ -226,9 +236,9 @@ export class WaitingsRepository {
       await this.waitings.save(notFilled);
       return;
     }
-    return;
   }
 
+  //웨이팅 취소 ( for user )
   async patchToCanceled(storeId: number, waitingId: number): Promise<void> {
     const canceled = await this.waitings.findOne({
       where: { waitingId, StoreId: storeId },
@@ -238,28 +248,26 @@ export class WaitingsRepository {
     return;
   }
 
+  //연기목록 조회
   async getAllDelayed(): Promise<Waitings[]> {
     return this.waitings.find({
       where: { status: WaitingStatus.DELAYED },
     });
   }
 
+  //noshow
   async saveNoshow(waitings: Waitings): Promise<void> {
     await this.waitings.save(waitings);
     return;
   }
 
+  //상태가 Waiting 인 목록 조회
   async getWaitingsStatusWaiting(
     storeId: number,
     peopleCnt: number,
   ): Promise<Waitings[]> {
-    // <<<<<<< HEAD
-    //     if (peopleCnt === 2) {
-    //       return this.waitings.find({
-    // =======
     if (peopleCnt == 1 || peopleCnt == 2) {
       return this.waitings.find({
-        // >>>>>>> 1b4ff43efc6c59311d3d8a83d72abbae6210cb1b
         where: {
           StoreId: storeId,
           status: In([
@@ -291,6 +299,7 @@ export class WaitingsRepository {
     }
   }
 
+  //상태가 Entered 인 목록 조회
   async getWaitingsStatusEntered(
     storeId: number,
     peopleCnt: number,
@@ -320,6 +329,7 @@ export class WaitingsRepository {
     }
   }
 
+  //테이블 수 조회
   async getTableTotalCnt(storeId: number, peopleCnt: number): Promise<number> {
     const stores = await this.waitings.findOne({
       where: { store: { storeId: storeId } },

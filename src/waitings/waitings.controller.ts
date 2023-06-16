@@ -7,7 +7,6 @@ import {
   Body,
   Query,
   ParseIntPipe,
-  UseInterceptors,
 } from '@nestjs/common';
 import { WaitingsService } from './waitings.service';
 import { Users } from '../auth/users.entity';
@@ -16,16 +15,12 @@ import { GetUser, Public } from 'src/auth/common/decorators';
 import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.pipe';
 import { Cron } from '@nestjs/schedule';
 import { Waitings } from './waitings.entity';
-import { CacheInterceptor } from 'src/cache/cache.interceptor';
-import { CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('stores')
-// @UseInterceptors(CacheInterceptor)
-// @CacheTTL(5000)
 export class WaitingsController {
   constructor(private waitingsService: WaitingsService) {}
 
-  // 웨이팅 수 조회 ( for user )
+  // 웨이팅 팀 수 조회 ( for user )
   @Public()
   @Get('/:storeId/waitings')
   async getCurrentWaitingsCnt(
@@ -35,7 +30,7 @@ export class WaitingsController {
       storeId,
     );
     return { teams: waitingCnt, message: `${waitingCnt}팀이 대기중입니다` };
-  } // Bullqueue
+  }
 
   // 웨이팅 리스트 조회 ( for admin )
   @Get('/:storeId/waitings/list')
@@ -44,9 +39,9 @@ export class WaitingsController {
     @GetUser() user: Users,
   ): Promise<Waitings[]> {
     return await this.waitingsService.getWaitingList(storeId, user);
-  } // Bullqueue
+  }
 
-  // 웨이팅을 신청 ( for user )
+  // 웨이팅 신청 ( for user )
   @Post('/:storeId/waitings')
   async postWaitings(
     @Param('storeId', ParseIntPipe) storeId: number,
@@ -58,7 +53,7 @@ export class WaitingsController {
       .then(() => {
         return `${peopleCnt}명의 웨이팅을 등록하였습니다`;
       });
-  } // Bullqueue
+  }
 
   // 웨이팅을 등록하지 않고 바로 입장 ( for admin )
   @Post('/:storeId/waitings/:userId/entered')
@@ -71,7 +66,7 @@ export class WaitingsController {
     return this.waitingsService
       .postEntered(storeId, userId, peopleCnt, user)
       .then(() => `${peopleCnt}명이 입장하셨습니다`);
-  } // Bullqueue
+  }
 
   // 웨이팅 취소 ( for user )
   @Patch('/:storeId/waitings/canceled')
@@ -84,7 +79,7 @@ export class WaitingsController {
       .then(() => {
         return { message: '웨이팅을 취소하였습니다' };
       });
-  } // Bullqueue
+  }
 
   // 손님의 상태를 변경 ( for admin )
   @Patch('/:storeId/waitings/:waitingId/')
@@ -102,7 +97,7 @@ export class WaitingsController {
         else if (status === 'DELAYED')
           return { message: '입장을 미루셨습니다' };
       });
-  } // Bullqueue
+  }
 
   // DELAYED 후 10분이 지나면 NOSHOW
   @Cron('0 */10 * * * *')
@@ -110,7 +105,7 @@ export class WaitingsController {
   async checkAndPatchNoshow(): Promise<void> {
     this.waitingsService.checkAndPatchNoshow();
     return;
-  } // Bullqueue
+  }
 
   // 나의 입장 예상 시간 조회 ( for user )
   @Get('/:storeId/waitings/time')

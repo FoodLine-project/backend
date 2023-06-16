@@ -17,8 +17,6 @@ import { config } from 'dotenv';
 import { CustomCacheModule } from 'src/cache/cache.module';
 import { ReviewsRepository } from 'src/reviews/reviews.repository';
 import { Reviews } from 'src/reviews/reviews.entity';
-// import { RedisControllModule } from 'src/redis/redis.module';
-// import { RedisService } from 'src/redis/redis.service';
 
 const result = config();
 if (result.error) {

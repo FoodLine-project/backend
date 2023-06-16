@@ -6,7 +6,6 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { TablesModule } from './tables/tables.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
-import { LocationService } from './location/location.service';
 import { APP_GUARD } from '@nestjs/core';
 import { AccessTokenGuard } from './auth/guards';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
@@ -31,7 +30,6 @@ if (result.error) {
     CustomCacheModule,
   ],
   providers: [
-    LocationService,
     {
       provide: APP_GUARD, // APP_GUARD: 애플리케이션의 전역 가드를 설정하는 토큰
       useClass: AccessTokenGuard, // AccessTokenGuard를 APP_GUARD에 등록
