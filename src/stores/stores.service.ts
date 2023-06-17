@@ -165,6 +165,101 @@ export class StoresService {
     return averageRating;
   }
 
+  async searchStores2(
+    keyword: string,
+    sort: 'ASC' | 'DESC',
+    column: string,
+  ): Promise<StoresSearchDto[]> {
+    const category = [
+      '한식',
+      '양식',
+      '중식',
+      '일식',
+      '양식',
+      '기타',
+      '분식',
+      '까페',
+      '통닭',
+      '식육',
+      '횟집',
+      '인도',
+      '패스트푸드',
+      '패밀리레스트랑',
+      '김밥(도시락)',
+      '소주방',
+    ];
+    console.log('Check')
+    if (category.includes(keyword)) {
+      if (keyword === '중식') {
+        keyword = '중국식';
+      } else if (keyword === '양식') {
+        keyword = '경양식';
+      }
+      console.log("카테고리")
+      const searchByCategory = await this.searchByCategory(
+        keyword,
+        sort,
+        column,
+      );
+      return searchByCategory;
+    } else {
+      console.log("키워드")
+      const searchStores = await this.searchByKeyword(
+        keyword,
+        sort,
+        column,
+      );
+      return searchStores;
+    }
+  }
+  async searchByCategory(keyword: string,
+    sort: 'ASC' | 'DESC' = 'ASC',
+    column: string,
+  ): Promise<any[]> {
+    const stores = await this.elasticsearchService.search<any>({
+      index: 'category_index',
+      _source: ['storeid', 'storename', 'category'],
+      sort: column ? [{ [column.toLocaleLowerCase()]: { order: sort === 'ASC' ? 'asc' : 'desc' } }] : undefined,
+      query: {
+        bool: {
+          should: [
+            {
+              wildcard: {
+                category: `*${keyword}*`
+              }
+            },
+          ],
+        },
+      },
+      size: 10000,
+    });
+    const storesData = stores.hits.hits.map(async (hit) => {
+      const storeDatas = hit._source;
+      const storeId: number = storeDatas.storeid;
+      const redisRating = await this.redisClient.hget(
+        `store:${storeId}`,
+        'rating',
+      );
+      if (redisRating == null) {
+        const average: number = await this.getRating(storeId);
+        const datas = {
+          maxWaitingCnt: storeDatas.maxWaitingCnt,
+          cycleTime: storeDatas.cycleTime,
+          tableForTwo: storeDatas.tableForTwo,
+          tableForFour: storeDatas.tableForFour,
+          availableTableForTwo: storeDatas.tableForTwo,
+          availableTableForFour: storeDatas.tableForFour,
+          rating: average,
+        };
+        await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
+        const redisRating = average;
+        return { ...storeDatas, redisRating };
+      }
+      return { ...storeDatas, redisRating };
+    });
+    const resolvedStoredDatas = await Promise.all(storesData);
+    return resolvedStoredDatas;
+  }
   //햄버거로 찾기
   async searchByKeyword(
     keyword: string,
@@ -186,8 +281,8 @@ export class StoresService {
             {
               wildcard: {
                 address: `*${keyword}*`,
-              },
-            },
+              }
+            }
           ],
         },
       },
@@ -233,7 +328,7 @@ export class StoresService {
     myLatitude: string,
     myLongitude: string
   ): Promise<any[]> {
-    const pageSize = 20;
+    const pageSize = 1000;
     // const from = (page - 1) * pageSize;
     const stores = await this.elasticsearchService.search<any>({
       index: 'geo_test',

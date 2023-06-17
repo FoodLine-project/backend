@@ -12,7 +12,7 @@ export class StoresRepository {
   constructor(
     @InjectRepository(Stores) private stores: Repository<Stores>,
     private tablesRepository: TablesRepository,
-  ) {}
+  ) { }
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
@@ -157,7 +157,7 @@ export class StoresRepository {
       {
         const La = 0;
         const Ma = 0;
-        const description = 'string';
+        const description = '';
         const maxWaitingCnt = 0;
         const currentWaitingCnt = 0;
         const tableForTwo = Math.floor(Math.random() * 10);
