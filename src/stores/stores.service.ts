@@ -18,7 +18,7 @@ export class StoresService {
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
     private readonly elasticsearchService: ElasticsearchService,
-  ) { }
+  ) {}
 
   async searchRestaurants(
     southWestLatitude: number,
@@ -188,14 +188,14 @@ export class StoresService {
       '김밥(도시락)',
       '소주방',
     ];
-    console.log('Check')
+    console.log('Check');
     if (category.includes(keyword)) {
       if (keyword === '중식') {
         keyword = '중국식';
       } else if (keyword === '양식') {
         keyword = '경양식';
       }
-      console.log("카테고리")
+      console.log('카테고리');
       const searchByCategory = await this.searchByCategory(
         keyword,
         sort,
@@ -203,30 +203,35 @@ export class StoresService {
       );
       return searchByCategory;
     } else {
-      console.log("키워드")
-      const searchStores = await this.searchByKeyword(
-        keyword,
-        sort,
-        column,
-      );
+      console.log('키워드');
+      const searchStores = await this.searchByKeyword(keyword, sort, column);
       return searchStores;
     }
   }
-  async searchByCategory(keyword: string,
+  async searchByCategory(
+    keyword: string,
     sort: 'ASC' | 'DESC' = 'ASC',
     column: string,
   ): Promise<any[]> {
     const stores = await this.elasticsearchService.search<any>({
       index: 'category_index',
       _source: ['storeid', 'storename', 'category'],
-      sort: column ? [{ [column.toLocaleLowerCase()]: { order: sort === 'ASC' ? 'asc' : 'desc' } }] : undefined,
+      sort: column
+        ? [
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
+            },
+          ]
+        : undefined,
       query: {
         bool: {
           should: [
             {
               wildcard: {
-                category: `*${keyword}*`
-              }
+                category: `*${keyword}*`,
+              },
             },
           ],
         },
@@ -269,7 +274,15 @@ export class StoresService {
     const stores = await this.elasticsearchService.search<any>({
       index: 'stores_index',
       _source: ['storeid', 'storename', 'category'],
-      sort: column ? [{ [column.toLocaleLowerCase()]: { order: sort === 'ASC' ? 'asc' : 'desc' } }] : undefined,
+      sort: column
+        ? [
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
+            },
+          ]
+        : undefined,
       query: {
         bool: {
           should: [
@@ -281,8 +294,8 @@ export class StoresService {
             {
               wildcard: {
                 address: `*${keyword}*`,
-              }
-            }
+              },
+            },
           ],
         },
       },
@@ -326,7 +339,7 @@ export class StoresService {
     northEastLatitude: number,
     northEastLongitude: number,
     myLatitude: string,
-    myLongitude: string
+    myLongitude: string,
   ): Promise<any[]> {
     const pageSize = 1000;
     // const from = (page - 1) * pageSize;
@@ -334,19 +347,25 @@ export class StoresService {
       index: 'geo_test',
       size: pageSize,
       //  from: from,
-      sort: column ? [
-        { [column.toLocaleLowerCase()]: { order: sort === 'ASC' ? 'asc' : 'desc' } }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
-      ] : undefined,
+      sort: column
+        ? [
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
+            }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
+          ]
+        : undefined,
       query: {
         geo_bounding_box: {
           location: {
             top_left: {
               lat: northEastLatitude, // 37.757791370664556
-              lon: southWestLongitude,//126.79520112345595 
+              lon: southWestLongitude, //126.79520112345595
             },
             bottom_right: {
-              lat: southWestLatitude,  // 37.754606432266826
-              lon: northEastLongitude,//126.77778001399787 
+              lat: southWestLatitude, // 37.754606432266826
+              lon: northEastLongitude, //126.77778001399787
             },
           },
         },
@@ -370,19 +389,17 @@ export class StoresService {
     return result;
   }
 
-
-
-
   //redis 에 storeId 랑 좌표 넣기
   async addStoresToRedis(): Promise<void> {
     const stores = await this.storesRepository.findAll();
     for (let i = 0; i < stores.length; i++) {
       await this.client.geoadd(
         'stores',
-        stores[i].La,
         stores[i].Ma,
+        stores[i].La,
         String(stores[i].storeId),
       );
+      console.log(`${i + 1}번째 음식점 좌표 redis 저장 완료`);
     }
   }
 
@@ -402,9 +419,9 @@ export class StoresService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
@@ -438,7 +455,7 @@ export class StoresService {
     for (const store of stores) {
       store.distance = Math.ceil(
         nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-        1000,
+          1000,
       );
     }
 
@@ -502,7 +519,7 @@ export class StoresService {
     for (const store of stores) {
       store.distance = Math.ceil(
         nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-        1000,
+          1000,
       );
     }
 

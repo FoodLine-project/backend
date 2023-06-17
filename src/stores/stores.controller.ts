@@ -21,7 +21,7 @@ import { CacheInterceptor } from 'src/cache/cache.interceptor';
 @Controller('places')
 @UseInterceptors(CacheInterceptor)
 export class StoresController {
-  constructor(private storesService: StoresService) { }
+  constructor(private storesService: StoresService) {}
 
   @Public()
   @Post('/coordinates')
@@ -51,10 +51,12 @@ export class StoresController {
   //elastic 좌표로
   @Public()
   @Post('/coordinate')
-  async searchByCoordinates(@Body() coordinatesData: any,
+  async searchByCoordinates(
+    @Body() coordinatesData: any,
     @Query('a') sort: 'ASC' | 'DESC' = 'ASC',
     @Query('b') column: string,
-    @Query('c') page: number): Promise<any[]> {
+    @Query('c') page: number,
+  ): Promise<any[]> {
     const { swLatlng, neLatlng, myLatitude, myLongitude } = coordinatesData;
     const southWestLatitude = swLatlng.Ma;
     const southWestLongitude = swLatlng.La;
@@ -71,7 +73,7 @@ export class StoresController {
       northEastLatitude,
       northEastLongitude,
       myLatitude,
-      myLongitude
+      myLongitude,
     );
     return restaurants;
   }

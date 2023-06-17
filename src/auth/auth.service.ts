@@ -17,16 +17,14 @@ import { Redis } from 'ioredis';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRedis('store') private readonly client: Redis,
+    @InjectRedis('refresh-token') private readonly client: Redis,
     private usersRepository: UsersRepository,
     // private storesRepository: StoresRepository,
     private jwtService: JwtService,
   ) {}
 
   async hash(target: string): Promise<string> {
-    return target;
-    // const salt = await bcrypt.genSalt();
-    // return await bcrypt.hash(target, salt);
+    return await bcrypt.hash(target, 2);
   }
 
   async getAccessToken(user: Users): Promise<string> {
@@ -116,10 +114,6 @@ export class AuthService {
       throw new BadRequestException(`이미 로그인되었습니다.`);
     }
 
-    await this.client.set(
-      `user:${user.userId}:refresh_token`,
-      hashedRefreshToken,
-    );
     await this.client.set(
       `user:${user.userId}:refresh_token`,
       hashedRefreshToken,
