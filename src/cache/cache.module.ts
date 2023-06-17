@@ -6,9 +6,9 @@ import { CacheInterceptor } from './cache.interceptor';
 const cacheModule = CacheModule.registerAsync({
   useFactory: () => ({
     store: redisStore,
-    host: process.env.WAITING_REDIS_HOST,
-    port: Number(process.env.WAITING_REDIS_PORT),
-    password: process.env.WAITING_REDIS_PASSWORD,
+    host: process.env.CACHE_REDIS_HOST,
+    port: Number(process.env.CACHE_REDIS_PORT),
+    password: process.env.CACHE_REDIS_PASSWORD,
   }),
 });
 

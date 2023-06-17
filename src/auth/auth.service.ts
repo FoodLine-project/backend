@@ -17,7 +17,7 @@ import { Redis } from 'ioredis';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRedis('store') private readonly client: Redis,
+    @InjectRedis('refresh-token') private readonly client: Redis,
     private usersRepository: UsersRepository,
     // private storesRepository: StoresRepository,
     private jwtService: JwtService,

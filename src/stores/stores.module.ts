@@ -19,7 +19,6 @@ import { CustomCacheModule } from 'src/cache/cache.module';
       maxRetries: 10,
       requestTimeout: 60000,
       pingTimeout: 60000,
-
     }),
     CustomCacheModule,
   ],
@@ -31,4 +30,4 @@ import { CustomCacheModule } from 'src/cache/cache.module';
     ReviewsRepository,
   ],
 })
-export class StoresModule { }
+export class StoresModule {}

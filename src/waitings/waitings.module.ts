@@ -24,10 +24,10 @@ if (result.error) {
 }
 
 const redisOptions: RedisOptions = {
-  host: `${process.env.WAITING_REDIS_HOST}`,
-  port: 10555,
-  username: `${process.env.WAITING_REDIS_USERNAME}`,
-  password: `${process.env.WAITING_REDIS_PASSWORD}`,
+  host: process.env.BULL_REDIS_HOST,
+  port: Number(process.env.BULL_REDIS_PORT),
+  username: process.env.BULL_REDIS_USERNAME,
+  password: process.env.BULL_REDIS_PASSWORD,
 };
 
 const redisOptions2: RedisOptions = {
