@@ -184,9 +184,9 @@ export class StoresRepository {
         try {
           const result = await this.stores.save(store);
           this.tablesRepository.createTable(result);
-          console.log('Inserted', result, 'row:', store);
+          //console.log('Inserted', result, 'row:', store);
         } catch (error) {
-          console.error('Error occurred during insert:', error);
+          //console.error('Error occurred during insert:', error);
         }
       }
     }

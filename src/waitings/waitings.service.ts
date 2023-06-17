@@ -463,7 +463,7 @@ export class WaitingsService {
 
   //노쇼 처리
   async checkAndPatchNoshow(): Promise<void> {
-    console.log('실행중');
+    //console.log('실행중');
     const delayed = await this.waitingsRepository.getAllDelayed();
     delayed.forEach((entity) => {
       const currentTime = new Date();
@@ -488,9 +488,9 @@ export class WaitingsService {
         this.waitingQueue.add('saveNoshowAndDecrementWaitingCnt', {
           entity,
         });
-        console.log(
-          `waitingId ${entity.waitingId}의 상태가 NOSHOW가 되었습니다`,
-        );
+        //console.log(
+        //  `waitingId ${entity.waitingId}의 상태가 NOSHOW가 되었습니다`,
+        //);
       }
     });
     return;
