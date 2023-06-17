@@ -53,19 +53,19 @@ export class UsersRepository {
     return await this.users.findOne({ where: { userId } });
   }
 
-  async getRefreshToken(userId: number): Promise<string> {
-    const user = await this.findUserById(userId);
-    return user.refreshToken;
-  }
+  // async getRefreshToken(userId: number): Promise<string> {
+  //   const user = await this.findUserById(userId);
+  //   return user.refreshToken;
+  // }
 
-  async updateRefreshToken(
-    userId: number,
-    refreshToken: string,
-  ): Promise<void> {
-    const user = await this.findUserById(userId);
-    user.refreshToken = refreshToken;
-    await this.users.save(user);
-  }
+  // async updateRefreshToken(
+  //   userId: number,
+  //   refreshToken: string,
+  // ): Promise<void> {
+  //   const user = await this.findUserById(userId);
+  //   user.refreshToken = refreshToken;
+  //   await this.users.save(user);
+  // }
 
   // async createAdminUsers(length: number) {
   //   const dummyUsers = [];
