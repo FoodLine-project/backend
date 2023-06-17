@@ -24,8 +24,9 @@ export class AuthService {
   ) {}
 
   async hash(target: string): Promise<string> {
-    const salt = await bcrypt.genSalt();
-    return await bcrypt.hash(target, salt);
+    return target;
+    // const salt = await bcrypt.genSalt();
+    // return await bcrypt.hash(target, salt);
   }
 
   async getAccessToken(user: Users): Promise<string> {
