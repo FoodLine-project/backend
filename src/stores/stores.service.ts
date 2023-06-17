@@ -153,7 +153,7 @@ export class StoresService {
         stores[i].Ma,
         stores[i].La,
       );
-      console.log(`updated coordinates of ${stores[i].storeId}`);
+      //console.log(`updated coordinates of ${stores[i].storeId}`);
     }
   }
 
@@ -188,14 +188,14 @@ export class StoresService {
       '김밥(도시락)',
       '소주방',
     ];
-    console.log('Check')
+    //console.log('Check')
     if (category.includes(keyword)) {
       if (keyword === '중식') {
         keyword = '중국식';
       } else if (keyword === '양식') {
         keyword = '경양식';
       }
-      console.log("카테고리")
+      //console.log("카테고리")
       const searchByCategory = await this.searchByCategory(
         keyword,
         sort,
@@ -203,7 +203,7 @@ export class StoresService {
       );
       return searchByCategory;
     } else {
-      console.log("키워드")
+      //console.log("키워드")
       const searchStores = await this.searchByKeyword(
         keyword,
         sort,
@@ -529,7 +529,7 @@ export class StoresService {
       createReadStream(inputFile, { encoding: 'utf-8' })
         .pipe(csvParser())
         .on('error', (error) => {
-          console.error('Error reading CSV file:', error);
+          //console.error('Error reading CSV file:', error);
           reject(error);
         })
         .on('data', async (row: any) => {
@@ -549,7 +549,7 @@ export class StoresService {
           resolve();
         })
         .on('finish', () => {
-          console.log('CSV processing completed.');
+          //console.log('CSV processing completed.');
         });
     });
   }
@@ -575,21 +575,21 @@ export class StoresService {
 
           await this.storesRepository.updateCoord(La, Ma, storeId);
 
-          console.log(
-            `Updated coordinates for address: ${address}`,
-            La,
-            Ma,
-            storeId,
-          );
+          //console.log(
+            //`Updated coordinates for address: ${address}`,
+            //La,
+            //Ma,
+            //storeId,
+          //);
         } catch (error) {
-          console.error(
-            `Error updating coordinates for address: ${address} and ${oldAddress}`,
-            error,
-          );
+          //console.error(
+            //`Error updating coordinates for address: ${address} and ${oldAddress}`,
+            //error,
+          //);
         }
       }
     } catch (error) {
-      console.error('Error occurred during database operation:', error);
+      //console.error('Error occurred during database operation:', error);
     }
   }
 }

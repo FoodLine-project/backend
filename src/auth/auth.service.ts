@@ -24,9 +24,7 @@ export class AuthService {
   ) {}
 
   async hash(target: string): Promise<string> {
-    return target;
-    // const salt = await bcrypt.genSalt();
-    // return await bcrypt.hash(target, salt);
+    return await bcrypt.hash(target, 2);
   }
 
   async getAccessToken(user: Users): Promise<string> {
@@ -106,7 +104,6 @@ export class AuthService {
     }
 
     const tokens = await this.getTokens(user);
-    const hashedRefreshToken = await this.hash(tokens.refreshToken);
 
     /* Refresh token을 redis에 저장/관리 */
     const refreshTokenFromRedis = await this.client.get(
@@ -118,11 +115,7 @@ export class AuthService {
 
     await this.client.set(
       `user:${user.userId}:refresh_token`,
-      hashedRefreshToken,
-    );
-    await this.client.set(
-      `user:${user.userId}:refresh_token`,
-      hashedRefreshToken,
+      tokens.refreshToken,
     );
     /* Refresh token을 redis에 저장/관리 */
 
@@ -165,7 +158,6 @@ export class AuthService {
   }
 
   async refreshAccessToken(user: Users): Promise<string> {
-    const refreshToken = user.refreshToken;
     /* Refresh token을 redis에 저장/관리 */
     const refreshTokenFromRedis = await this.client.get(
       `user:${user.userId}:refresh_token`,
@@ -185,12 +177,7 @@ export class AuthService {
     // }
     /* Refresh token을 postgres users 테이블에 저장/관리 */
 
-    const refreshTokenMatches = await bcrypt.compare(
-      refreshToken,
-      refreshTokenFromRedis,
-      // refreshTokenFromPostgres,
-    );
-    if (!refreshTokenMatches) {
+    if (user.refreshToken !== refreshTokenFromRedis) {
       throw new UnauthorizedException(`로그인이 필요합니다.`);
     }
 

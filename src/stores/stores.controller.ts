@@ -84,7 +84,8 @@ export class StoresController {
     @Query('b') sort: 'ASC' | 'DESC' = 'ASC',
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
-    return this.storesService.searchByKeyword(keyword, sort, column);
+    return this.storesService.searchStores2(keyword, sort, column);
+    // return this.storesService.searchByKeyword(keyword, sort, column);
   }
 
   //postgres 의 coordinate 값을 채우는 api
