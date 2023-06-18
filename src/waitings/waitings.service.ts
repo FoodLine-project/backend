@@ -540,20 +540,29 @@ export class WaitingsService {
     const cycleTime = storeHash.cycleTime;
     // 여기까지 with redis
 
-    const waitingPeople: Waitings[] =
-      await this.waitingsRepository.getWaitingsStatusWaiting(
+    // const waitingPeople: Waitings[] =
+    //   await this.waitingsRepository.getWaitingsStatusWaiting(
+    //     storeId,
+    //     peopleCnt,
+    //   );
+
+    // const enteredPeople: Waitings[] =
+    //   await this.waitingsRepository.getWaitingsStatusEntered(
+    //     storeId,
+    //     peopleCnt,
+    //   );
+
+    const people: { Waiting: Waitings[]; Entered: Waitings[] } =
+      await this.waitingsRepository.getWaitingsStatusWaitingAndEntered(
         storeId,
         peopleCnt,
       );
 
+    const waitingPeople = people.Waiting;
+    const enteredPeople = people.Entered;
     const waitingIdsArr = waitingPeople.map((error) => error.waitingId);
     const myTurn = waitingIdsArr.indexOf(Number(existsWaiting.waitingId)) + 1;
 
-    const enteredPeople: Waitings[] =
-      await this.waitingsRepository.getWaitingsStatusEntered(
-        storeId,
-        peopleCnt,
-      );
     if (tableCnt > enteredPeople.length || enteredPeople.length === 0) {
       if (waitingIdsArr.length === 0) return 0;
     }
