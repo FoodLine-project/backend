@@ -12,6 +12,7 @@ import { LoggerMiddleware } from './middlewares/logger.middleware';
 import { CustomRedisModule } from './redis/custom-redis.module';
 import { config } from 'dotenv';
 import { CustomCacheModule } from './cache/cache.module';
+import { AppController } from './app/app.controller';
 
 const result = config();
 if (result.error) {
@@ -35,6 +36,7 @@ if (result.error) {
       useClass: AccessTokenGuard, // AccessTokenGuard를 APP_GUARD에 등록
     },
   ],
+  controllers: [AppController],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
