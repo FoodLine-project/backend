@@ -304,7 +304,7 @@ export class WaitingsRepository {
     storeId: number,
     peopleCnt: number,
   ): Promise<Waitings[]> {
-    if (peopleCnt === 2) {
+    if (peopleCnt == 1 || peopleCnt == 2) {
       return this.waitings.find({
         where: {
           StoreId: storeId,
@@ -326,6 +326,66 @@ export class WaitingsRepository {
           updatedAt: 'ASC', // update 기준 오름차순 정렬
         },
       });
+    }
+  }
+
+  async getWaitingsStatusWaitingAndEntered(
+    storeId: number,
+    peopleCnt: number,
+  ): Promise<{ Waiting: Waitings[]; Entered: Waitings[] }> {
+    if (peopleCnt == 1 || peopleCnt == 2) {
+      const Waiting = await this.waitings.find({
+        where: {
+          StoreId: storeId,
+          status: In([
+            WaitingStatus.WAITING,
+            WaitingStatus.CALLED,
+            WaitingStatus.DELAYED,
+            WaitingStatus.ENTERED,
+          ]),
+          peopleCnt: In([1, 2]),
+        },
+        order: {
+          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+        },
+      });
+      const Entered = await this.waitings.find({
+        where: {
+          StoreId: storeId,
+          status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
+          peopleCnt: In([1, 2]),
+        },
+        order: {
+          updatedAt: 'ASC', // update 기준 오름차순 정렬
+        },
+      });
+      return { Waiting, Entered };
+    } else {
+      const Waiting = await this.waitings.find({
+        where: {
+          StoreId: storeId,
+          status: In([
+            WaitingStatus.WAITING,
+            WaitingStatus.CALLED,
+            WaitingStatus.DELAYED,
+          ]),
+          peopleCnt: In([3, 4]),
+        },
+        order: {
+          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+        },
+      });
+      const Entered = await this.waitings.find({
+        where: {
+          StoreId: storeId,
+          status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
+          peopleCnt: In([3, 4]),
+        },
+        order: {
+          updatedAt: 'ASC', // update 기준 오름차순 정렬
+        },
+      });
+      return { Waiting, Entered };
     }
   }
 
