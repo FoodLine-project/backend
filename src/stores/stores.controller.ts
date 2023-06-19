@@ -99,7 +99,7 @@ export class StoresController {
 
   // 중앙 좌표의 반경 n km 음식점 조회
   @Public()
-  @Get('/nearby-stores-byradius')
+  @Post('/nearby-stores-byradius')
   async getNearbyStoresByRadius(
     @Body() coordinates: { Ma: number; La: number },
     @Query('sort')
@@ -114,7 +114,7 @@ export class StoresController {
 
   // 좌하단 우상단 좌표 내의 음식점 조회
   @Public()
-  @Get('/nearby-stores-bybox')
+  @Post('/nearby-stores-bybox')
   async getNearbyStoresByBox(
     @Body()
     coordinates: {
