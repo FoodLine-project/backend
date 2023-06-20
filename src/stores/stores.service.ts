@@ -18,7 +18,7 @@ export class StoresService {
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
     private readonly elasticsearchService: ElasticsearchService,
-  ) {}
+  ) { }
 
   async searchRestaurants(
     southWestLatitude: number,
@@ -215,15 +215,16 @@ export class StoresService {
   ): Promise<any[]> {
     const stores = await this.elasticsearchService.search<any>({
       index: 'category_index',
-      _source: ['storeid', 'storename', 'category'],
+      _source: ['storeid', 'storename', 'category', 'maxwaitingcnt', 'cycletime', 'tablefortwo',
+        'tableforfour',],
       sort: column
         ? [
-            {
-              [column.toLocaleLowerCase()]: {
-                order: sort === 'ASC' ? 'asc' : 'desc',
-              },
+          {
+            [column.toLocaleLowerCase()]: {
+              order: sort === 'ASC' ? 'asc' : 'desc',
             },
-          ]
+          },
+        ]
         : undefined,
       query: {
         bool: {
@@ -248,14 +249,15 @@ export class StoresService {
       if (redisRating == null) {
         const average: number = await this.getRating(storeId);
         const datas = {
-          maxWaitingCnt: storeDatas.maxWaitingCnt,
-          cycleTime: storeDatas.cycleTime,
-          tableForTwo: storeDatas.tableForTwo,
-          tableForFour: storeDatas.tableForFour,
-          availableTableForTwo: storeDatas.tableForTwo,
-          availableTableForFour: storeDatas.tableForFour,
+          maxWaitingCnt: storeDatas.maxwaitingcnt,
+          cycleTime: storeDatas.cycletime,
+          tableForTwo: storeDatas.tablefortwo,
+          tableForFour: storeDatas.tableforfour,
+          availableTableForTwo: storeDatas.tablefortwo,
+          availableTableForFour: storeDatas.tableforfour,
           rating: average,
         };
+
         await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
         const redisRating = average;
         return { ...storeDatas, redisRating };
@@ -263,6 +265,7 @@ export class StoresService {
       return { ...storeDatas, redisRating };
     });
     const resolvedStoredDatas = await Promise.all(storesData);
+    console.log(storesData)
     return resolvedStoredDatas;
   }
   //햄버거로 찾기
@@ -273,15 +276,16 @@ export class StoresService {
   ): Promise<any[]> {
     const stores = await this.elasticsearchService.search<any>({
       index: 'stores_index',
-      _source: ['storeid', 'storename', 'category'],
+      _source: ['storeid', 'storename', 'category', 'maxwaitingcnt', 'cycletime', 'tablefortwo',
+        'tableforfour',],
       sort: column
         ? [
-            {
-              [column.toLocaleLowerCase()]: {
-                order: sort === 'ASC' ? 'asc' : 'desc',
-              },
+          {
+            [column.toLocaleLowerCase()]: {
+              order: sort === 'ASC' ? 'asc' : 'desc',
             },
-          ]
+          },
+        ]
         : undefined,
       query: {
         bool: {
@@ -311,12 +315,12 @@ export class StoresService {
       if (redisRating == null) {
         const average: number = await this.getRating(storeId);
         const datas = {
-          maxWaitingCnt: storeDatas.maxWaitingCnt,
-          cycleTime: storeDatas.cycleTime,
-          tableForTwo: storeDatas.tableForTwo,
-          tableForFour: storeDatas.tableForFour,
-          availableTableForTwo: storeDatas.tableForTwo,
-          availableTableForFour: storeDatas.tableForFour,
+          maxWaitingCnt: storeDatas.maxwaitingcnt,
+          cycleTime: storeDatas.cycletime,
+          tableForTwo: storeDatas.tablefortwo,
+          tableForFour: storeDatas.tableforfour,
+          availableTableForTwo: storeDatas.tablefortwo,
+          availableTableForFour: storeDatas.tableforfour,
           rating: average,
         };
         await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
@@ -330,6 +334,7 @@ export class StoresService {
   }
 
   //elastic 좌표로 주변 음식점 검색 (거리순)
+
   async searchByCoord(
     sort: 'ASC' | 'DESC' = 'ASC',
     column: string,
@@ -349,12 +354,12 @@ export class StoresService {
       //  from: from,
       sort: column
         ? [
-            {
-              [column.toLocaleLowerCase()]: {
-                order: sort === 'ASC' ? 'asc' : 'desc',
-              },
-            }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
-          ]
+          {
+            [column.toLocaleLowerCase()]: {
+              order: sort === 'ASC' ? 'asc' : 'desc',
+            },
+          }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
+        ]
         : undefined,
       query: {
         geo_bounding_box: {
@@ -371,23 +376,50 @@ export class StoresService {
         },
       },
     });
-    const result = stores.hits.hits.map((hit: any) => {
+    const result = await Promise.all(stores.hits.hits.map(async (hit: any) => {
       const storesFound = hit._source;
+      const storeId: number = storesFound.storeid;
+      const redisRating = await this.redisClient.hget(
+        `store:${storeId}`,
+        'rating',
+      );
+      if (redisRating == null) {
+        const average: number = await this.getRating(storeId);
+        const datas = {
+          maxWaitingCnt: storesFound.maxwaitingcnt,
+          cycleTime: storesFound.cycletime,
+          tableForTwo: storesFound.tablefortwo,
+          tableForFour: storesFound.tableforfour,
+          availableTableForTwo: storesFound.tablefortwo,
+          availableTableForFour: storesFound.tableforfour,
+          rating: average,
+        };
+        await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
+        const redisRating = average;
+        const latitude: number = storesFound.location.lat;
+        const longitude: number = storesFound.location.lon;
+        const start = { latitude: myLatitude, longitude: myLongitude };
+        const end = { latitude: latitude, longitude: longitude };
+        const distance = geolib.getDistance(start, end);
+        return { ...storesFound, distance: distance + 'm', redisRating };
+      }
       const latitude: number = storesFound.location.lat;
       const longitude: number = storesFound.location.lon;
       const start = { latitude: myLatitude, longitude: myLongitude };
       const end = { latitude: latitude, longitude: longitude };
       const distance = geolib.getDistance(start, end);
-      return { ...storesFound, distance: distance + 'm' };
-    });
+      return { ...storesFound, distance: distance + 'm', redisRating };
+    }));
+
     result.sort((a, b) => {
       const distanceA = parseFloat(a.distance);
       const distanceB = parseFloat(b.distance);
       return distanceA - distanceB;
     });
-
+    console.log(result)
     return result;
   }
+
 
   //redis 에 storeId 랑 좌표 넣기
   async addStoresToRedis(): Promise<void> {
@@ -419,9 +451,9 @@ export class StoresService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRadians(lat1)) *
-        Math.cos(toRadians(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
@@ -455,7 +487,7 @@ export class StoresService {
     for (const store of stores) {
       store.distance = Math.ceil(
         nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-          1000,
+        1000,
       );
     }
 
@@ -519,7 +551,7 @@ export class StoresService {
     for (const store of stores) {
       store.distance = Math.ceil(
         nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-          1000,
+        1000,
       );
     }
 
