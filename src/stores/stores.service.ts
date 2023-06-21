@@ -10,6 +10,7 @@ import * as csvParser from 'csv-parser';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
+
 @Injectable()
 export class StoresService {
   constructor(
