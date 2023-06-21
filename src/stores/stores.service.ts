@@ -10,6 +10,7 @@ import * as csvParser from 'csv-parser';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
+import { MoreThanOrEqual } from 'typeorm';
 @Injectable()
 export class StoresService {
   constructor(
@@ -20,6 +21,7 @@ export class StoresService {
     private readonly elasticsearchService: ElasticsearchService,
   ) {}
 
+  //주변식당탐색
   async searchRestaurants(
     southWestLatitude: number,
     southWestLongitude: number,
@@ -138,25 +140,6 @@ export class StoresService {
     return store;
   }
 
-  //상점 추가
-  async createStore(createUserDto: CreateStoresDto): Promise<Stores> {
-    const store = await this.storesRepository.createStore(createUserDto);
-    return store;
-  }
-
-  //postgres 좌표 업데이트
-  async fillCoordinates() {
-    const stores = await this.storesRepository.findAll();
-    for (let i = 0; i < stores.length; i++) {
-      await this.storesRepository.fillCoordinates(
-        stores[i],
-        stores[i].Ma,
-        stores[i].La,
-      );
-      console.log(`updated coordinates of ${stores[i].storeId}`);
-    }
-  }
-
   //rating 가져오기
   async getRating(storeId: number): Promise<number> {
     const averageRating = await this.reviewsRepository.getAverageRating(
@@ -220,6 +203,7 @@ export class StoresService {
     return resolvedStoredDatas;
   }
 
+  //elastic search
   //elastic 좌표로 주변 음식점 검색
   async searchByCoord(
     southWestLatitude: number,
@@ -264,6 +248,7 @@ export class StoresService {
     return result;
   }
 
+  //geo redis
   //redis 에 storeId 랑 좌표 넣기
   async addStoresToRedis(): Promise<void> {
     const stores = await this.storesRepository.findAll();
@@ -409,6 +394,26 @@ export class StoresService {
       }
       return a.distance - b.distance;
     });
+  }
+
+  //postGis
+  //postgres 좌표 업데이트
+  async fillCoordinates() {
+    const stores = await this.storesRepository.findAll();
+    for (let i = 0; i < stores.length; i++) {
+      await this.storesRepository.fillCoordinates(
+        stores[i],
+        stores[i].Ma,
+        stores[i].La,
+      );
+      console.log(`updated coordinates of ${stores[i].storeId}`);
+    }
+  }
+
+  //상점 추가
+  async createStore(createUserDto: CreateStoresDto): Promise<Stores> {
+    const store = await this.storesRepository.createStore(createUserDto);
+    return store;
   }
 
   //CSV 부분

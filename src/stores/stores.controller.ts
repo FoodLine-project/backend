@@ -36,6 +36,7 @@ export class StoresController {
     const northEastLatitude = neLatlng.La;
     const northEastLongitude = neLatlng.Ma;
 
+    console.log(swLatlng.La, swLatlng.Ma, neLatlng.La, neLatlng.Ma);
     //geolocation 받고 그 가운데에 user위치;
 
     const restaurants = await this.storesService.searchRestaurants(
@@ -162,6 +163,8 @@ export class StoresController {
     await this.storesService.updateCoordinates();
     return 'Coordinates updated successfully';
   }
+
+  //postgis를 활용하여 좌표 범위 내의 식당을 쿼리
 }
 
 //카카오맵api 연동
