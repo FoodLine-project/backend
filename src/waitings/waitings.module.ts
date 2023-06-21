@@ -14,9 +14,9 @@ import { BullModule } from '@nestjs/bull';
 import { RedisOptions } from 'ioredis';
 import { WaitingConsumer } from './waiting.consumer';
 import { config } from 'dotenv';
-import { CustomCacheModule } from 'src/cache/cache.module';
-import { ReviewsRepository } from 'src/reviews/reviews.repository';
-import { Reviews } from 'src/reviews/reviews.entity';
+import { CustomCacheModule } from '../cache/cache.module';
+import { ReviewsRepository } from '../reviews/reviews.repository';
+import { Reviews } from '../reviews/reviews.entity';
 
 const result = config();
 if (result.error) {
@@ -35,6 +35,12 @@ const redisOptions2: RedisOptions = {
   port: 6379,
 };
 
+const redisOptions3: RedisOptions = {
+  host: '192.168.219.106',
+  port: 6379,
+  username: null,
+  password: null,
+};
 @Module({
   imports: [
     TypeOrmModule.forFeature([Waitings, Stores, Tables, Reviews], {
@@ -48,9 +54,9 @@ const redisOptions2: RedisOptions = {
     }),
     BullModule.registerQueue({
       name: 'waitingQueue',
-      defaultJobOptions: {
-        removeOnComplete: true,
-      },
+      // defaultJobOptions: {
+      //   removeOnComplete: true,
+      // },
     }),
     CustomCacheModule,
   ],

@@ -11,7 +11,7 @@ import {
 import { WaitingsService } from './waitings.service';
 import { Users } from '../auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
-import { GetUser, Public } from 'src/auth/common/decorators';
+import { GetUser, Public } from '../auth/common/decorators';
 import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.pipe';
 import { Cron } from '@nestjs/schedule';
 import { Waitings } from './waitings.entity';
