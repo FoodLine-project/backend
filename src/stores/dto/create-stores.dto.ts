@@ -9,19 +9,16 @@ export class CreateStoresDto {
   category: string;
 
   @IsNotEmpty()
-  description: string;
+  newAddress: string;
 
   @IsNotEmpty()
   maxWaitingCnt: number;
 
   @IsNotEmpty()
-  currentWaitingCnt: number;
+  lon: number;
 
   @IsNotEmpty()
-  Ma: number;
-
-  @IsNotEmpty()
-  La: number;
+  lat: number;
 
   @IsNotEmpty()
   tableForTwo: number;

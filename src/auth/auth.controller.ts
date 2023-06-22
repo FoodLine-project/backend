@@ -48,9 +48,14 @@ export class AuthController {
   @Post('/refresh')
   async refreshAccessToken(
     @GetUser() user: Users,
+    @GetUser('refreshToken') refreshToken: string,
   ): Promise<{ accessToken: string }> {
+    console.log(refreshToken);
     try {
-      const accessToken = await this.authService.refreshAccessToken(user);
+      const accessToken = await this.authService.refreshAccessToken(
+        user,
+        refreshToken,
+      );
 
       return { accessToken };
     } catch (error) {
@@ -60,12 +65,18 @@ export class AuthController {
 
   @Get('/profile')
   async getMyProfile(@GetUser() user: Users): Promise<Users> {
-    return user;
+    return await this.authService.getUserInfo(user.userId);
   }
 
-  // @Public()
-  // @Post('/gen-random-admin-users')
-  // async genRandomUsers() {
-  //   return await this.authService.genRandomAdminUsers();
-  // }
+  @Public()
+  @Post('/gen-random-admin-users')
+  async genRandomAdminUsers() {
+    await this.authService.genRandomAdminUsers();
+  }
+
+  @Public()
+  @Post('/gen-random-users')
+  async genRandomUsers() {
+    await this.authService.genRandomUsers(500000);
+  }
 }

@@ -10,7 +10,7 @@ async function bootstrap() {
 
   app.use(cors());
   await app.listen(3300, () => {
-    console.log('3000 포트로 연결되었습니다.');
+    console.log('3300 포트로 연결되었습니다.');
   });
 }
 bootstrap();
