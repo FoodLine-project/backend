@@ -22,14 +22,12 @@ export class WaitingConsumer {
   @Process('getCurrentWaitingCnt')
   async getCurrentWaitingCnt(job: Job): Promise<number> {
     const storeId = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     return await this.waitingsRepository.getCurrentWaitingCnt(storeId);
   }
 
   @Process('postWaiting')
   async getMessageQueue(job: Job): Promise<void> {
     const { storeId, peopleCnt, user } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.postWaitings(storeId, peopleCnt, user);
     return;
   }
@@ -37,7 +35,6 @@ export class WaitingConsumer {
   @Process('postEntered')
   async postEntered(job: Job): Promise<void> {
     const { storeId, userId, peopleCnt } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.postEntered(storeId, userId, peopleCnt);
     return;
   }
@@ -45,14 +42,12 @@ export class WaitingConsumer {
   @Process('getWaitingListById')
   async getWaitingList(job: Job): Promise<Waitings[]> {
     const storeId = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     return await this.waitingsRepository.getWaitingListById(storeId);
   }
 
   @Process('patchToExited')
   async patchToExited(job: Job): Promise<void> {
     const { storeId, waitingId } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.patchToExited(storeId, waitingId);
     return;
   }
@@ -60,7 +55,6 @@ export class WaitingConsumer {
   @Process('patchToDelayed')
   async patchToDelayed(job: Job): Promise<void> {
     const { storeId, waitingId } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.patchToDelayed(storeId, waitingId);
     return;
   }
@@ -68,7 +62,6 @@ export class WaitingConsumer {
   @Process('patchToEntered')
   async patchToEntered(job: Job): Promise<void> {
     const { storeId, waitingId, status } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.patchToEntered(storeId, waitingId, status);
     return;
   }
@@ -76,7 +69,6 @@ export class WaitingConsumer {
   @Process('patchToCanceled')
   async patchToCanceled(job: Job): Promise<void> {
     const { storeId, waitingId } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.patchToCanceled(storeId, waitingId);
     return;
   }
@@ -84,31 +76,13 @@ export class WaitingConsumer {
   @Process('saveNoshow')
   async saveNoshow(job: Job): Promise<void> {
     const { entity } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.saveNoshow(entity);
-    return;
-  }
-
-  @Process('decrementCurrentWaitingCnt')
-  async decrementWaitingCnt(job: Job): Promise<void> {
-    const storeId = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
-    await this.storesRepository.decrementCurrentWaitingCnt(storeId);
-    return;
-  }
-
-  @Process('incrementCurrentWaitingCnt')
-  async incrementWaitingCnt(job: Job): Promise<void> {
-    const storeId = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
-    await this.storesRepository.incrementCurrentWaitingCnt(storeId);
     return;
   }
 
   @Process('decrementTables')
   async decrementTable(job: Job): Promise<void> {
     const { storeId, peopleCnt } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.tablesRepository.decrementTables(storeId, peopleCnt);
     return;
   }
@@ -116,7 +90,6 @@ export class WaitingConsumer {
   @Process('incrementTables')
   async incrementTable(job: Job): Promise<void> {
     const { storeId, peopleCnt } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.tablesRepository.incrementTables(storeId, peopleCnt);
     return;
   }
@@ -130,7 +103,6 @@ export class WaitingConsumer {
       `store:${storeId}`,
       'currentWaitingCnt',
     );
-    console.log('currentWaitingCnt:', currentWaitingCnt);
     if (currentWaitingCnt) return Number(currentWaitingCnt);
     else return 0;
   }
@@ -138,7 +110,6 @@ export class WaitingConsumer {
   @Process('addStoreHashes')
   async addStoreHashes(job: Job): Promise<void> {
     const { storeId, ...data } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.redisClient.hset(`store:${storeId}`, data);
   }
 
@@ -189,7 +160,6 @@ export class WaitingConsumer {
   @Process('postWaitingWithRedis')
   async postWaitingWithRedis(job: Job): Promise<void> {
     const { storeId, peopleCnt, user } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.postWaitings(storeId, peopleCnt, user);
     await this.redisClient.hincrby(`store:${storeId}`, 'currentWaitingCnt', 1);
     return;
@@ -198,7 +168,6 @@ export class WaitingConsumer {
   @Process('addStoreHashAndPostEntered')
   async addStoreHashAndPostEntered(job: Job): Promise<void> {
     const { storeId, userId, peopleCnt, ...data } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.redisClient.hset(`store:${storeId}`, data);
     await this.waitingsRepository.postEntered(storeId, userId, peopleCnt);
   }
@@ -206,7 +175,6 @@ export class WaitingConsumer {
   @Process('exitedAndIncrementTable')
   async patchToExitedAndIncrementTable(job: Job): Promise<void> {
     const { storeId, peopleCnt, waitingId } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.patchToExited(storeId, waitingId);
     let availableTable: string;
     if (peopleCnt == 1 || peopleCnt == 2) {
@@ -221,7 +189,6 @@ export class WaitingConsumer {
   @Process('enteredAndDecrementCnts')
   async enteredAndDecrementCnts(job: Job): Promise<void> {
     const { storeId, waitingId, status, peopleCnt } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.patchToEntered(storeId, waitingId, status);
     let availableTable: string;
     if (peopleCnt == 1 || peopleCnt == 2) {
@@ -237,7 +204,6 @@ export class WaitingConsumer {
   @Process('canceledAndDecrementWaitingCnt')
   async canceledAndDecrementWaitingCnt(job: Job): Promise<void> {
     const { storeId, waitingId } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.patchToCanceled(storeId, waitingId);
     await this.redisClient.hincrby(`store:${storeId}`, 'currentWaitingCnt', -1);
     return;
@@ -246,7 +212,6 @@ export class WaitingConsumer {
   @Process('saveNoshowAndDecrementWaitingCnt')
   async saveNoshowAndDecrementWaitingCnt(job: Job): Promise<void> {
     const { entity } = job.data;
-    console.log(`${job.id}의 작업을 수행하였습니다`);
     await this.waitingsRepository.saveNoshow(entity);
     const storeId = entity.StoreId;
     await this.redisClient.hincrby(`store:${storeId}`, 'currentWaitingCnt', -1);

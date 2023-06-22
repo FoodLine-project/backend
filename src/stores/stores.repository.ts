@@ -1,18 +1,14 @@
-import { TablesRepository } from './../tables/tables.repository';
 import { Injectable } from '@nestjs/common';
 import { Repository, ILike, Point } from 'typeorm';
 import { Stores } from './stores.entity';
-import { StoresSearchDto } from './dto/search-stores.dto';
 import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateStoresDto } from './dto/create-stores.dto';
+import { StoresSearchDto } from './dto/search-stores.dto';
 
 @Injectable()
 export class StoresRepository {
-  constructor(
-    @InjectRepository(Stores) private stores: Repository<Stores>,
-    private tablesRepository: TablesRepository,
-  ) {}
+  constructor(@InjectRepository(Stores) private stores: Repository<Stores>) {}
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
@@ -32,12 +28,12 @@ export class StoresRepository {
         'storeName',
         'category',
         'maxWaitingCnt',
-        'address',
-        'rating',
+        'newAddress',
+        'oldAddress',
       ],
       where: [
         { storeName: ILike(`${keyword}%`) },
-        { address: ILike(`%${keyword}%`) },
+        { newAddress: ILike(`%${keyword}%`) },
       ],
       order: column && sort ? { [column]: sort } : {},
     });
@@ -57,8 +53,7 @@ export class StoresRepository {
         'storeName',
         'category',
         'maxWaitingCnt',
-        'address',
-        'rating',
+        'newAddress',
       ],
       where: [{ category: ILike(`${keyword}%`) }],
       order: column && sort ? { [column]: sort } : {},
@@ -88,19 +83,7 @@ export class StoresRepository {
       .getMany();
   }
 
-  //현재 대기팀 감소
-  async decrementCurrentWaitingCnt(storeId: number): Promise<void> {
-    this.stores.decrement({ storeId }, 'currentWaitingCnt', 1);
-    return;
-  }
-
-  //현재 대기팀 증가
-  async incrementCurrentWaitingCnt(storeId: number): Promise<void> {
-    this.stores.increment({ storeId }, 'currentWaitingCnt', 1);
-    return;
-  }
-
-  //상세 조회
+  //리뷰와 함께 상세 조회
   async getOneStore(storeId: number): Promise<Stores> {
     const store = await this.stores.findOne({
       where: { storeId },
@@ -114,26 +97,24 @@ export class StoresRepository {
   async createStore(createStoreDto: CreateStoresDto): Promise<Stores> {
     const {
       storeName,
+      newAddress,
       category,
-      description,
       maxWaitingCnt,
-      currentWaitingCnt,
-      Ma,
-      La,
+      lon,
+      lat,
       tableForTwo,
       tableForFour,
     } = createStoreDto;
 
     const store = this.stores.create({
       storeName,
-      category,
-      description,
       maxWaitingCnt,
-      currentWaitingCnt,
-      Ma,
-      La,
-      tableForTwo,
+      lat,
+      lon,
       tableForFour,
+      tableForTwo,
+      category,
+      newAddress,
     });
 
     await this.stores.save(store);
@@ -155,47 +136,45 @@ export class StoresRepository {
   async processCSVFile(rows: any): Promise<void> {
     for (const rowData of rows) {
       {
-        const La = 0;
-        const Ma = 0;
-        const description = 'string';
+        const lat = 0;
+        const lon = 0;
         const maxWaitingCnt = 0;
-        const currentWaitingCnt = 0;
         const tableForTwo = Math.floor(Math.random() * 10);
         const tableForFour = Math.floor(Math.random() * 10);
         const storeName = rowData['사업장명'];
         const category = rowData['위생업태명'];
-        const address = rowData['도로명전체주소'];
+        const newAddress = rowData['도로명전체주소'];
         const oldAddress = rowData['소재지전체주소'];
 
         const store = this.stores.create({
           storeName,
-          description,
           maxWaitingCnt,
-          currentWaitingCnt,
-          La,
-          Ma,
+          lat,
+          lon,
           tableForFour,
           tableForTwo,
           category,
-          address,
+          newAddress,
           oldAddress,
         });
 
         try {
-          const result = await this.stores.save(store);
-          this.tablesRepository.createTable(result);
-          console.log('Inserted', result, 'row:', store);
+          await this.stores.save(store);
+          console.log(store.storeId, 'saved successfully');
+
+          //console.log('Inserted', result, 'row:', store);
         } catch (error) {
-          console.error('Error occurred during insert:', error);
+          //console.error('Error occurred during insert:', error);
         }
       }
     }
   }
+
   //좌표를 위한 주소와 아이디
   async getStoreAddressId() {
     return await this.stores.find({
-      select: ['storeId', 'address', 'oldAddress'],
-      where: { Ma: 0, La: 0 },
+      select: ['storeId', 'newAddress', 'oldAddress'],
+      where: { lon: 0, lat: 0 },
       order: { storeId: 'ASC' },
     });
   }
@@ -231,7 +210,7 @@ export class StoresRepository {
     }
   }
   //저장
-  async updateCoord(La: number, Ma: number, storeId: number): Promise<any> {
-    await this.stores.update(storeId, { La, Ma });
+  async updateCoord(lat: number, lon: number, storeId: number): Promise<any> {
+    await this.stores.update(storeId, { lat, lon });
   }
 }

@@ -23,28 +23,19 @@ export class Stores extends BaseEntity {
   storeName: string;
 
   @Column()
-  description: string;
-
-  @Column()
   category: string;
 
   @Column()
   maxWaitingCnt: number;
 
-  @Column()
-  currentWaitingCnt: number;
+  @Column('numeric')
+  lat: number;
 
   @Column('numeric')
-  La: number;
-
-  @Column('numeric')
-  Ma: number;
+  lon: number;
 
   @Column()
-  address: string;
-
-  @Column({ nullable: true })
-  distance: number;
+  newAddress: string;
 
   @Column({ nullable: true })
   oldAddress: string;
@@ -57,9 +48,6 @@ export class Stores extends BaseEntity {
 
   @Column()
   tableForFour: number;
-
-  @Column({ type: 'float', default: 0 })
-  rating: number;
 
   @Column('geometry', {
     spatialFeatureType: 'Point',

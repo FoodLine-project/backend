@@ -13,6 +13,12 @@ if (result.error) {
       readyLog: true,
       config: [
         {
+          namespace: 'refresh-token',
+          host: process.env.REFRESH_TOKEN_REDIS_HOST,
+          port: Number(process.env.REFRESH_TOKEN_REDIS_PORT),
+          password: process.env.REFRESH_TOKEN_REDIS_PASSWORD,
+        },
+        {
           namespace: 'store',
           host: process.env.STORE_REDIS_HOST,
           port: Number(process.env.STORE_REDIS_PORT),
@@ -23,12 +29,6 @@ if (result.error) {
           host: process.env.WAITING_REDIS_HOST,
           port: Number(process.env.WAITING_REDIS_PORT),
           password: process.env.WAITING_REDIS_PASSWORD,
-        },
-        {
-          namespace: 'local',
-          host: 'localhost',
-          port: 6379,
-          // password: '',
         },
       ],
     }),

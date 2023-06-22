@@ -44,10 +44,10 @@ export class CacheInterceptor implements NestInterceptor {
     if (!key) {
       return next.handle();
     }
-    console.log('key:', key);
+    //console.log('key:', key);
     try {
       const value = await this.cacheManager.get(key);
-      console.log('value:', value);
+      //console.log('value:', value);
       if (value !== undefined && value !== null) {
         return of(value);
       }
@@ -56,12 +56,12 @@ export class CacheInterceptor implements NestInterceptor {
       //     ? await ttlValueOrFactory(context)
       //     : ttlValueOrFactory;
       const ttl = 5;
-      console.log('ttl:', ttl);
+      //console.log('ttl:', ttl);
       return next.handle().pipe(
         tap((response) => {
-          console.log('response:', response);
+          //console.log('response:', response);
           const args =
-            ttl === undefined ? [key, response] : [key, response, ttl];
+            ttl === undefined ? [key, response] : [key, response, { ttl }];
           this.cacheManager.set(...args);
         }),
       );

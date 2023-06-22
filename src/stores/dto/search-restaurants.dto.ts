@@ -1,14 +1,13 @@
 import { IsNotEmpty } from 'class-validator';
 
-export class StoresSearchDto {
+export class searchRestaurantsDto {
   @IsNotEmpty()
   storeName: string;
+  //   rating: number;
   category: string;
-  maxWaitingCnt: number;
-  lat: number;
-  lon: number;
   newAddress: string;
-  oldAddress: string;
+  currentWaitingCnt: number;
+  distance: number;
   tableForTwo: number;
   tableForFour: number;
 }

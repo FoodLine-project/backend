@@ -16,20 +16,21 @@ import { Stores } from './stores.entity';
 import * as path from 'path';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { Public } from '../auth/common/decorators';
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { CacheInterceptor } from 'src/cache/cache.interceptor';
+import { searchRestaurantsDto } from './dto/search-restaurants.dto';
 
-@Controller('places')
+@Controller('stores')
 @UseInterceptors(CacheInterceptor)
 export class StoresController {
   constructor(private storesService: StoresService) {}
 
   @Public()
-  @Post('/coordinates')
+  @Post('/nearby-stores-rough')
   async searchRestaurants(
     @Body() coordinatesData: any,
     @Query('sort')
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
-  ): Promise<{ 근처식당목록: Stores[] }> {
+  ): Promise<{ 근처식당목록: searchRestaurantsDto[] }> {
     const { swLatlng, neLatlng } = coordinatesData;
     const southWestLatitude = swLatlng.La;
     const southWestLongitude = swLatlng.Ma;
@@ -51,22 +52,30 @@ export class StoresController {
 
   //elastic 좌표로
   @Public()
-  @Post('/coordinate')
-  async searchByCoordinates(@Body() coordinatesData: any): Promise<any[]> {
-    const { swLatlng, neLatlng, userLatlng } = coordinatesData;
-    const southWestLatitude = swLatlng.La;
-    const southWestLongitude = swLatlng.Ma;
-    const northEastLatitude = neLatlng.La;
-    const northEastLongitude = neLatlng.Ma;
-    const userLatitude = userLatlng.La;
-    const userLongitude = userLatlng.Ma;
+  @Post('/nearby-stores-elastic')
+  async searchByCoordinates(
+    @Body() coordinatesData: any,
+    @Query('a') sort: 'ASC' | 'DESC' = 'ASC',
+    @Query('b') column: string,
+    @Query('c') page: number,
+  ): Promise<any[]> {
+    const { swLatlng, neLatlng, myLatitude, myLongitude } = coordinatesData;
+    const southWestLatitude = swLatlng.Ma;
+    const southWestLongitude = swLatlng.La;
+    const northEastLatitude = neLatlng.Ma;
+    const northEastLongitude = neLatlng.La;
+    myLatitude;
+    myLongitude;
     const restaurants = await this.storesService.searchByCoord(
+      sort,
+      column,
+      page,
       southWestLatitude,
       southWestLongitude,
       northEastLatitude,
       northEastLongitude,
-      userLatitude,
-      userLongitude,
+      myLatitude,
+      myLongitude,
     );
     return restaurants;
   }
@@ -76,37 +85,23 @@ export class StoresController {
   @Get('/search')
   searchStores(
     @Query('keyword') keyword: string,
-    @Query('b') sort: 'ASC' | 'DESC',
+    @Query('b') sort: 'ASC' | 'DESC' = 'ASC',
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
-    return this.storesService.searchByKeyword(keyword, sort, column);
+    return this.storesService.searchStores2(keyword, sort, column);
+    // return this.storesService.searchByKeyword(keyword, sort, column);
   }
 
   //postgres 의 coordinate 값을 채우는 api
   @Public()
-  @Post('fill-coordinates')
+  @Post('/fill-coordinates')
   async fillCoordinates() {
     await this.storesService.fillCoordinates();
   }
 
-  // 중앙 좌표의 반경 n km 음식점 조회
-  @Public()
-  @Get('/nearby-stores-byradius')
-  async getNearbyStoresByRadius(
-    @Body() coordinates: { Ma: number; La: number },
-    @Query('sort')
-    sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
-  ) {
-    const stores = await this.storesService.getNearbyStoresByRadius(
-      coordinates,
-      sortBy,
-    );
-    return stores;
-  }
-
   // 좌하단 우상단 좌표 내의 음식점 조회
   @Public()
-  @Get('/nearby-stores-bybox')
+  @Post('/nearby-stores-redis')
   async getNearbyStoresByBox(
     @Body()
     coordinates: {
@@ -152,7 +147,7 @@ export class StoresController {
   @Public()
   @Post('/process')
   async processCSV(): Promise<void> {
-    const inputFile = path.resolve('../stores/csv/111.csv');
+    const inputFile = path.resolve('src/stores/csv/111.csv');
     await this.storesService.processCSVFile(inputFile);
   }
 
