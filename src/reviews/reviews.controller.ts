@@ -31,9 +31,16 @@ export class ReviewsController {
     @GetUser() user: Users,
     @Param('storeId', ParseIntPipe) storeId: number,
     @Body() reviewDto: ReviewDto,
-  ): Promise<{ message: string, reviewId: number }> {
-    const createdReview = await this.reviewsService.createReview(user, storeId, reviewDto);
-    return { message: '리뷰를 작성했습니다.', reviewId: createdReview.reviewId };
+  ): Promise<{ message: string; reviewId: number }> {
+    const createdReview = await this.reviewsService.createReview(
+      user,
+      storeId,
+      reviewDto,
+    );
+    return {
+      message: '리뷰를 작성했습니다.',
+      reviewId: createdReview.reviewId,
+    };
   }
 
   @Patch('/:reviewId')

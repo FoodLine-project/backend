@@ -12,6 +12,7 @@ import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
 import { searchRestaurantsDto } from './dto/search-restaurants.dto';
 
+
 @Injectable()
 export class StoresService {
   constructor(
@@ -273,7 +274,6 @@ export class StoresService {
           availableTableForFour: storeDatas.tableforfour,
           rating: average,
         };
-
         await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
         const redisRating = average;
         return { ...storeDatas, redisRating };
@@ -482,6 +482,7 @@ export class StoresService {
     const distance = R * c;
     return distance;
   }
+
 
   //box 내의 음식점 조회
   async getNearbyStoresByBox(
