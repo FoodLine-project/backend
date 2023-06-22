@@ -12,7 +12,7 @@ export const typeORMConfig: TypeOrmModuleOptions = {
   port: 5432,
   username: `${process.env.POSTGRES_USERNAME}`,
   password: `${process.env.POSTGRES_PASSWORD}`,
-  database: `temp`,
+  database: `final`,
   entities: [__dirname + './../**/*.entity.{js,ts}'],
   synchronize: true,
   // logging: true,

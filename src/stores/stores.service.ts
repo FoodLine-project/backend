@@ -10,6 +10,8 @@ import * as csvParser from 'csv-parser';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
+import { searchRestaurantsDto } from './dto/search-restaurants.dto';
+
 
 @Injectable()
 export class StoresService {
@@ -18,25 +20,27 @@ export class StoresService {
     @InjectRedis('waitingManager') private readonly redisClient: Redis,
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
+
     private readonly elasticsearchService: ElasticsearchService,
   ) {}
 
+  //주변식당탐색
   async searchRestaurants(
     southWestLatitude: number,
     southWestLongitude: number,
     northEastLatitude: number,
     northEastLongitude: number,
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
-  ): Promise<{ 근처식당목록: Stores[] }> {
+  ): Promise<{ 근처식당목록: searchRestaurantsDto[] }> {
     const restaurants = await this.storesRepository.findAll();
 
     const restaurantsWithinRadius = restaurants.filter((restaurant) => {
       const withinLatitudeRange =
-        Number(restaurant.La) >= southWestLatitude &&
-        Number(restaurant.La) <= northEastLatitude;
+        Number(restaurant.lat) >= southWestLatitude &&
+        Number(restaurant.lat) <= northEastLatitude;
       const withinLongitudeRange =
-        Number(restaurant.Ma) >= southWestLongitude &&
-        Number(restaurant.Ma) <= northEastLongitude;
+        Number(restaurant.lon) >= southWestLongitude &&
+        Number(restaurant.lon) <= northEastLongitude;
       return withinLatitudeRange && withinLongitudeRange;
     });
 
@@ -54,20 +58,40 @@ export class StoresService {
     };
 
     //user위치에 따른 거리값을 모든 sort조건에 포함시켜준다
+    //calculateDistance로 얻은 distance 값을 출력값에 포함시켜준다
     const userLocation = {
       latitude: southWestLatitude,
       longitude: southWestLongitude,
     };
-    restaurantsWithinRadius.forEach((restaurant) => {
+
+    const restaurantsResult: searchRestaurantsDto[] = [];
+    restaurantsWithinRadius.forEach(async (restaurant) => {
       const distance = calculateDistance(userLocation, {
-        latitude: Number(restaurant.La),
-        longitude: Number(restaurant.Ma),
+        latitude: Number(restaurant.lat),
+        longitude: Number(restaurant.lon),
       });
-      restaurant.distance = distance;
+
+      const storesHashes = await this.redisClient.hgetall(
+        `store:${restaurant.storeId}`,
+      );
+
+      let currentWaitingCnt: string;
+      // let rating : string
+
+      if (!storesHashes.currentWaitingCnt) {
+        currentWaitingCnt = '0';
+        // rating = '0'
+      }
+
+      restaurantsResult.push({
+        ...restaurant,
+        distance: distance,
+        currentWaitingCnt: Number(currentWaitingCnt),
+      });
     });
 
     //정렬로직모음
-    restaurantsWithinRadius.sort((a, b) => {
+    restaurantsResult.sort((a, b) => {
       if (sortBy === 'distance') {
         return (a.distance || 0) - (b.distance || 0);
       } else if (sortBy === 'name') {
@@ -76,13 +100,11 @@ export class StoresService {
         return a.currentWaitingCnt - b.currentWaitingCnt;
       } else if (sortBy === 'waitingCnt2') {
         return b.currentWaitingCnt - a.currentWaitingCnt;
-      } else if (sortBy === 'rating') {
-        return b.rating - a.rating;
       }
       return 0;
     });
 
-    return { 근처식당목록: restaurantsWithinRadius };
+    return { 근처식당목록: restaurantsResult };
   }
 
   //sorting //쿼리 searching 따로
@@ -143,19 +165,6 @@ export class StoresService {
   async createStore(createUserDto: CreateStoresDto): Promise<Stores> {
     const store = await this.storesRepository.createStore(createUserDto);
     return store;
-  }
-
-  //postgres 좌표 업데이트
-  async fillCoordinates() {
-    const stores = await this.storesRepository.findAll();
-    for (let i = 0; i < stores.length; i++) {
-      await this.storesRepository.fillCoordinates(
-        stores[i],
-        stores[i].Ma,
-        stores[i].La,
-      );
-      //console.log(`updated coordinates of ${stores[i].storeId}`);
-    }
   }
 
   //rating 가져오기
@@ -442,8 +451,8 @@ export class StoresService {
     for (let i = 0; i < stores.length; i++) {
       await this.client.geoadd(
         'stores',
-        stores[i].Ma,
-        stores[i].La,
+        stores[i].lon,
+        stores[i].lat,
         String(stores[i].storeId),
       );
       console.log(`${i + 1}번째 음식점 좌표 redis 저장 완료`);
@@ -474,51 +483,6 @@ export class StoresService {
     return distance;
   }
 
-  //반경 내의 음식점 조회
-  async getNearbyStoresByRadius(
-    coordinates: {
-      Ma: number;
-      La: number;
-    },
-    sortBy?: string,
-  ): Promise<Stores[]> {
-    const latitude = coordinates.Ma,
-      longitude = coordinates.La;
-
-    const nearbyStores = await this.client.georadius(
-      'stores',
-      longitude,
-      latitude,
-      1,
-      'km',
-      'withdist',
-    );
-
-    const nearbyStoresIds = nearbyStores.map((store) => store[0]);
-    const nearbyStoresDistances = nearbyStores.map((store) => Number(store[1]));
-
-    const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
-
-    for (const store of stores) {
-      store.distance = Math.ceil(
-        nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-          1000,
-      );
-    }
-
-    return stores.sort((a, b) => {
-      if (sortBy === 'name') {
-        return a.storeName.toUpperCase() < b.storeName.toUpperCase() ? -1 : 1;
-      } else if (sortBy === 'waitingCnt') {
-        return a.currentWaitingCnt - b.currentWaitingCnt;
-      } else if (sortBy === 'waitingCnt2') {
-        return b.currentWaitingCnt - a.currentWaitingCnt;
-      } else if (sortBy === 'rating') {
-        return b.rating - a.rating;
-      }
-      return a.distance - b.distance;
-    });
-  }
 
   //box 내의 음식점 조회
   async getNearbyStoresByBox(
@@ -563,14 +527,32 @@ export class StoresService {
 
     const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
 
-    for (const store of stores) {
-      store.distance = Math.ceil(
+    const result = [];
+
+    stores.forEach(async (store) => {
+      const distance = Math.ceil(
         nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
           1000,
       );
-    }
 
-    return stores.sort((a, b) => {
+      const storesHashes = await this.redisClient.hgetall(
+        `store:${store.storeId}`,
+      );
+
+      let currentWaitingCnt: string;
+
+      if (!storesHashes.currentWaitingCnt) {
+        currentWaitingCnt = '0';
+      }
+
+      result.push({
+        ...store,
+        distance,
+        currentWaitingCnt: Number(currentWaitingCnt),
+      });
+    });
+
+    return result.sort((a, b) => {
       if (sortBy === 'name') {
         return a.storeName.toUpperCase() < b.storeName.toUpperCase() ? -1 : 1;
       } else if (sortBy === 'waitingCnt') {
@@ -584,36 +566,40 @@ export class StoresService {
     });
   }
 
+  //postGis
+  //postgres 좌표 업데이트
+  async fillCoordinates() {
+    const stores = await this.storesRepository.findAll();
+    for (let i = 0; i < stores.length; i++) {
+      await this.storesRepository.fillCoordinates(
+        stores[i],
+        stores[i].lon,
+        stores[i].lat,
+      );
+      console.log(`updated coordinates of ${stores[i].storeId}`);
+    }
+  }
+
   //CSV 부분
   async processCSVFile(inputFile: string): Promise<void> {
-    const batchSize = 100;
-
     return new Promise<void>((resolve, reject) => {
-      let currentBatch: any[] = [];
+      const rows: any[] = [];
+
       createReadStream(inputFile, { encoding: 'utf-8' })
         .pipe(csvParser())
         .on('error', (error) => {
-          //console.error('Error reading CSV file:', error);
+          console.error('Error reading CSV file:', error);
           reject(error);
         })
-        .on('data', async (row: any) => {
-          if (row['상세영업상태코드'] === '01') {
-            currentBatch.push(row);
-
-            if (currentBatch.length === batchSize) {
-              await this.storesRepository.processCSVFile(currentBatch);
-              currentBatch = [];
-            }
-          }
+        .on('data', (row: any) => {
+          rows.push(row);
         })
         .on('end', async () => {
-          if (currentBatch.length > 0) {
-            await this.storesRepository.processCSVFile(currentBatch);
-          }
+          await this.storesRepository.processCSVFile(rows);
           resolve();
         })
         .on('finish', () => {
-          //console.log('CSV processing completed.');
+          console.log('CSV processing completed.');
         });
     });
   }
@@ -624,20 +610,23 @@ export class StoresService {
       const stores = await this.storesRepository.getStoreAddressId();
 
       for (const store of stores) {
-        const { address, oldAddress, storeId } = store;
+        const { newAddress, oldAddress, storeId } = store;
 
         try {
-          let coordinates = await this.storesRepository.getCoordinate(address);
+          let coordinates = await this.storesRepository.getCoordinate(
+            newAddress,
+          );
 
           if (!coordinates) {
             coordinates = await this.storesRepository.getCoordinate(oldAddress);
           }
           if (!coordinates) continue;
 
-          const La = coordinates[0];
-          const Ma = coordinates[1];
+          //La = y, Ma = x
+          const lat = coordinates[0];
+          const lon = coordinates[1];
 
-          await this.storesRepository.updateCoord(La, Ma, storeId);
+          await this.storesRepository.updateCoord(lat, lon, storeId);
 
           //console.log(
           //`Updated coordinates for address: ${address}`,
