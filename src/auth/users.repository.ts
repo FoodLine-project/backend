@@ -7,8 +7,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-// import { faker } from '@faker-js/faker';
-// import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersRepository {
@@ -53,59 +52,61 @@ export class UsersRepository {
     return await this.users.findOne({ where: { userId } });
   }
 
-  // async getRefreshToken(userId: number): Promise<string> {
-  //   const user = await this.findUserById(userId);
-  //   return user.refreshToken;
-  // }
+  async createRandomAdminUsers(length: number) {
+    const dummyUsers = [];
 
-  // async updateRefreshToken(
-  //   userId: number,
-  //   refreshToken: string,
-  // ): Promise<void> {
-  //   const user = await this.findUserById(userId);
-  //   user.refreshToken = refreshToken;
-  //   await this.users.save(user);
-  // }
+    for (let i = 0; i < length; i++) {
+      const dummyUser = new Users();
 
-  // async createAdminUsers(length: number) {
-  //   const dummyUsers = [];
+      dummyUser.email = `admin${i + 1}@example.com`;
 
-  //   for (let i = 0; i < length; i++) {
-  //     const dummyUser = new Users();
+      dummyUser.nickname = `admin${i + 1}`;
 
-  //     dummyUser.email = faker.internet.email();
-  //     while (dummyUsers.some((user) => user.email === dummyUser.email)) {
-  //       dummyUser.email = faker.internet.email();
-  //     }
+      dummyUser.password = await bcrypt.hash('1q2w3e4r', 2);
 
-  //     dummyUser.nickname = faker.internet.userName().substring(0, 16);
-  //     while (
-  //       dummyUser.nickname.length < 4 ||
-  //       dummyUsers.some((user) => user.nickname === dummyUser.nickname)
-  //     ) {
-  //       dummyUser.nickname = faker.internet.userName().substring(0, 16);
-  //     }
+      dummyUser.phoneNumber = `010-${Math.floor(
+        1000 + Math.random() * 9000,
+      )}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-  //     const salt = await bcrypt.genSalt();
-  //     dummyUser.password = await bcrypt.hash('1q2w3e4r', salt);
+      dummyUser.isAdmin = true;
+      dummyUser.StoreId = i + 1;
 
-  //     dummyUser.phoneNumber = `010-${Math.floor(
-  //       1000 + Math.random() * 9000,
-  //     )}-${Math.floor(1000 + Math.random() * 9000)}`;
+      dummyUsers.push(dummyUser);
 
-  //     dummyUser.isAdmin = true;
-  //     dummyUser.StoreId = i + 1;
+      try {
+        await this.users.save(dummyUser);
+      } catch (error) {
+        throw error;
+      }
+    }
+  }
 
-  //     dummyUsers.push(dummyUser);
+  async createRandomUsers(length: number) {
+    const dummyUsers = [];
 
-  //     try {
-  //       await this.users.save(dummyUser);
+    for (let i = 0; i < length; i++) {
+      const dummyUser = new Users();
 
-  //     } catch (error) {
+      dummyUser.email = `user${i + 1}@example.com`;
 
-  //       throw error;
-  //     }
-  //   }
+      dummyUser.nickname = `user${i + 1}`;
 
-  // }
+      dummyUser.password = await bcrypt.hash('1q2w3e4r', 2);
+
+      dummyUser.phoneNumber = `010-${Math.floor(
+        1000 + Math.random() * 9000,
+      )}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      dummyUser.isAdmin = false;
+      dummyUser.StoreId = null;
+
+      dummyUsers.push(dummyUser);
+
+      try {
+        await this.users.save(dummyUser);
+      } catch (error) {
+        throw error;
+      }
+    }
+  }
 }

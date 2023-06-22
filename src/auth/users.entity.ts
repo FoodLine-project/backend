@@ -32,9 +32,6 @@ export class Users extends BaseEntity {
   @Column()
   phoneNumber: string;
 
-  @Column({ nullable: true, default: null })
-  refreshToken: string;
-
   @Column({ default: false })
   isAdmin: boolean;
 
@@ -45,6 +42,8 @@ export class Users extends BaseEntity {
   checkStoreId() {
     if (this.isAdmin && !this.StoreId) {
       throw new UnauthorizedException(`StoreId가 존재하지 않습니다.`);
+    } else if (!this.isAdmin && this.StoreId) {
+      throw new UnauthorizedException(`admin이 아닙니다.`);
     }
   }
 

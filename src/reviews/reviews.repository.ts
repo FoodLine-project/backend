@@ -81,4 +81,30 @@ export class ReviewsRepository {
 
     return parseFloat(average.toPrecision(2));
   }
+
+  async genRandomReviews(
+    reviewCount: number,
+    storeCount: number,
+    userCount: number,
+  ) {
+    const ratings: number[] = [1, 2, 3, 4, 5];
+    const reviews: string[] = [
+      '최악이에요',
+      '별로에요',
+      '무난해요',
+      '맛있어요',
+      '최고에요',
+    ];
+
+    for (let i = 287551; i < reviewCount; i++) {
+      const index = Math.floor(Math.random() * 5);
+      const ranUserId = Math.floor(Math.random() * userCount) + 1;
+      const ranStoreId = Math.floor(Math.random() * storeCount) + 1;
+      await this.createReview(ranUserId, ranStoreId, {
+        rating: ratings[index],
+        review: reviews[index],
+      });
+      console.log(`${i + 1}번째 리뷰를 생성했습니다.`);
+    }
+  }
 }

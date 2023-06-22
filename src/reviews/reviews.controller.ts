@@ -63,4 +63,10 @@ export class ReviewsController {
     await this.reviewsService.deleteReview(user, storeId, reviewId);
     return { message: '리뷰를 삭제했습니다.' };
   }
+
+  @Public()
+  @Post('/gen-random-reviews')
+  async genRandomReviews() {
+    await this.reviewsService.genRandomReviews();
+  }
 }
