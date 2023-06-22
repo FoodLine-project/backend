@@ -17,25 +17,27 @@ import * as path from 'path';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { Public } from '../auth/common/decorators';
 import { CacheInterceptor } from 'src/cache/cache.interceptor';
+import { searchRestaurantsDto } from './dto/search-restaurants.dto';
 
-@Controller('places')
+@Controller('stores')
 @UseInterceptors(CacheInterceptor)
 export class StoresController {
   constructor(private storesService: StoresService) {}
 
   @Public()
-  @Post('/coordinates')
+  @Post('/nearby-stores-rough')
   async searchRestaurants(
     @Body() coordinatesData: any,
     @Query('sort')
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
-  ): Promise<{ 근처식당목록: Stores[] }> {
+  ): Promise<{ 근처식당목록: searchRestaurantsDto[] }> {
     const { swLatlng, neLatlng } = coordinatesData;
     const southWestLatitude = swLatlng.La;
     const southWestLongitude = swLatlng.Ma;
     const northEastLatitude = neLatlng.La;
     const northEastLongitude = neLatlng.Ma;
 
+    console.log(swLatlng.La, swLatlng.Ma, neLatlng.La, neLatlng.Ma);
     //geolocation 받고 그 가운데에 user위치;
 
     const restaurants = await this.storesService.searchRestaurants(
@@ -50,7 +52,7 @@ export class StoresController {
 
   //elastic 좌표로
   @Public()
-  @Post('/coordinate')
+  @Post('/nearby-stores-elastic')
   async searchByCoordinates(
     @Body() coordinatesData: any,
     @Query('a') sort: 'ASC' | 'DESC' = 'ASC',
@@ -92,29 +94,14 @@ export class StoresController {
 
   //postgres 의 coordinate 값을 채우는 api
   @Public()
-  @Post('fill-coordinates')
+  @Post('/fill-coordinates')
   async fillCoordinates() {
     await this.storesService.fillCoordinates();
   }
 
-  // 중앙 좌표의 반경 n km 음식점 조회
-  @Public()
-  @Post('/nearby-stores-byradius')
-  async getNearbyStoresByRadius(
-    @Body() coordinates: { Ma: number; La: number },
-    @Query('sort')
-    sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
-  ) {
-    const stores = await this.storesService.getNearbyStoresByRadius(
-      coordinates,
-      sortBy,
-    );
-    return stores;
-  }
-
   // 좌하단 우상단 좌표 내의 음식점 조회
   @Public()
-  @Post('/nearby-stores-bybox')
+  @Post('/nearby-stores-redis')
   async getNearbyStoresByBox(
     @Body()
     coordinates: {
@@ -160,7 +147,7 @@ export class StoresController {
   @Public()
   @Post('/process')
   async processCSV(): Promise<void> {
-    const inputFile = path.resolve('../stores/csv/111.csv');
+    const inputFile = path.resolve('src/stores/csv/111.csv');
     await this.storesService.processCSVFile(inputFile);
   }
 
@@ -171,6 +158,8 @@ export class StoresController {
     await this.storesService.updateCoordinates();
     return 'Coordinates updated successfully';
   }
+
+  //postgis를 활용하여 좌표 범위 내의 식당을 쿼리
 }
 
 //카카오맵api 연동

@@ -16,13 +16,13 @@ import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.p
 import { Cron } from '@nestjs/schedule';
 import { Waitings } from './waitings.entity';
 
-@Controller('stores')
+@Controller('stores/:storeId/waitings')
 export class WaitingsController {
   constructor(private waitingsService: WaitingsService) {}
 
   // 웨이팅 팀 수 조회 ( for user )
   @Public()
-  @Get('/:storeId/waitings')
+  @Get('/')
   async getCurrentWaitingsCnt(
     @Param('storeId', ParseIntPipe) storeId: number,
   ): Promise<{ teams: number; message: string }> {
@@ -33,7 +33,7 @@ export class WaitingsController {
   }
 
   // 웨이팅 리스트 조회 ( for admin )
-  @Get('/:storeId/waitings/list')
+  @Get('/list')
   async getWaitingList(
     @Param('storeId', ParseIntPipe) storeId: number,
     @GetUser() user: Users,
@@ -42,7 +42,7 @@ export class WaitingsController {
   }
 
   // 웨이팅 신청 ( for user )
-  @Post('/:storeId/waitings')
+  @Post('/')
   async postWaitings(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Body('peopleCnt', ParseIntPipe) peopleCnt: number,
@@ -56,7 +56,7 @@ export class WaitingsController {
   }
 
   // 웨이팅을 등록하지 않고 바로 입장 ( for admin )
-  @Post('/:storeId/waitings/:userId/entered')
+  @Post('/:userId/entered')
   async postEntered(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('userId', ParseIntPipe) userId: number,
@@ -69,7 +69,7 @@ export class WaitingsController {
   }
 
   // 웨이팅 취소 ( for user )
-  @Patch('/:storeId/waitings/canceled')
+  @Patch('/canceled')
   async patchStatusToCanceled(
     @Param('storeId', ParseIntPipe) storeId: number,
     @GetUser() user: Users,
@@ -82,7 +82,7 @@ export class WaitingsController {
   }
 
   // 손님의 상태를 변경 ( for admin )
-  @Patch('/:storeId/waitings/:waitingId/')
+  @Patch('/:waitingId/')
   async patchStatusOfWaitings(
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('waitingId', ParseIntPipe) waitingId: number,
@@ -108,7 +108,7 @@ export class WaitingsController {
   }
 
   // 나의 입장 예상 시간 조회 ( for user )
-  @Get('/:storeId/waitings/time')
+  @Get('/time')
   async getWaitingTime(
     @Param('storeId', ParseIntPipe) storeId: number,
     @GetUser() user: Users,

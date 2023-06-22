@@ -116,27 +116,6 @@ export class WaitingConsumer {
     }
   }
 
-  @Process('decrementCurrentWaitingCnt')
-  async decrementWaitingCnt(job: Job): Promise<void> {
-    const storeId = job.data;
-    try {
-      await this.storesRepository.decrementCurrentWaitingCnt(storeId);
-      return;
-    } catch (err) {
-      throw new Error('Redis 연결에 실패했습니다');
-    }
-  }
-
-  @Process('incrementCurrentWaitingCnt')
-  async incrementWaitingCnt(job: Job): Promise<void> {
-    const storeId = job.data;
-    try {
-      await this.storesRepository.incrementCurrentWaitingCnt(storeId);
-      return;
-    } catch (err) {
-      throw new Error('Redis 연결에 실패했습니다');
-    }
-  }
 
   @Process('decrementTables')
   async decrementTable(job: Job): Promise<void> {

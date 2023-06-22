@@ -1,4 +1,3 @@
-
 // import { ElasticsearchService } from '@nestjs/elasticsearch';
 // import { StoresService } from './stores.service';
 
@@ -36,7 +35,6 @@
 //         const userLatitude = 37.55;
 //         const userLongitude = 127.0;
 
-       
 //         const result = await StoresService.searchByCoord(
 //             southWestLatitude,
 //             southWestLongitude,
