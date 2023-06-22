@@ -3,7 +3,6 @@ import { AuthModule } from './auth/auth.module';
 import { StoresModule } from './stores/stores.module';
 import { WaitingsModule } from './waitings/waitings.module';
 import { ReviewsModule } from './reviews/reviews.module';
-import { TablesModule } from './tables/tables.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeORMConfig } from './configs/typeorm.config';
 import { APP_GUARD } from '@nestjs/core';
@@ -26,7 +25,6 @@ if (result.error) {
     StoresModule,
     WaitingsModule,
     ReviewsModule,
-    TablesModule,
     CustomRedisModule,
     CustomCacheModule,
   ],

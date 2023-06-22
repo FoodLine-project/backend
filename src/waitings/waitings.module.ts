@@ -7,9 +7,7 @@ import { Waitings } from './waitings.entity';
 import { AuthModule } from '../auth/auth.module';
 import { StoresRepository } from '../stores/stores.repository';
 import { ScheduleModule } from '@nestjs/schedule';
-import { TablesRepository } from '../tables/tables.repository';
 import { Stores } from '../stores/stores.entity';
-import { Tables } from '../tables/tables.entity';
 import { BullModule } from '@nestjs/bull';
 import { RedisOptions } from 'ioredis';
 import { WaitingConsumer } from './waiting.consumer';
@@ -43,7 +41,7 @@ const redisOptions3: RedisOptions = {
 };
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Waitings, Stores, Tables, Reviews], {
+    TypeOrmModule.forFeature([Waitings, Stores, Reviews], {
       type: 'spanner',
       maxQueryExecutionTime: 50000,
     }),
@@ -65,9 +63,8 @@ const redisOptions3: RedisOptions = {
     WaitingsService,
     WaitingsRepository,
     StoresRepository,
-    TablesRepository,
     WaitingConsumer,
     ReviewsRepository,
   ],
 })
-export class WaitingsModule {}
+export class WaitingsModule { }
