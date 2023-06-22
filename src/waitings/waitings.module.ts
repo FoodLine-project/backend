@@ -37,9 +37,9 @@ const redisOptions2: RedisOptions = {
 
 const redisOptions3: RedisOptions = {
   host: '192.168.219.106',
-  port: 6379,
-  username: null,
-  password: null,
+  port: 6378,
+  // username: null,
+  password: '1234',
 };
 @Module({
   imports: [
@@ -50,7 +50,7 @@ const redisOptions3: RedisOptions = {
     AuthModule,
     ScheduleModule.forRoot(),
     BullModule.forRoot({
-      redis: redisOptions2,
+      redis: redisOptions,
     }),
     BullModule.registerQueue({
       name: 'waitingQueue',

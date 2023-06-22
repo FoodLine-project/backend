@@ -1,5 +1,4 @@
 import { ReviewsRepository } from './../reviews/reviews.repository';
-// import { RedisService } from './../redis/redis.service';
 import { StoresRepository } from './../stores/stores.repository';
 import { Users } from '../auth/users.entity';
 import { WaitingStatus } from './waitingStatus.enum';
@@ -13,7 +12,6 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { TablesRepository } from '../tables/tables.repository';
 import { InjectQueue } from '@nestjs/bull/dist/decorators';
 import { Queue } from 'bull';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
@@ -22,12 +20,10 @@ import { Redis } from 'ioredis';
 export class WaitingsService {
   constructor(
     @InjectRedis('waitingManager') private readonly redisClient: Redis,
-    // @InjectRedis('local') private readonly redisClient: Redis,
     @InjectQueue('waitingQueue')
     private waitingQueue: Queue,
     private waitingsRepository: WaitingsRepository,
     private storesRepository: StoresRepository,
-    private tablesRepository: TablesRepository,
     private reviewsRepository: ReviewsRepository,
   ) {}
 
@@ -37,26 +33,20 @@ export class WaitingsService {
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
+    // with Bullqueue
+    // const job = await this.waitingQueue.add(
+    //   'getCurrentWaitingCntInRedis',
+    //   storeId,
+    // );
+    // const result = await job.finished();
+    // return result;
 
-    // 여기부터
-    // const job = await this.waitingQueue.add('getCurrentWaitingCnt', storeId);
-    // 여기까지 withour redis
-
-    // 여기부터
-    try {
-      const job = await this.waitingQueue.add(
-        'getCurrentWaitingCntInRedis',
-        storeId,
-      );
-      // 여기까지 with redis
-
-      const result = await job.finished();
-      return result;
-    } catch (err) {
-      throw new InternalServerErrorException(
-        '웨이팅 팀 수 조회에 실패했습니다',
-      );
-    }
+    // without Bullqueue
+    const waitingCnt: string = await this.redisClient.hget(
+      `store:${storeId}`,
+      'currentWaitingCnt',
+    );
+    return Number(waitingCnt);
   }
 
   //웨이팅 리스트 조회 ( for admin )
@@ -68,15 +58,7 @@ export class WaitingsService {
     if (!existsStore) {
       throw new NotFoundException('음식점 존재하지 않습니다');
     }
-    try {
-      const job = await this.waitingQueue.add('getWaitingListById', storeId);
-      const result = await job.finished();
-      return result;
-    } catch (err) {
-      throw new InternalServerErrorException(
-        '웨이팅 리스트 조회에 실패했습니다',
-      );
-    }
+    return await this.waitingsRepository.getWaitingListById(storeId);
   }
 
   //대기열 추가
@@ -92,63 +74,35 @@ export class WaitingsService {
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
-    // if (existsStore.maxWaitingCnt === existsStore.currentWaitingCnt) {
-    //   return 'full';
-    // }
-
-    // const tablesOfStore = await this.tablesRepository.findTableById(storeId);
-
     const storeHash = await this.redisClient.hgetall(`store:${storeId}`);
 
-    if (peopleCnt === 1 || peopleCnt === 2) {
-      if (
-        Number(storeHash.availableTableForTwo) !== 0 &&
-        Number(storeHash.currentWaitingCnt) == 0
-      ) {
-        throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
-      }
-    } else {
-      if (
-        Number(storeHash.availableTableForFour) !== 0 &&
-        Number(storeHash.currentWaitingCnt) == 0
-      ) {
-        throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
-      }
+    const peopleCntForTables =
+      peopleCnt <= 2
+        ? Number(storeHash.availableTableForTwo)
+        : Number(storeHash.availableTableForFour);
+
+    if (
+      Number(peopleCntForTables) !== 0 &&
+      Number(storeHash.currentWaitingCnt) === 0
+    ) {
+      throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
     }
-    if (storeHash.maxWaitingCnt == storeHash.currentWaitingCnt) {
+
+    if (storeHash.maxWaitingCnt === storeHash.currentWaitingCnt) {
       throw new ConflictException('최대 웨이팅 수를 초과했습니다');
     }
+
     const existsUser = await this.waitingsRepository.getWaitingByUser(user);
     if (existsUser) {
       throw new ConflictException('이미 웨이팅을 신청하셨습니다');
     }
 
-    // 여기부터
-    // without redis
-    // const job1 = await this.waitingQueue.add('postWaiting', {
-    //   storeId,
-    //   peopleCnt,
-    //   user,
-    // });
-    // await job1.finished();
-    // const job = await this.waitingQueue.add(
-    //   'incrementCurrentWaitingCnt',
-    //   storeId,
-    // );
-    // 여기까지 without redis
-
-    // with redis
-    // await this.waitingQueue.add('incrementCurrentWaitingCntInRedis', storeId);
-
-    // finally one add to queue
-    // 여기부터
     try {
       const job = await this.waitingQueue.add('postWaitingWithRedis', {
         storeId,
         peopleCnt,
         user,
       });
-      // 여기까지 with redis
       await job.finished();
       return 'success';
     } catch (err) {
@@ -162,7 +116,7 @@ export class WaitingsService {
     userId: number,
     peopleCnt: number,
     user: Users,
-  ): Promise<void> {
+  ): Promise<string> {
     const existsStore = await this.storesRepository.findStoreById(storeId);
     if (peopleCnt > 4) {
       throw new BadRequestException('최대 4명까지 신청할 수 있습니다');
@@ -177,98 +131,100 @@ export class WaitingsService {
     if (existsUser) {
       throw new ConflictException('이미 웨이팅이 신청되어있습니다');
     }
-    // const tablesOfStore = await this.tablesRepository.findTableById(storeId);
 
-    // if (peopleCnt == 1 || peopleCnt == 2) {
-    //   if (tablesOfStore.availableTableForTwo == 0) {
-    //     throw new ConflictException('자리가 없습니다');
-    //   }
-    // } else {
-    //   if (tablesOfStore.availableTableForFour == 0) {
-    //     throw new ConflictException('자리가 없습니다');
-    //   }
-    // }
-
-    // 여기부터
     const tablesOfStoreInRedis = await this.redisClient.hgetall(
       `store:${storeId}`,
     );
 
     // 이미 redis 에 hash 가 있을때
     if (tablesOfStoreInRedis.tableForTwo !== undefined) {
-      let availableTableForTwo: number;
-      let availableTableForFour: number;
-      if (peopleCnt == 1 || peopleCnt == 2) {
-        if (Number(tablesOfStoreInRedis.availableTableForTwo) == 0) {
-          throw new ConflictException('자리가 없습니다');
-        }
-        availableTableForTwo =
-          Number(tablesOfStoreInRedis.availableTableForTwo) - 1;
-        availableTableForFour = Number(
-          tablesOfStoreInRedis.availableTableForFour,
-        );
-        // await this.waitingQueue.add('addStoreHashes', {
-        //   storeId,
-        //   availableTableForTwo,
-        //   availableTableForFour,
-        // });
-        // await this.waitingQueue.add('postEntered', {
-        //   storeId,
-        //   userId,
-        //   peopleCnt,
-        // });
-        try {
-          const job = await this.waitingQueue.add(
-            'addStoreHashAndPostEntered',
-            {
-              storeId,
-              availableTableForTwo,
-              availableTableForFour,
-              userId,
-              peopleCnt,
-            },
-          );
-          await job.finished();
-          return;
-        } catch (err) {
-          throw new InternalServerErrorException('입장에 실패했습니다');
-        }
-      } else {
-        if (Number(tablesOfStoreInRedis.availableTableForFour) == 0) {
-          throw new ConflictException('자리가 없습니다');
-        }
-        availableTableForTwo = Number(
-          tablesOfStoreInRedis.availableTableForTwo,
-        );
-        availableTableForFour =
-          Number(tablesOfStoreInRedis.availableTableForFour) - 1;
-        // await this.waitingQueue.add('addStoreHashes', {
-        //   storeId,
-        //   availableTableForTwo,
-        //   availableTableForFour,
-        // });
-        // await this.waitingQueue.add('postEntered', {
-        //   storeId,
-        //   userId,
-        //   peopleCnt,
-        // });
-        try {
-          const job = await this.waitingQueue.add(
-            'addStoreHashAndPostEntered',
-            {
-              storeId,
-              availableTableForTwo,
-              availableTableForFour,
-              userId,
-              peopleCnt,
-            },
-          );
-          await job.finished();
-          return;
-        } catch (err) {
-          throw new InternalServerErrorException('입장에 실패했습니다');
-        }
+      const availableTableForTwoFromRedis = Number(
+        tablesOfStoreInRedis.availableTableForTwo,
+      );
+      const availableTableForFourFromRedis = Number(
+        tablesOfStoreInRedis.availableTableForFour,
+      );
+      const peopleCntForTables =
+        peopleCnt <= 2
+          ? availableTableForTwoFromRedis
+          : availableTableForFourFromRedis;
+
+      if (Number(peopleCntForTables) == 0) {
+        throw new ConflictException('자리가 없습니다');
       }
+      const availableTableForTwo =
+        peopleCnt <= 2
+          ? availableTableForTwoFromRedis - 1
+          : availableTableForTwoFromRedis;
+      const availableTableForFour =
+        peopleCnt <= 2
+          ? availableTableForFourFromRedis
+          : availableTableForFourFromRedis - 1;
+      try {
+        const job = await this.waitingQueue.add('addStoreHashAndPostEntered', {
+          storeId,
+          availableTableForTwo,
+          availableTableForFour,
+          userId,
+          peopleCnt,
+        });
+        await job.finished();
+        return 'success';
+      } catch (err) {
+        throw new InternalServerErrorException('입장에 실패했습니다');
+      }
+
+      // if (peopleCnt == 1 || peopleCnt == 2) {
+      //   if (Number(tablesOfStoreInRedis.availableTableForTwo) == 0) {
+      //     throw new ConflictException('자리가 없습니다');
+      //   }
+      //   availableTableForTwo =
+      //     Number(tablesOfStoreInRedis.availableTableForTwo) - 1;
+      //   availableTableForFour = Number(
+      //     tablesOfStoreInRedis.availableTableForFour,
+      //   );
+      //   try {
+      //     const job = await this.waitingQueue.add(
+      //       'addStoreHashAndPostEntered',
+      //       {
+      //         storeId,
+      //         availableTableForTwo,
+      //         availableTableForFour,
+      //         userId,
+      //         peopleCnt,
+      //       },
+      //     );
+      //     await job.finished();
+      //     return 'success';
+      //   } catch (err) {
+      //     throw new InternalServerErrorException('입장에 실패했습니다');
+      //   }
+      // } else {
+      //   if (Number(tablesOfStoreInRedis.availableTableForFour) == 0) {
+      //     throw new ConflictException('자리가 없습니다');
+      //   }
+      //   availableTableForTwo = Number(
+      //     tablesOfStoreInRedis.availableTableForTwo,
+      //   );
+      //   availableTableForFour =
+      //     Number(tablesOfStoreInRedis.availableTableForFour) - 1;
+      //   try {
+      //     const job = await this.waitingQueue.add(
+      //       'addStoreHashAndPostEntered',
+      //       {
+      //         storeId,
+      //         availableTableForTwo,
+      //         availableTableForFour,
+      //         userId,
+      //         peopleCnt,
+      //       },
+      //     );
+      //     await job.finished();
+      //     return 'success';
+      //   } catch (err) {
+      //     throw new InternalServerErrorException('입장에 실패했습니다');
+      //   }
+      // }
     } else {
       // redis 에 hash 가 없을때
       const average: number = await this.reviewsRepository.getAverageRating(
@@ -281,28 +237,12 @@ export class WaitingsService {
       const tableForTwo = existsStore.tableForTwo;
       const tableForFour = existsStore.tableForFour;
       const currentWaitingCnt = 0;
+
       if (peopleCnt == 1 || peopleCnt == 2) {
         availableTableForTwo = availableTableForTwo - 1;
       } else {
         availableTableForFour = availableTableForFour - 1;
       }
-      // await this.waitingQueue.add('postEntered', {
-      //   storeId,
-      //   userId,
-      //   peopleCnt,
-      // });
-      // await this.waitingQueue.add('addStoreHashes', {
-      //   storeId,
-      //   maxWaitingCnt,
-      //   currentWaitingCnt,
-      //   cycleTime,
-      //   tableForTwo,
-      //   tableForFour,
-      //   availableTableForTwo,
-      //   availableTableForFour,
-      //   rating: average,
-      // });
-      // return;
       try {
         const job = await this.waitingQueue.add('addStoreHashAndPostEntered', {
           storeId,
@@ -318,38 +258,11 @@ export class WaitingsService {
           rating: average,
         });
         await job.finished();
-        return;
+        return 'success';
       } catch (err) {
         throw new InternalServerErrorException('입장에 실패했습니다');
       }
     }
-    // 여기까지 with redis
-
-    // 여기부터
-    // without Redis
-    // const job1 = await this.waitingQueue.add('postEntered', {
-    //   storeId,
-    //   userId,
-    //   peopleCnt,
-    // });
-    // await job1.finished();
-    // const job = await this.waitingQueue.add('decrementTables', {
-    //   storeId,
-    //   peopleCnt,
-    // });
-    // await job.finished();
-    // return;
-    // 여기까지 without redis
-
-    // // with Redis
-    // await this.waitingQueue.add('addStoresHashes', {
-    //   storeId,
-    //   availableTableForTwo,
-    //   availableTableForFour,
-    //   maxWaitingCnt,
-    //   peopleCnt,
-    //   cycleTime,
-    // });
   }
 
   //웨이팅 상태 변경
@@ -378,31 +291,28 @@ export class WaitingsService {
       if (waiting.status !== WaitingStatus.ENTERED) {
         throw new BadRequestException('적절하지 않은 status 입니다');
       }
-      //여기부터
-      // without redis
-      // await this.waitingQueue.add('patchToExited', { storeId, waitingId });
-      // await this.waitingQueue.add('incrementTables', { storeId, peopleCnt });
-      // 여기까지 without redis
-
-      // // with redis
-      // await this.waitingQueue.add('incrementTableInRedis', {
-      //   storeId,
-      //   peopleCnt,
-      // });
-
-      // 여기부터
       try {
-        const job = await this.waitingQueue.add('exitedAndIncrementTable', {
-          storeId,
-          waitingId,
-          peopleCnt,
-        });
-        await job.finished();
+        // with Bullqueue
+        // const job = await this.waitingQueue.add('exitedAndIncrementTable', {
+        //   storeId,
+        //   waitingId,
+        //   peopleCnt,
+        // });
+        // await job.finished();
+
+        // without Bullqueue
+        await this.waitingsRepository.patchToExited(storeId, waitingId);
+        let availableTable: string;
+        if (peopleCnt == 1 || peopleCnt == 2) {
+          availableTable = 'availableTableForTwo';
+        } else {
+          availableTable = 'availableTableForFour';
+        }
+        await this.redisClient.hincrby(`store:${storeId}`, availableTable, 1);
         return;
       } catch (err) {
         throw new InternalServerErrorException('퇴장에 실패했습니다');
       }
-      // 여기까지 with redis
     } // ENTERED 를 EXITED_AND_READY로 처리하고 그 인원수에 맞는 대기열을 CALLED 처리 한다 => 매장용
     // 대기열이 없으면 부르지 않는다
 
@@ -412,11 +322,15 @@ export class WaitingsService {
         throw new BadRequestException('적절하지 않은 status 입니다');
       }
       try {
-        const job = await this.waitingQueue.add('patchToDelayed', {
-          storeId,
-          waitingId,
-        });
-        await job.finished();
+        // with Bullqueue
+        // const job = await this.waitingQueue.add('patchToDelayed', {
+        //   storeId,
+        //   waitingId,
+        // });
+        // await job.finished();
+
+        // without Bullqueue
+        await this.waitingsRepository.patchToDelayed(storeId, waitingId);
         return;
       } catch (err) {
         throw new InternalServerErrorException('웨이팅 연기에 실패했습니다');
@@ -430,19 +344,6 @@ export class WaitingsService {
         waiting.status == WaitingStatus.CALLED ||
         waiting.status == WaitingStatus.WAITING
       ) {
-        // 여기부터
-        // this.waitingQueue.add('patchToEntered', { storeId, waitingId, status });
-
-        // // without redis
-        // this.waitingQueue.add('decrementTables', { storeId, peopleCnt });
-        // this.waitingQueue.add('decrementCurrentWaitingCnt', storeId);
-        // 여기까지 without redis
-
-        // // with redis
-        // this.waitingQueue.add('decrementTableInRedis', { storeId, peopleCnt });
-        // this.waitingQueue.add('decrementCurrentWaitingCntInRedis', storeId);
-
-        // 여기부터
         const tablesOfStoreInRedis = await this.redisClient.hgetall(
           `store:${storeId}`,
         );
@@ -456,18 +357,41 @@ export class WaitingsService {
           }
         }
         try {
-          const job = await this.waitingQueue.add('enteredAndDecrementCnts', {
+          // with Bullqueue
+          // const job = await this.waitingQueue.add('enteredAndDecrementCnts', {
+          //   storeId,
+          //   waitingId,
+          //   status,
+          //   peopleCnt,
+          // });
+          // await job.finished();
+
+          // without Bullqueue
+          await this.waitingsRepository.patchToEntered(
             storeId,
             waitingId,
             status,
-            peopleCnt,
-          });
-          await job.finished();
+          );
+          let availableTable: string;
+          if (peopleCnt == 1 || peopleCnt == 2) {
+            availableTable = 'availableTableForTwo';
+          } else {
+            availableTable = 'availableTableForFour';
+          }
+          await this.redisClient.hincrby(
+            `store:${storeId}`,
+            availableTable,
+            -1,
+          );
+          await this.redisClient.hincrby(
+            `store:${storeId}`,
+            'currentWaitingCnt',
+            -1,
+          );
           return;
         } catch (err) {
           throw new InternalServerErrorException('입장에 실패했습니다');
         }
-        // 여가까지 with redis
       } else {
         throw new BadRequestException('적절하지 않은 status 입니다');
       }
@@ -493,23 +417,21 @@ export class WaitingsService {
       waiting.status == WaitingStatus.DELAYED ||
       waiting.status == WaitingStatus.WAITING
     ) {
-      // 여기부터
-      // this.waitingQueue.add('patchToCanceled', { storeId, waitingId });
-
-      // //without redis
-      // this.waitingQueue.add('decrementCurrentWaitingCnt', storeId);
-      // 여기까지 without redis
-
-      // //with redis
-      // this.waitingQueue.add('decrementCurrentWaitingCntInRedis', storeId);
-
-      // 여기부터
       try {
-        const job = await this.waitingQueue.add(
-          'canceledAndDecrementWaitingCnt',
-          { storeId, waitingId },
+        // with Bullqueue
+        // const job = await this.waitingQueue.add(
+        //   'canceledAndDecrementWaitingCnt',
+        //   { storeId, waitingId },
+        // );
+        // await job.finished();
+
+        // without Bullqueue
+        await this.waitingsRepository.patchToCanceled(storeId, waitingId);
+        await this.redisClient.hincrby(
+          `store:${storeId}`,
+          'currentWaitingCnt',
+          -1,
         );
-        await job.finished();
         return;
       } catch (err) {
         throw new InternalServerErrorException('웨이팅 취소에 실패했습니다');
@@ -522,9 +444,9 @@ export class WaitingsService {
 
   //노쇼 처리
   async checkAndPatchNoshow(): Promise<void> {
-    //console.log('실행중');
+    console.log('Noshow Check');
     const delayed = await this.waitingsRepository.getAllDelayed();
-    delayed.forEach((entity) => {
+    delayed.forEach(async (entity) => {
       const currentTime = new Date();
       const updatedAt = entity.updatedAt;
       const timePassed = Math.floor(
@@ -533,27 +455,27 @@ export class WaitingsService {
 
       if (timePassed >= 10) {
         entity.status = WaitingStatus.NOSHOW;
-        // this.waitingQueue.add('saveNoshow', { entity });
-
-        // // without redis
-        // // this.waitingQueue.add('decrementCurrentWaitingCnt', entity.StoreId);
-
-        // //with redis
-        // this.waitingQueue.add(
-        //   'decrementCurrentWaitingCntInRedis',
-        //   entity.StoreId,
-        // );
 
         try {
-          this.waitingQueue.add('saveNoshowAndDecrementWaitingCnt', {
-            entity,
-          });
+          // with Bullqueue
+          // this.waitingQueue.add('saveNoshowAndDecrementWaitingCnt', {
+          //   entity,
+          // });
+
+          //without
+          await this.waitingsRepository.saveNoshow(entity);
+          const storeId = entity.StoreId;
+          await this.redisClient.hincrby(
+            `store:${storeId}`,
+            'currentWaitingCnt',
+            -1,
+          );
         } catch (err) {
           throw new InternalServerErrorException('노쇼 처리에 실패했습니다');
         }
-        //console.log(
-        //  `waitingId ${entity.waitingId}의 상태가 NOSHOW가 되었습니다`,
-        //);
+        console.log(
+          `waitingId ${entity.waitingId}의 상태가 NOSHOW가 되었습니다`,
+        );
       }
     });
     return;
@@ -578,42 +500,18 @@ export class WaitingsService {
     }
     const peopleCnt = existsWaiting.peopleCnt;
 
-    // 여기부터
-    // const cycleTime = await this.storesRepository.getCycleTimeByStoreId(
-    //   storeId,
-    // );
+    // with Bullqueue
+    // const job = await this.waitingQueue.add('getStoreHashesFromRedis', storeId);
+    // const storeHash = await job.finished();
 
-    // // without redis
-    // const tableCnt = await this.waitingsRepository.getTableTotalCnt(
-    //   storeId,
-    //   peopleCnt,
-    // ); // 사람 수에 맞는 테이블의 갯수
-    // 여기까지 without redis
-
-    // 여기부터
-    // with redis
-    const job = await this.waitingQueue.add('getStoreHashesFromRedis', storeId);
-    const storeHash = await job.finished();
-
+    const storeHash = await this.redisClient.hgetall(`store:${storeId}`);
     let tableCnt: number;
 
-    if (peopleCnt == 1 || peopleCnt == 2) tableCnt = storeHash.tableForTwo;
-    else tableCnt = storeHash.tableForFour;
+    if (peopleCnt == 1 || peopleCnt == 2)
+      tableCnt = Number(storeHash.tableForTwo);
+    else tableCnt = Number(storeHash.tableForFour);
 
-    const cycleTime = storeHash.cycleTime;
-    // 여기까지 with redis
-
-    // const waitingPeople: Waitings[] =
-    //   await this.waitingsRepository.getWaitingsStatusWaiting(
-    //     storeId,
-    //     peopleCnt,
-    //   );
-
-    // const enteredPeople: Waitings[] =
-    //   await this.waitingsRepository.getWaitingsStatusEntered(
-    //     storeId,
-    //     peopleCnt,
-    //   );
+    const cycleTime = Number(storeHash.cycleTime);
 
     const people: { Waiting: Waitings[]; Entered: Waitings[] } =
       await this.waitingsRepository.getWaitingsStatusWaitingAndEntered(
