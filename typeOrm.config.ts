@@ -18,7 +18,7 @@ export const dataSource = new DataSource({
   port: 5432,
   username: configService.get('POSTGRES_USERNAME'),
   password: configService.get('POSTGRES_PASSWORD'),
-  database: 'temp',
+  database: 'final',
   entities: [Stores, Waitings, Reviews, Tables, Users],
   migrations: [AddColumn1686766534159],
   // migrationsTableName: 'custom_migration_table',

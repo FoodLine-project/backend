@@ -117,6 +117,7 @@ export class WaitingsRepository {
     const exited = await this.waitings.findOne({
       where: { waitingId },
     });
+
     await this.waitings
       .createQueryBuilder('waitings')
       .update(Waitings)
@@ -127,31 +128,19 @@ export class WaitingsRepository {
       .where('waitingId = :waitingId', { waitingId })
       .setParameter('updatedAt', exited.updatedAt)
       .execute();
-    if (exited.peopleCnt == 1 || exited.peopleCnt == 2) {
-      const called = await this.waitings.findOne({
-        where: {
-          StoreId: storeId,
-          status: WaitingStatus.WAITING,
-          peopleCnt: In([1, 2]),
-        },
-      });
-      if (!called) return;
-      called.status = WaitingStatus.CALLED;
-      await this.waitings.save(called);
-      return;
-    } else {
-      const called = await this.waitings.findOne({
-        where: {
-          StoreId: storeId,
-          status: WaitingStatus.WAITING,
-          peopleCnt: In([3, 4]),
-        },
-      });
-      if (!called) return;
-      called.status = WaitingStatus.CALLED;
-      await this.waitings.save(called);
-      return;
-    }
+
+    const peopleCntForTables = exited.peopleCnt <= 2 ? [1, 2] : [3, 4];
+    const called = await this.waitings.findOne({
+      where: {
+        StoreId: storeId,
+        status: WaitingStatus.WAITING,
+        peopleCnt: In(peopleCntForTables),
+      },
+    });
+    if (!called) return;
+    called.status = WaitingStatus.CALLED;
+    await this.waitings.save(called);
+    return;
   }
 
   //연기
@@ -161,37 +150,22 @@ export class WaitingsRepository {
     });
     delayed.status = WaitingStatus.DELAYED;
     await this.waitings.save(delayed);
-    if (delayed.peopleCnt == 1 || delayed.peopleCnt == 2) {
-      const called = await this.waitings.findOne({
-        where: {
-          StoreId: storeId,
-          status: WaitingStatus.WAITING,
-          peopleCnt: In([1, 2]),
-        },
-        order: {
-          createdAt: 'ASC',
-        },
-      });
-      if (!called) return;
-      called.status = WaitingStatus.CALLED;
-      await this.waitings.save(called);
-      return;
-    } else {
-      const called = await this.waitings.findOne({
-        where: {
-          StoreId: storeId,
-          status: WaitingStatus.WAITING,
-          peopleCnt: In([3, 4]),
-        },
-        order: {
-          createdAt: 'ASC',
-        },
-      });
-      if (!called) return;
-      called.status = WaitingStatus.CALLED;
-      await this.waitings.save(called);
-      return;
-    }
+
+    const peopleCntForTables = delayed.peopleCnt <= 2 ? [1, 2] : [3, 4];
+    const called = await this.waitings.findOne({
+      where: {
+        StoreId: storeId,
+        status: WaitingStatus.WAITING,
+        peopleCnt: In(peopleCntForTables),
+      },
+      order: {
+        createdAt: 'ASC',
+      },
+    });
+    if (!called) return;
+    called.status = WaitingStatus.CALLED;
+    await this.waitings.save(called);
+    return;
   }
 
   //입장
@@ -205,37 +179,23 @@ export class WaitingsRepository {
     });
     entered.status = status;
     await this.waitings.save(entered);
-    if (entered.peopleCnt == 1 || entered.peopleCnt == 2) {
-      const notFilled = await this.waitings.findOne({
-        where: {
-          StoreId: storeId,
-          status: WaitingStatus.EXITED_AND_READY,
-          peopleCnt: In([1, 2]),
-        },
-        order: {
-          updatedAt: 'ASC',
-        },
-      });
-      if (!notFilled) return;
-      notFilled.status = WaitingStatus.EXITED;
-      await this.waitings.save(notFilled);
-      return;
-    } else {
-      const notFilled = await this.waitings.findOne({
-        where: {
-          StoreId: storeId,
-          status: WaitingStatus.EXITED_AND_READY,
-          peopleCnt: In([3, 4]),
-        },
-        order: {
-          updatedAt: 'ASC',
-        },
-      });
-      if (!notFilled) return;
-      notFilled.status = WaitingStatus.EXITED;
-      await this.waitings.save(notFilled);
-      return;
-    }
+
+    const peopleCntForTables = entered.peopleCnt <= 2 ? [1, 2] : [3, 4];
+
+    const notFilled = await this.waitings.findOne({
+      where: {
+        StoreId: storeId,
+        status: WaitingStatus.EXITED_AND_READY,
+        peopleCnt: In(peopleCntForTables),
+      },
+      order: {
+        updatedAt: 'ASC',
+      },
+    });
+    if (!notFilled) return;
+    notFilled.status = WaitingStatus.EXITED;
+    await this.waitings.save(notFilled);
+    return;
   }
 
   //웨이팅 취소 ( for user )
@@ -250,7 +210,7 @@ export class WaitingsRepository {
 
   //연기목록 조회
   async getAllDelayed(): Promise<Waitings[]> {
-    return this.waitings.find({
+    return await this.waitings.find({
       where: { status: WaitingStatus.DELAYED },
     });
   }
@@ -266,37 +226,21 @@ export class WaitingsRepository {
     storeId: number,
     peopleCnt: number,
   ): Promise<Waitings[]> {
-    if (peopleCnt == 1 || peopleCnt == 2) {
-      return this.waitings.find({
-        where: {
-          StoreId: storeId,
-          status: In([
-            WaitingStatus.WAITING,
-            WaitingStatus.CALLED,
-            WaitingStatus.DELAYED,
-          ]),
-          peopleCnt: In([1, 2]),
-        },
-        order: {
-          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
-        },
-      });
-    } else {
-      return this.waitings.find({
-        where: {
-          StoreId: storeId,
-          status: In([
-            WaitingStatus.WAITING,
-            WaitingStatus.CALLED,
-            WaitingStatus.DELAYED,
-          ]),
-          peopleCnt: In([3, 4]),
-        },
-        order: {
-          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
-        },
-      });
-    }
+    const peopleCntForTables = peopleCnt <= 2 ? [1, 2] : [3, 4];
+    return await this.waitings.find({
+      where: {
+        StoreId: storeId,
+        status: In([
+          WaitingStatus.WAITING,
+          WaitingStatus.CALLED,
+          WaitingStatus.DELAYED,
+        ]),
+        peopleCnt: In(peopleCntForTables),
+      },
+      order: {
+        createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+      },
+    });
   }
 
   //상태가 Entered 인 목록 조회
@@ -304,89 +248,50 @@ export class WaitingsRepository {
     storeId: number,
     peopleCnt: number,
   ): Promise<Waitings[]> {
-    if (peopleCnt == 1 || peopleCnt == 2) {
-      return this.waitings.find({
-        where: {
-          StoreId: storeId,
-          status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
-          peopleCnt: In([1, 2]),
-        },
-        order: {
-          updatedAt: 'ASC', // update 기준 오름차순 정렬
-        },
-      });
-    } else {
-      return this.waitings.find({
-        where: {
-          StoreId: storeId,
-          status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
-          peopleCnt: In([3, 4]),
-        },
-        order: {
-          updatedAt: 'ASC', // update 기준 오름차순 정렬
-        },
-      });
-    }
+    const peopleCntForTables = peopleCnt <= 2 ? [1, 2] : [3, 4];
+    return await this.waitings.find({
+      where: {
+        StoreId: storeId,
+        status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
+        peopleCnt: In(peopleCntForTables),
+      },
+      order: {
+        updatedAt: 'ASC', // update 기준 오름차순 정렬
+      },
+    });
   }
 
   async getWaitingsStatusWaitingAndEntered(
     storeId: number,
     peopleCnt: number,
   ): Promise<{ Waiting: Waitings[]; Entered: Waitings[] }> {
-    if (peopleCnt == 1 || peopleCnt == 2) {
-      const Waiting = await this.waitings.find({
-        where: {
-          StoreId: storeId,
-          status: In([
-            WaitingStatus.WAITING,
-            WaitingStatus.CALLED,
-            WaitingStatus.DELAYED,
-            WaitingStatus.ENTERED,
-          ]),
-          peopleCnt: In([1, 2]),
-        },
-        order: {
-          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
-        },
-      });
-      const Entered = await this.waitings.find({
-        where: {
-          StoreId: storeId,
-          status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
-          peopleCnt: In([1, 2]),
-        },
-        order: {
-          updatedAt: 'ASC', // update 기준 오름차순 정렬
-        },
-      });
-      return { Waiting, Entered };
-    } else {
-      const Waiting = await this.waitings.find({
-        where: {
-          StoreId: storeId,
-          status: In([
-            WaitingStatus.WAITING,
-            WaitingStatus.CALLED,
-            WaitingStatus.DELAYED,
-          ]),
-          peopleCnt: In([3, 4]),
-        },
-        order: {
-          createdAt: 'ASC', // 생성일 기준 오름차순 정렬
-        },
-      });
-      const Entered = await this.waitings.find({
-        where: {
-          StoreId: storeId,
-          status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
-          peopleCnt: In([3, 4]),
-        },
-        order: {
-          updatedAt: 'ASC', // update 기준 오름차순 정렬
-        },
-      });
-      return { Waiting, Entered };
-    }
+    const peopleCntForTables = peopleCnt <= 2 ? [1, 2] : [3, 4];
+    const Waiting = await this.waitings.find({
+      where: {
+        StoreId: storeId,
+        status: In([
+          WaitingStatus.WAITING,
+          WaitingStatus.CALLED,
+          WaitingStatus.DELAYED,
+          WaitingStatus.ENTERED,
+        ]),
+        peopleCnt: In([1, 2]),
+      },
+      order: {
+        createdAt: 'ASC', // 생성일 기준 오름차순 정렬
+      },
+    });
+    const Entered = await this.waitings.find({
+      where: {
+        StoreId: storeId,
+        status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
+        peopleCnt: In(peopleCntForTables),
+      },
+      order: {
+        updatedAt: 'ASC', // update 기준 오름차순 정렬
+      },
+    });
+    return { Waiting, Entered };
   }
 
   //테이블 수 조회
@@ -395,10 +300,8 @@ export class WaitingsRepository {
       where: { store: { storeId: storeId } },
       relations: ['store'],
     });
-    if (peopleCnt === 1 || peopleCnt === 0) {
-      return stores.store.tableForTwo;
-    } else {
-      return stores.store.tableForFour;
-    }
+    return peopleCnt <= 2
+      ? stores.store.tableForTwo
+      : stores.store.tableForFour;
   }
 }

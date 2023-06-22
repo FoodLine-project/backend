@@ -101,7 +101,6 @@ export class WaitingsController {
 
   // DELAYED 후 10분이 지나면 NOSHOW
   @Cron('0 */10 * * * *')
-  // @Cron('0 */1 * * * *')
   async checkAndPatchNoshow(): Promise<void> {
     this.waitingsService.checkAndPatchNoshow();
     return;
