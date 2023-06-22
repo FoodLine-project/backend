@@ -12,14 +12,14 @@ import { Tokens } from './types';
 import { Users } from './users.entity';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
-// import { StoresRepository } from '../stores/stores.repository';
+import { StoresRepository } from '../stores/stores.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRedis('refresh-token') private readonly client: Redis,
     private usersRepository: UsersRepository,
-    // private storesRepository: StoresRepository,
+    private storesRepository: StoresRepository,
     private jwtService: JwtService,
   ) {}
 
@@ -38,7 +38,7 @@ export class AuthService {
         StoreId,
       },
       {
-        secret: `${process.env.JWT_AT_SECRET_KEY}`,
+        secret: process.env.JWT_AT_SECRET_KEY,
         expiresIn: '2h',
       },
     );
@@ -55,7 +55,7 @@ export class AuthService {
         StoreId,
       },
       {
-        secret: `${process.env.JWT_RT_SECRET_KEY}`,
+        secret: process.env.JWT_RT_SECRET_KEY,
         expiresIn: '7d',
       },
     );
@@ -117,6 +117,8 @@ export class AuthService {
       `user:${user.userId}:refresh_token`,
       tokens.refreshToken,
     );
+    await this.client.expire(`user:${user.userId}:refresh_token`, 604800);
+
     /* Refresh token을 redis에 저장/관리 */
 
     /* Refresh token을 postgres users 테이블에 저장/관리 */
@@ -157,7 +159,7 @@ export class AuthService {
     /* Refresh token을 postgres users 테이블에 저장/관리 */
   }
 
-  async refreshAccessToken(user: Users): Promise<string> {
+  async refreshAccessToken(user: Users, refreshToken: string): Promise<string> {
     /* Refresh token을 redis에 저장/관리 */
     const refreshTokenFromRedis = await this.client.get(
       `user:${user.userId}:refresh_token`,
@@ -177,7 +179,7 @@ export class AuthService {
     // }
     /* Refresh token을 postgres users 테이블에 저장/관리 */
 
-    if (user.refreshToken !== refreshTokenFromRedis) {
+    if (refreshToken !== refreshTokenFromRedis) {
       throw new UnauthorizedException(`로그인이 필요합니다.`);
     }
 
@@ -188,10 +190,13 @@ export class AuthService {
     return await this.usersRepository.findUserById(userId);
   }
 
-  // async genRandomAdminUsers() {
-  //   const storeCount = (await this.storesRepository.findAll()).length;
-  //   console.log(storeCount);
+  async genRandomAdminUsers() {
+    const storeCount = (await this.storesRepository.findAll()).length;
 
-  //   await this.usersRepository.createAdminUsers(storeCount);
-  // }
+    await this.usersRepository.createRandomAdminUsers(storeCount);
+  }
+
+  async genRandomUsers(count: number) {
+    await this.usersRepository.createRandomAdminUsers(count);
+  }
 }

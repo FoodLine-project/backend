@@ -97,4 +97,16 @@ export class ReviewsService {
       throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
     }
   }
+
+  async genRandomReviews() {
+    const reviewCount = 5000000;
+    const storeCount = 693430;
+    const userCount = 1193430;
+
+    await this.reviewsRepository.genRandomReviews(
+      reviewCount,
+      storeCount,
+      userCount,
+    );
+  }
 }
