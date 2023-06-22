@@ -312,7 +312,7 @@ export class StoresService {
           rating
         };
 
-        await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
+        await this.redisClient.hset(`store:${storeId}`, datas);
         const currentWaitingCnt = 0;
         return { ...storeDatas, rating, currentWaitingCnt };
       }
