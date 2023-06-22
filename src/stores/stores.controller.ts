@@ -18,11 +18,12 @@ import { CreateStoresDto } from './dto/create-stores.dto';
 import { Public } from '../auth/common/decorators';
 import { CacheInterceptor } from 'src/cache/cache.interceptor';
 import { searchRestaurantsDto } from './dto/search-restaurants.dto';
+import { oneStoreDto } from './dto/getOne-store.dto';
 
 @Controller('stores')
 @UseInterceptors(CacheInterceptor)
 export class StoresController {
-  constructor(private storesService: StoresService) {}
+  constructor(private storesService: StoresService) { }
 
   @Public()
   @Post('/nearby-stores-rough')
@@ -124,7 +125,7 @@ export class StoresController {
   @Get('/:storeId')
   getOneStore(
     @Param('storeId', ParseIntPipe) storeId: number,
-  ): Promise<Stores> {
+  ): Promise<oneStoreDto> {
     return this.storesService.getOneStore(storeId);
   }
 
