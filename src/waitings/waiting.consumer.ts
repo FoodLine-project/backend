@@ -23,7 +23,7 @@ export class WaitingConsumer {
       throw new Error('Redis 연결에 실패했습니다');
     }
   }
-  
+
   // with Redis
   @Process('getCurrentWaitingCntInRedis')
   async getCurrentWaitingCntInRedis(job: Job): Promise<number> {

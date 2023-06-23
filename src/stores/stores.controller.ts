@@ -23,7 +23,7 @@ import { oneStoreDto } from './dto/getOne-store.dto';
 @Controller('stores')
 @UseInterceptors(CacheInterceptor)
 export class StoresController {
-  constructor(private storesService: StoresService) { }
+  constructor(private storesService: StoresService) {}
 
   @Public()
   @Post('/nearby-stores-rough')

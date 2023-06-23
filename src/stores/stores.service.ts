@@ -13,7 +13,6 @@ import { Redis } from 'ioredis';
 import { searchRestaurantsDto } from './dto/search-restaurants.dto';
 import { oneStoreDto } from './dto/getOne-store.dto';
 
-
 @Injectable()
 export class StoresService {
   constructor(
@@ -23,7 +22,7 @@ export class StoresService {
     private reviewsRepository: ReviewsRepository,
 
     private readonly elasticsearchService: ElasticsearchService,
-  ) { }
+  ) {}
 
   //주변식당탐색
   async searchRestaurants(
@@ -161,7 +160,6 @@ export class StoresService {
     const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
     //캐싱 예외. currenWaitingCnt/Ratings APi 분리
     if (Object.keys(redisAll).length === 0) {
-
       const store = await this.storesRepository.getOneStore(storeId);
       const rating: number = await this.getRating(storeId);
       return {
@@ -175,11 +173,11 @@ export class StoresService {
         tableForFour: store.tableForFour,
         tableForTwo: store.tableForTwo,
         rating: rating,
-        review: store.reviews
-      }
+        review: store.reviews,
+      };
     }
     //hset
-    const review = await this.reviewsRepository.findAllReviews(storeId)
+    const review = await this.reviewsRepository.findAllReviews(storeId);
 
     return {
       storeName: redisAll.storename, //없음. 그럼 애초에 .getOneStore(storeId); 전체?
@@ -192,7 +190,7 @@ export class StoresService {
       tableForFour: parseInt(redisAll.tableForFour),
       tableForTwo: parseInt(redisAll.tableForTwo),
       rating: parseInt(redisAll.rating),
-      review: review
+      review: review,
     };
   }
 
@@ -271,15 +269,16 @@ export class StoresService {
         'maxwaitingcnt',
         'cycletime',
         'tablefortwo',
-        'tableforfour',],
+        'tableforfour',
+      ],
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
             },
-          },
-        ]
+          ]
         : undefined,
       query: {
         bool: {
@@ -296,9 +295,7 @@ export class StoresService {
     const storesData = stores.hits.hits.map(async (hit) => {
       const storeDatas = hit._source;
       const storeId: number = storeDatas.storeid;
-      const redisAll = await this.redisClient.hgetall(
-        `store:${storeId}`
-      );
+      const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
       if (Object.keys(redisAll).length === 0) {
         const rating: number = await this.getRating(storeId);
         const datas = {
@@ -309,7 +306,7 @@ export class StoresService {
           tableForFour: storeDatas.tableforfour,
           availableTableForTwo: storeDatas.tablefortwo,
           availableTableForFour: storeDatas.tableforfour,
-          rating
+          rating,
         };
 
         await this.redisClient.hset(`store:${storeId}`, datas);
@@ -342,15 +339,16 @@ export class StoresService {
         'maxwaitingcnt',
         'cycletime',
         'tablefortwo',
-        'tableforfour',],
+        'tableforfour',
+      ],
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
             },
-          },
-        ]
+          ]
         : undefined,
       query: {
         bool: {
@@ -372,10 +370,8 @@ export class StoresService {
     const storesData = stores.hits.hits.map(async (hit) => {
       const storeDatas = hit._source;
       const storeId: number = storeDatas.storeid;
-      const redisAll = await this.redisClient.hgetall(
-        `store:${storeId}`,
-      );
-      console.log(redisAll)
+      const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
+      console.log(redisAll);
       if (Object.keys(redisAll).length === 0) {
         const rating: number = await this.getRating(storeId);
         const datas = {
@@ -386,14 +382,14 @@ export class StoresService {
           tableForFour: storeDatas.tableforfour,
           availableTableForTwo: storeDatas.tablefortwo,
           availableTableForFour: storeDatas.tableforfour,
-          rating
+          rating,
         };
         await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
         const currentWaitingCnt = 0;
         return { ...storeDatas, rating, currentWaitingCnt };
       }
       const currentWaitingCnt = redisAll.currentWaitingCnt;
-      const rating = redisAll.rating
+      const rating = redisAll.rating;
       return { ...storeDatas, rating, currentWaitingCnt };
     });
     const resolvedStoredDatas = await Promise.all(storesData);
@@ -420,12 +416,12 @@ export class StoresService {
       //  from: from,
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
-            },
-          }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
-        ]
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
+            }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
+          ]
         : undefined,
       query: {
         geo_bounding_box: {
@@ -442,50 +438,60 @@ export class StoresService {
         },
       },
     });
-    const result = await Promise.all(stores.hits.hits.map(async (hit: any) => {
-      const storesFound = hit._source;
-      const storeId: number = storesFound.storeid;
-      const redisAll = await this.redisClient.hgetall(
-        `store:${storeId}`,
-      );
-      if (Object.keys(redisAll).length === 0) {
-        const average: number = await this.getRating(storeId);
-        const datas = {
-          maxWaitingCnt: storesFound.maxwaitingcnt,
-          currentWaitingCnt: 0,
-          cycleTime: storesFound.cycletime,
-          tableForTwo: storesFound.tablefortwo,
-          tableForFour: storesFound.tableforfour,
-          availableTableForTwo: storesFound.tablefortwo,
-          availableTableForFour: storesFound.tableforfour,
-          rating: average,
-        };
-        await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
-        const rating = average;
+    const result = await Promise.all(
+      stores.hits.hits.map(async (hit: any) => {
+        const storesFound = hit._source;
+        const storeId: number = storesFound.storeid;
+        const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
+        if (Object.keys(redisAll).length === 0) {
+          const average: number = await this.getRating(storeId);
+          const datas = {
+            maxWaitingCnt: storesFound.maxwaitingcnt,
+            currentWaitingCnt: 0,
+            cycleTime: storesFound.cycletime,
+            tableForTwo: storesFound.tablefortwo,
+            tableForFour: storesFound.tableforfour,
+            availableTableForTwo: storesFound.tablefortwo,
+            availableTableForFour: storesFound.tableforfour,
+            rating: average,
+          };
+          await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
+          const rating = average;
+          const latitude: number = storesFound.location.lat;
+          const longitude: number = storesFound.location.lon;
+          const start = { latitude: myLatitude, longitude: myLongitude };
+          const end = { latitude: latitude, longitude: longitude };
+          const distance = geolib.getDistance(start, end);
+          const currentWaitingCnt = 0;
+          return {
+            ...storesFound,
+            distance: distance + 'm',
+            rating,
+            currentWaitingCnt,
+          };
+        }
         const latitude: number = storesFound.location.lat;
         const longitude: number = storesFound.location.lon;
         const start = { latitude: myLatitude, longitude: myLongitude };
         const end = { latitude: latitude, longitude: longitude };
         const distance = geolib.getDistance(start, end);
-        const currentWaitingCnt = 0
-        return { ...storesFound, distance: distance + 'm', rating, currentWaitingCnt };
-      }
-      const latitude: number = storesFound.location.lat;
-      const longitude: number = storesFound.location.lon;
-      const start = { latitude: myLatitude, longitude: myLongitude };
-      const end = { latitude: latitude, longitude: longitude };
-      const distance = geolib.getDistance(start, end);
-      const currentWaitingCnt = redisAll.currentWaitingCnt;
-      const rating = redisAll.rating
-      return { ...storesFound, distance: distance + 'm', rating, currentWaitingCnt };
-    }));
+        const currentWaitingCnt = redisAll.currentWaitingCnt;
+        const rating = redisAll.rating;
+        return {
+          ...storesFound,
+          distance: distance + 'm',
+          rating,
+          currentWaitingCnt,
+        };
+      }),
+    );
 
     result.sort((a, b) => {
       const distanceA = parseFloat(a.distance);
       const distanceB = parseFloat(b.distance);
       return distanceA - distanceB;
     });
-    console.log(result)
+    console.log(result);
     return result;
   }
   //redis 에 storeId 랑 좌표 넣기
@@ -518,14 +524,13 @@ export class StoresService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
   }
-
 
   //box 내의 음식점 조회
   async getNearbyStoresByBox(
@@ -575,7 +580,7 @@ export class StoresService {
     stores.forEach(async (store) => {
       const distance = Math.ceil(
         nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-        1000,
+          1000,
       );
 
       const storesHashes = await this.redisClient.hgetall(
@@ -653,16 +658,27 @@ export class StoresService {
       const stores = await this.storesRepository.getStoreAddressId();
 
       for (const store of stores) {
-        const { newAddress, oldAddress, storeId } = store;
+        const { newAddress, storeName, oldAddress, storeId } = store;
 
         try {
           let coordinates = await this.storesRepository.getCoordinate(
+            null,
             newAddress,
           );
 
           if (!coordinates) {
-            coordinates = await this.storesRepository.getCoordinate(oldAddress);
+            coordinates = await this.storesRepository.getCoordinate(
+              null,
+              oldAddress,
+            );
           }
+          if (!coordinates) {
+            coordinates = await this.storesRepository.getCoordinate(
+              storeName,
+              null,
+            );
+          }
+
           if (!coordinates) continue;
 
           //La = y, Ma = x
@@ -671,21 +687,18 @@ export class StoresService {
 
           await this.storesRepository.updateCoord(lat, lon, storeId);
 
-          //console.log(
-          //`Updated coordinates for address: ${address}`,
-          //La,
-          //Ma,
-          //storeId,
-          //);
+          console.log(
+            `Updated coordinates for address: ${storeId},${storeName},${newAddress}${lat}, ${lon}`,
+          );
         } catch (error) {
-          //console.error(
-          //`Error updating coordinates for address: ${address} and ${oldAddress}`,
-          //error,
-          //);
+          console.error(
+            `Error updating coordinates for address: ${storeId},${storeName},${newAddress}, ${oldAddress}`,
+            error,
+          );
         }
       }
     } catch (error) {
-      //console.error('Error occurred during database operation:', error);
+      console.error('Error occurred during database operation:', error);
     }
   }
 }
