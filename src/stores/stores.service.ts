@@ -17,7 +17,7 @@ import { oneStoreDto } from './dto/getOne-store.dto';
 export class StoresService {
   constructor(
     @InjectRedis('store') private readonly client: Redis,
-    @InjectRedis('waitingManager') private readonly redisClient: Redis,
+    @InjectRedis('ec2redis') private readonly redisClient: Redis,
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
 
@@ -155,42 +155,53 @@ export class StoresService {
     }
   }
 
-  //상세조회 + 댓글
   async getOneStore(storeId: number): Promise<oneStoreDto> {
     const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
+    const store = await this.storesRepository.getOneStore(storeId);
+
+    console.log(redisAll);
+
     //캐싱 예외. currenWaitingCnt/Ratings APi 분리
     if (Object.keys(redisAll).length === 0) {
-      const store = await this.storesRepository.getOneStore(storeId);
       const rating: number = await this.getRating(storeId);
-      return {
-        storeName: store.storeName,
-        category: store.category,
+      const storeName = store.storeName;
+      const category = store.category;
+      const lon = store.lon;
+      const lat = store.lat;
+      const data = {
         maxWaitingCnt: store.maxWaitingCnt,
         currentWaitingCnt: 0,
-        lon: store.lon,
-        lat: store.lat,
-        newAddress: store.newAddress,
-        tableForFour: store.tableForFour,
+        cycleTime: store.cycleTime,
         tableForTwo: store.tableForTwo,
+        tableForFour: store.tableForFour,
+        availableTableForTwo: store.tableForTwo,
+        availableTableForFour: store.tableForFour,
         rating: rating,
-        review: store.reviews,
+      };
+      await this.redisClient.hset(`store:${storeId}`, data);
+      delete data.availableTableForTwo;
+      delete data.availableTableForFour;
+      delete data.cycleTime;
+      return {
+        storeName,
+        category,
+        lat,
+        lon,
+        newAddress: store.newAddress,
+        ...data,
       };
     }
-    //hset
-    const review = await this.reviewsRepository.findAllReviews(storeId);
-
     return {
-      storeName: redisAll.storename, //없음. 그럼 애초에 .getOneStore(storeId); 전체?
-      category: redisAll.category,
-      maxWaitingCnt: parseInt(redisAll.maxWaitingCnt),
+      storeName: store.storeName,
+      category: store.category,
+      lon: store.lon,
+      lat: store.lat,
+      newAddress: store.newAddress,
+      maxWaitingCnt: store.maxWaitingCnt,
       currentWaitingCnt: parseInt(redisAll.currentWaitingCnt),
-      lon: parseFloat(redisAll.lon),
-      lat: parseFloat(redisAll.lat),
-      newAddress: redisAll.newAddress,
-      tableForFour: parseInt(redisAll.tableForFour),
-      tableForTwo: parseInt(redisAll.tableForTwo),
-      rating: parseInt(redisAll.rating),
-      review: review,
+      tableForFour: store.tableForFour,
+      tableForTwo: store.tableForTwo,
+      rating: Number(redisAll.rating),
     };
   }
 

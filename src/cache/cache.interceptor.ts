@@ -61,7 +61,7 @@ export class CacheInterceptor implements NestInterceptor {
         tap((response) => {
           //console.log('response:', response);
           const args =
-            ttl === undefined ? [key, response] : [key, response, { ttl }];
+            ttl === undefined ? [key, response] : [key, response, ttl];
           this.cacheManager.set(...args);
         }),
       );
