@@ -12,9 +12,17 @@ const cacheModule = CacheModule.registerAsync({
   }),
 });
 
+const cacheModule2 = CacheModule.registerAsync({
+  useFactory: () => ({
+    store: redisStore,
+    host: process.env.EC2_REDIS_HOST,
+    port: Number(process.env.EC2_REDIS_PORT),
+  }),
+});
+
 @Module({
   providers: [CacheInterceptor],
-  imports: [cacheModule],
-  exports: [cacheModule],
+  imports: [cacheModule2],
+  exports: [cacheModule2],
 })
 export class CustomCacheModule {}
