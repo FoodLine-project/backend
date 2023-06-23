@@ -273,9 +273,8 @@ export class WaitingsRepository {
           WaitingStatus.WAITING,
           WaitingStatus.CALLED,
           WaitingStatus.DELAYED,
-          WaitingStatus.ENTERED,
         ]),
-        peopleCnt: In([1, 2]),
+        peopleCnt: In(peopleCntForTables),
       },
       order: {
         createdAt: 'ASC', // 생성일 기준 오름차순 정렬

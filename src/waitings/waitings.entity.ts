@@ -18,6 +18,7 @@ export class Waitings extends BaseEntity {
   @PrimaryGeneratedColumn()
   waitingId: number;
 
+  @Index()
   @Column()
   StoreId: number;
 
