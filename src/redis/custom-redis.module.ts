@@ -22,6 +22,7 @@ if (result.error) {
           namespace: 'ec2redis',
           host: process.env.EC2_REDIS_HOST,
           port: Number(process.env.EC2_REDIS_PORT),
+          password: process.env.EC2_REDIS_PASSWORD,
         },
       ],
     }),
