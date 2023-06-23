@@ -43,6 +43,7 @@ const redisOptions3: RedisOptions = {
 const redisOptions4: RedisOptions = {
   host: process.env.EC2_REDIS_HOST,
   port: Number(process.env.EC2_REDIS_PORT),
+  password: process.env.EC2_REDIS_PASSWORD,
 };
 
 @Module({

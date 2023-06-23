@@ -67,35 +67,34 @@ export class WaitingsService {
     peopleCnt: number,
     user: Users,
   ): Promise<string> {
-    // if (peopleCnt > 4) {
-    //   throw new BadRequestException('최대 4명까지 신청할 수 있습니다');
-    // }
-    // const existsStore = await this.storesRepository.findStoreById(storeId);
-    // if (!existsStore) {
-    //   throw new NotFoundException('음식점이 존재하지 않습니다');
-    // }
-    // const storeHash = await this.redisClient.hgetall(`store:${storeId}`);
+    if (peopleCnt > 4) {
+      throw new BadRequestException('최대 4명까지 신청할 수 있습니다');
+    }
+    const existsStore = await this.storesRepository.findStoreById(storeId);
+    if (!existsStore) {
+      throw new NotFoundException('음식점이 존재하지 않습니다');
+    }
+    const storeHash = await this.redisClient.hgetall(`store:${storeId}`);
 
-    // const peopleCntForTables =
-    //   peopleCnt <= 2
-    //     ? Number(storeHash.availableTableForTwo)
-    //     : Number(storeHash.availableTableForFour);
+    const peopleCntForTables =
+      peopleCnt <= 2
+        ? Number(storeHash.availableTableForTwo)
+        : Number(storeHash.availableTableForFour);
 
-    // if (
-    //   Number(peopleCntForTables) !== 0 &&
-    //   Number(storeHash.currentWaitingCnt) === 0
-    // ) {
-    //   throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
-    // }
+    if (
+      Number(peopleCntForTables) !== 0 &&
+      !Number(storeHash.currentWaitingCnt)
+    ) {
+      throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
+    }
+    if (storeHash.maxWaitingCnt === storeHash.currentWaitingCnt) {
+      throw new ConflictException('최대 웨이팅 수를 초과했습니다');
+    }
 
-    // if (storeHash.maxWaitingCnt === storeHash.currentWaitingCnt) {
-    //   throw new ConflictException('최대 웨이팅 수를 초과했습니다');
-    // }
-
-    // const existsUser = await this.waitingsRepository.getWaitingByUser(user);
-    // if (existsUser) {
-    //   throw new ConflictException('이미 웨이팅을 신청하셨습니다');
-    // }
+    const existsUser = await this.waitingsRepository.getWaitingByUser(user);
+    if (existsUser) {
+      throw new ConflictException('이미 웨이팅을 신청하셨습니다');
+    }
 
     try {
       const job = await this.waitingQueue.add('postWaitingWithRedis', {

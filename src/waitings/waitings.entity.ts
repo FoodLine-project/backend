@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -20,6 +21,7 @@ export class Waitings extends BaseEntity {
   @Column()
   StoreId: number;
 
+  @Index()
   @Column()
   UserId: number;
 
