@@ -21,7 +21,6 @@ import { searchRestaurantsDto } from './dto/search-restaurants.dto';
 import { oneStoreDto } from './dto/getOne-store.dto';
 
 @Controller('stores')
-@UseInterceptors(CacheInterceptor)
 export class StoresController {
   constructor(private storesService: StoresService) {}
 
@@ -120,7 +119,7 @@ export class StoresController {
   }
 
   //상세조회 (정보+댓글)
-  @UseInterceptors(CacheInterceptor)
+  // @UseInterceptors(CacheInterceptor)
   @Public()
   @Get('/:storeId')
   getOneStore(

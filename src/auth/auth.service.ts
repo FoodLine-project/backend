@@ -17,7 +17,7 @@ import { StoresRepository } from '../stores/stores.repository';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRedis('refresh-token') private readonly client: Redis,
+    @InjectRedis('ec2redis') private readonly client: Redis,
     private usersRepository: UsersRepository,
     private storesRepository: StoresRepository,
     private jwtService: JwtService,

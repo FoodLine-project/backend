@@ -34,11 +34,17 @@ const redisOptions2: RedisOptions = {
 };
 
 const redisOptions3: RedisOptions = {
-  host: '192.168.219.106',
-  port: 6378,
-  // username: null,
-  password: '1234',
+  host: process.env.CLOSE_REDIS_HOST,
+  port: Number(process.env.CLOSE_REDIS_PORT),
+  username: process.env.CLOSE_REDIS_USERNAME,
+  password: process.env.CLOSE_REDIS_PASSWORD,
 };
+
+const redisOptions4: RedisOptions = {
+  host: process.env.EC2_REDIS_HOST,
+  port: Number(process.env.EC2_REDIS_PORT),
+};
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Waitings, Stores, Reviews], {
@@ -48,7 +54,7 @@ const redisOptions3: RedisOptions = {
     AuthModule,
     ScheduleModule.forRoot(),
     BullModule.forRoot({
-      redis: redisOptions,
+      redis: redisOptions4,
     }),
     BullModule.registerQueue({
       name: 'waitingQueue',
@@ -67,4 +73,4 @@ const redisOptions3: RedisOptions = {
     ReviewsRepository,
   ],
 })
-export class WaitingsModule { }
+export class WaitingsModule {}

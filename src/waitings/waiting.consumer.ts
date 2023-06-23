@@ -9,13 +9,14 @@ EventEmitter.defaultMaxListeners = 100;
 @Processor('waitingQueue')
 export class WaitingConsumer {
   constructor(
-    @InjectRedis('waitingManager') private readonly redisClient: Redis,
+    @InjectRedis('ec2redis') private readonly redisClient: Redis,
     private readonly waitingsRepository: WaitingsRepository,
   ) {}
 
   @Process('patchToDelayed')
   async patchToDelayed(job: Job): Promise<void> {
     const { storeId, waitingId } = job.data;
+    console.log(`${job.id}의 작업을 수행하였습니다`);
     try {
       await this.waitingsRepository.patchToDelayed(storeId, waitingId);
       return;
@@ -62,6 +63,7 @@ export class WaitingConsumer {
         'currentWaitingCnt',
         1,
       );
+      console.log(`${job.id}의 작업을 수행하였습니다`);
       return;
     } catch (err) {
       throw new Error('Redis 연결에 실패했습니다');
@@ -74,6 +76,7 @@ export class WaitingConsumer {
     try {
       await this.redisClient.hset(`store:${storeId}`, data);
       await this.waitingsRepository.postEntered(storeId, userId, peopleCnt);
+      console.log(`${job.id}의 작업을 수행하였습니다`);
     } catch (err) {
       throw new Error('Redis 연결에 실패했습니다');
     }
@@ -91,6 +94,7 @@ export class WaitingConsumer {
         availableTable = 'availableTableForFour';
       }
       await this.redisClient.hincrby(`store:${storeId}`, availableTable, 1);
+      console.log(`${job.id}의 작업을 수행하였습니다`);
       return;
     } catch (err) {
       throw new Error('Redis 연결에 실패했습니다');
