@@ -172,10 +172,10 @@ export class StoresService {
         maxWaitingCnt: store.maxWaitingCnt,
         currentWaitingCnt: 0,
         cycleTime: store.cycleTime,
-        tableForFour: store.tableForFour,
         tableForTwo: store.tableForTwo,
-        availableTableForTwo: 0,
-        availableTableForFour: 0,
+        tableForFour: store.tableForFour,
+        availableTableForTwo: store.tableForTwo,
+        availableTableForFour: store.tableForFour,
         rating: rating,
       };
       await this.redisClient.hset(`store:${storeId}`, data);
