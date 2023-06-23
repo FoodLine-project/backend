@@ -87,7 +87,6 @@ export class StoresRepository {
   async getOneStore(storeId: number): Promise<Stores> {
     const store = await this.stores.findOne({
       where: { storeId },
-      relations: ['reviews'],
     });
 
     return store;

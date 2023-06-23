@@ -1,17 +1,16 @@
 import { Stores } from '../stores/stores.entity';
 import { Users } from '../auth/users.entity';
-
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-
 @Entity()
 export class Reviews extends BaseEntity {
   @PrimaryGeneratedColumn()
@@ -20,6 +19,7 @@ export class Reviews extends BaseEntity {
   @Column()
   UserId: number;
 
+  @Index()
   @Column()
   StoreId: number;
 
