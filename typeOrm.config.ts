@@ -5,7 +5,6 @@ import { DataSource } from 'typeorm';
 import { AddColumn1686766534159 } from './src/migrations/1686766534159-addColumn';
 import { Waitings } from './src/waitings/waitings.entity';
 import { Reviews } from './src/reviews/reviews.entity';
-import { Tables } from './src/tables/tables.entity';
 import { Users } from './src/auth/users.entity';
 
 config();
@@ -18,8 +17,8 @@ export const dataSource = new DataSource({
   port: 5432,
   username: configService.get('POSTGRES_USERNAME'),
   password: configService.get('POSTGRES_PASSWORD'),
-  database: 'temp',
-  entities: [Stores, Waitings, Reviews, Tables, Users],
+  database: 'final',
+  entities: [Stores, Waitings, Reviews, Users],
   migrations: [AddColumn1686766534159],
   // migrationsTableName: 'custom_migration_table',
 });

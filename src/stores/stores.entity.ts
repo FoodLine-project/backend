@@ -1,6 +1,5 @@
 import { Users } from '../auth/users.entity';
 import { Reviews } from '../reviews/reviews.entity';
-import { Tables } from '../tables/tables.entity';
 import { Waitings } from '../waitings/waitings.entity';
 import {
   BaseEntity,
@@ -67,9 +66,6 @@ export class Stores extends BaseEntity {
 
   @OneToMany(() => Reviews, (review) => review.store)
   reviews: Reviews[];
-
-  @OneToOne(() => Tables, (table) => table.store)
-  tables: Tables;
 
   @OneToOne(() => Users, (user) => user.store)
   user: Users;
