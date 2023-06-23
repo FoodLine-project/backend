@@ -116,7 +116,6 @@ export class WaitingConsumer {
     }
   }
 
-
   @Process('decrementTables')
   async decrementTable(job: Job): Promise<void> {
     const { storeId, peopleCnt } = job.data;

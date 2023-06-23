@@ -173,20 +173,22 @@ export class StoresRepository {
   //좌표를 위한 주소와 아이디
   async getStoreAddressId() {
     return await this.stores.find({
-      select: ['storeId', 'newAddress', 'oldAddress'],
+      select: ['storeId', 'storeName', 'newAddress', 'oldAddress'],
       where: { lon: 0, lat: 0 },
       order: { storeId: 'ASC' },
     });
   }
   //주소 넣고 좌표
-  async getCoordinate(address: string): Promise<any> {
+  async getCoordinate(storeNmae: string, address: string): Promise<any> {
     try {
-      if (!address) {
+      if (!address && !storeNmae) {
         return null;
       }
-      const url =
-        'https://dapi.kakao.com/v2/local/search/address.json?query=' +
-        encodeURIComponent(address);
+
+      const query = address ? address : storeNmae;
+      const encodedQuery = encodeURIComponent(query);
+
+      const url = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodedQuery}`;
       // const restApiKey = '800b8fe2427efbffbef3bc6fe96a5464';
       const restApiKey = `${process.env.KAKAO_REST_API_KEY}`;
       const headers = { Authorization: 'KakaoAK ' + restApiKey };

@@ -12,7 +12,6 @@ import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
 import { searchRestaurantsDto } from './dto/search-restaurants.dto';
 
-
 @Injectable()
 export class StoresService {
   constructor(
@@ -483,7 +482,6 @@ export class StoresService {
     return distance;
   }
 
-
   //box 내의 음식점 조회
   async getNearbyStoresByBox(
     coordinates: {
@@ -610,16 +608,27 @@ export class StoresService {
       const stores = await this.storesRepository.getStoreAddressId();
 
       for (const store of stores) {
-        const { newAddress, oldAddress, storeId } = store;
+        const { newAddress, storeName, oldAddress, storeId } = store;
 
         try {
           let coordinates = await this.storesRepository.getCoordinate(
+            null,
             newAddress,
           );
 
           if (!coordinates) {
-            coordinates = await this.storesRepository.getCoordinate(oldAddress);
+            coordinates = await this.storesRepository.getCoordinate(
+              null,
+              oldAddress,
+            );
           }
+          if (!coordinates) {
+            coordinates = await this.storesRepository.getCoordinate(
+              storeName,
+              null,
+            );
+          }
+
           if (!coordinates) continue;
 
           //La = y, Ma = x
@@ -628,21 +637,18 @@ export class StoresService {
 
           await this.storesRepository.updateCoord(lat, lon, storeId);
 
-          //console.log(
-          //`Updated coordinates for address: ${address}`,
-          //La,
-          //Ma,
-          //storeId,
-          //);
+          console.log(
+            `Updated coordinates for address: ${storeId},${storeName},${newAddress}${lat}, ${lon}`,
+          );
         } catch (error) {
-          //console.error(
-          //`Error updating coordinates for address: ${address} and ${oldAddress}`,
-          //error,
-          //);
+          console.error(
+            `Error updating coordinates for address: ${storeId},${storeName},${newAddress}, ${oldAddress}`,
+            error,
+          );
         }
       }
     } catch (error) {
-      //console.error('Error occurred during database operation:', error);
+      console.error('Error occurred during database operation:', error);
     }
   }
 }
