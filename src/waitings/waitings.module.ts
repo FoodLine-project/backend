@@ -59,9 +59,10 @@ const redisOptions4: RedisOptions = {
     }),
     BullModule.registerQueue({
       name: 'waitingQueue',
-      // defaultJobOptions: {
-      //   removeOnComplete: true,
-      // },
+      defaultJobOptions: {
+        removeOnComplete: true,
+      },
+      limiter: { max: 10, duration: 200 },
     }),
     CustomCacheModule,
   ],

@@ -1,10 +1,10 @@
+import { ConflictException } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { WaitingsRepository } from './waitings.repository';
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { EventEmitter } from 'events';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
-
 EventEmitter.defaultMaxListeners = 100;
 @Processor('waitingQueue')
 export class WaitingConsumer {
@@ -57,6 +57,13 @@ export class WaitingConsumer {
   async postWaitingWithRedis(job: Job): Promise<void> {
     const { storeId, peopleCnt, user } = job.data;
     try {
+      const storeHashes = await this.redisClient.hgetall(`store:${storeId}`);
+      if (
+        Number(storeHashes.maxWaitingCnt) <=
+        Number(storeHashes.currentWaitingCnt)
+      ) {
+        throw new ConflictException('최대 웨이팅 수를 초과했습니다');
+      }
       await this.waitingsRepository.postWaitings(storeId, peopleCnt, user);
       await this.redisClient.hincrby(
         `store:${storeId}`,

@@ -159,8 +159,6 @@ export class StoresService {
     const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
     const store = await this.storesRepository.getOneStore(storeId);
 
-    console.log(redisAll);
-
     //캐싱 예외. currenWaitingCnt/Ratings APi 분리
     if (Object.keys(redisAll).length === 0) {
       const rating: number = await this.getRating(storeId);
