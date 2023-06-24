@@ -1,0 +1,41 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    strategy:
+      matrix:
+        ec2_instance:
+          ['54.180.136.69', '3.38.218.146']
+          # 추가 EC2 인스턴스를 여기에 추가할 수 있습니다.
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Configure SSH keys
+        uses: webfactory/ssh-agent@v0.5.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Copy code to EC2 instances
+        run: scp -r ./ ubuntu@${{ matrix.ec2_instance }}:/app
+
+      - name: SSH into EC2 instances and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ matrix.ec2_instance }}
+          username: ubuntu
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /app
+            docker build -t final .
+            docker stop final || true
+            docker rm final || true
+            docker run -d --name final -d -p 3300:3300 final
