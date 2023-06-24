@@ -21,10 +21,6 @@ import { CustomCacheModule } from 'src/cache/cache.module';
     CustomCacheModule,
   ],
   controllers: [StoresController],
-  providers: [
-    StoresService,
-    StoresRepository,
-    ReviewsRepository,
-  ],
+  providers: [StoresService, StoresRepository, ReviewsRepository],
 })
-export class StoresModule { }
+export class StoresModule {}

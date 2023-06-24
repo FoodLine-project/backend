@@ -37,7 +37,7 @@ export class WaitingsController {
   async getWaitingList(
     @Param('storeId', ParseIntPipe) storeId: number,
     @GetUser() user: Users,
-  ): Promise<Waitings[]> {
+  ): Promise<{ WAITING: Waitings[]; ENTERED: Waitings[] }> {
     return await this.waitingsService.getWaitingList(storeId, user);
   }
 

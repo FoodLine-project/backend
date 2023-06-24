@@ -27,7 +27,7 @@ export class CacheInterceptor implements NestInterceptor {
   @Inject(HTTP_ADAPTER_HOST)
   protected readonly httpAdapterHost: HttpAdapterHost;
 
-  protected allowedMethods = ['GET'];
+  protected allowedMethods = ['GET', 'POST'];
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
     @Inject(REFLECTOR) protected readonly reflector: any,
@@ -55,7 +55,7 @@ export class CacheInterceptor implements NestInterceptor {
       //   typeof ttlValueOrFactory === 'function'
       //     ? await ttlValueOrFactory(context)
       //     : ttlValueOrFactory;
-      const ttl = 5;
+      const ttl = 20;
       //console.log('ttl:', ttl);
       return next.handle().pipe(
         tap((response) => {
