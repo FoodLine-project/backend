@@ -13,7 +13,7 @@ import { CustomCacheModule } from 'src/cache/cache.module';
   imports: [
     TypeOrmModule.forFeature([Stores, Reviews]),
     ElasticsearchModule.register({
-      node: 'http://3.35.77.57:9200',
+      node: 'http://52.78.66.6:9200',
       maxRetries: 10,
       requestTimeout: 60000,
       pingTimeout: 60000,
