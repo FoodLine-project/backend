@@ -16,7 +16,7 @@ import { oneStoreDto } from './dto/getOne-store.dto';
 @Injectable()
 export class StoresService {
   constructor(
-    @InjectRedis('store') private readonly client: Redis,
+    // @InjectRedis('store') private readonly client: Redis,
     @InjectRedis('ec2redis') private readonly redisClient: Redis,
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
@@ -504,18 +504,18 @@ export class StoresService {
     return result;
   }
   //redis 에 storeId 랑 좌표 넣기
-  async addStoresToRedis(): Promise<void> {
-    const stores = await this.storesRepository.findAll();
-    for (let i = 0; i < stores.length; i++) {
-      await this.client.geoadd(
-        'stores',
-        stores[i].lon,
-        stores[i].lat,
-        String(stores[i].storeId),
-      );
-      console.log(`${i + 1}번째 음식점 좌표 redis 저장 완료`);
-    }
-  }
+  // async addStoresToRedis(): Promise<void> {
+  //   const stores = await this.storesRepository.findAll();
+  //   for (let i = 0; i < stores.length; i++) {
+  //     await this.client.geoadd(
+  //       'stores',
+  //       stores[i].lon,
+  //       stores[i].lat,
+  //       String(stores[i].storeId),
+  //     );
+  //     console.log(`${i + 1}번째 음식점 좌표 redis 저장 완료`);
+  //   }
+  // }
 
   //두 좌표 사이의 거리
   getDistanceWithCoordinates(
@@ -542,86 +542,86 @@ export class StoresService {
   }
 
   //box 내의 음식점 조회
-  async getNearbyStoresByBox(
-    coordinates: {
-      swLatlng: { La: number; Ma: number };
-      neLatlng: { La: number; Ma: number };
-    },
-    sortBy?: string,
-  ): Promise<Stores[]> {
-    const { swLatlng, neLatlng } = coordinates;
+  // async getNearbyStoresByBox(
+  //   coordinates: {
+  //     swLatlng: { La: number; Ma: number };
+  //     neLatlng: { La: number; Ma: number };
+  //   },
+  //   sortBy?: string,
+  // ): Promise<Stores[]> {
+  //   const { swLatlng, neLatlng } = coordinates;
 
-    const userLatitude: number = (swLatlng.La + neLatlng.La) / 2;
-    const userLongitude: number = (swLatlng.Ma + neLatlng.Ma) / 2;
+  //   const userLatitude: number = (swLatlng.La + neLatlng.La) / 2;
+  //   const userLongitude: number = (swLatlng.Ma + neLatlng.Ma) / 2;
 
-    const width = this.getDistanceWithCoordinates(
-      swLatlng.La,
-      swLatlng.Ma,
-      swLatlng.La,
-      neLatlng.Ma,
-    );
-    const height = this.getDistanceWithCoordinates(
-      swLatlng.La,
-      swLatlng.Ma,
-      neLatlng.La,
-      swLatlng.Ma,
-    );
+  //   const width = this.getDistanceWithCoordinates(
+  //     swLatlng.La,
+  //     swLatlng.Ma,
+  //     swLatlng.La,
+  //     neLatlng.Ma,
+  //   );
+  //   const height = this.getDistanceWithCoordinates(
+  //     swLatlng.La,
+  //     swLatlng.Ma,
+  //     neLatlng.La,
+  //     swLatlng.Ma,
+  //   );
 
-    const nearbyStores = await this.client.geosearch(
-      'stores',
-      'FROMLONLAT',
-      userLongitude,
-      userLatitude,
-      'BYBOX',
-      width,
-      height,
-      'km',
-      'withdist',
-    );
+  //   const nearbyStores = await this.client.geosearch(
+  //     'stores',
+  //     'FROMLONLAT',
+  //     userLongitude,
+  //     userLatitude,
+  //     'BYBOX',
+  //     width,
+  //     height,
+  //     'km',
+  //     'withdist',
+  //   );
 
-    const nearbyStoresIds = nearbyStores.map((store) => store[0]);
-    const nearbyStoresDistances = nearbyStores.map((store) => Number(store[1]));
+  //   const nearbyStoresIds = nearbyStores.map((store) => store[0]);
+  //   const nearbyStoresDistances = nearbyStores.map((store) => Number(store[1]));
 
-    const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
+  //   const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
 
-    const result = [];
+  //   const result = [];
 
-    stores.forEach(async (store) => {
-      const distance = Math.ceil(
-        nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-          1000,
-      );
+  //   stores.forEach(async (store) => {
+  //     const distance = Math.ceil(
+  //       nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
+  //         1000,
+  //     );
 
-      const storesHashes = await this.redisClient.hgetall(
-        `store:${store.storeId}`,
-      );
+  //     const storesHashes = await this.redisClient.hgetall(
+  //       `store:${store.storeId}`,
+  //     );
 
-      let currentWaitingCnt: string;
+  //     let currentWaitingCnt: string;
 
-      if (!storesHashes.currentWaitingCnt) {
-        currentWaitingCnt = '0';
-      }
+  //     if (!storesHashes.currentWaitingCnt) {
+  //       currentWaitingCnt = '0';
+  //     }
 
-      result.push({
-        ...store,
-        distance,
-        currentWaitingCnt: Number(currentWaitingCnt),
-      });
-    });
+  //     result.push({
+  //       ...store,
+  //       distance,
+  //       currentWaitingCnt: Number(currentWaitingCnt),
+  //     });
+  //   });
 
-    return result.sort((a, b) => {
-      if (sortBy === 'name') {
-        return a.storeName.toUpperCase() < b.storeName.toUpperCase() ? -1 : 1;
-      } else if (sortBy === 'waitingCnt') {
-        return a.currentWaitingCnt - b.currentWaitingCnt;
-      } else if (sortBy === 'waitingCnt2') {
-        return b.currentWaitingCnt - a.currentWaitingCnt;
-      } else if (sortBy === 'rating') {
-        return b.rating - a.rating;
-      }
-      return a.distance - b.distance;
-    });
-  }
+  //   return result.sort((a, b) => {
+  //     if (sortBy === 'name') {
+  //       return a.storeName.toUpperCase() < b.storeName.toUpperCase() ? -1 : 1;
+  //     } else if (sortBy === 'waitingCnt') {
+  //       return a.currentWaitingCnt - b.currentWaitingCnt;
+  //     } else if (sortBy === 'waitingCnt2') {
+  //       return b.currentWaitingCnt - a.currentWaitingCnt;
+  //     } else if (sortBy === 'rating') {
+  //       return b.rating - a.rating;
+  //     }
+  //     return a.distance - b.distance;
+  //   });
+  // }
 
   //postGis
   //postgres 좌표 업데이트
