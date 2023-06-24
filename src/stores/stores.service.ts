@@ -108,8 +108,7 @@ export class StoresService {
   }
 
   //sorting //쿼리 searching 따로
-
-  //키워드로 검색부분 //sorting 추가 //전국 식당으로 //가장 가까운 순으로?
+  //키워드로 검색부분 //sorting 추가 //전국 식당으로 //가장 가까운 순으로? --- rough
   async searchStores(
     keyword: string,
     sort: 'ASC' | 'DESC',
@@ -155,6 +154,7 @@ export class StoresService {
     }
   }
 
+  //redis사용한 상세조회 --- 최종판
   async getOneStore(storeId: number): Promise<oneStoreDto> {
     const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
     const store = await this.storesRepository.getOneStore(storeId);
