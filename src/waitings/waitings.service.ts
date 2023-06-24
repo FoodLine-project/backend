@@ -87,7 +87,10 @@ export class WaitingsService {
     ) {
       throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
     }
-    if (storeHash.maxWaitingCnt === storeHash.currentWaitingCnt) {
+
+    if (
+      Number(storeHash.maxWaitingCnt) <= Number(storeHash.currentWaitingCnt)
+    ) {
       throw new ConflictException('최대 웨이팅 수를 초과했습니다');
     }
 
@@ -102,8 +105,8 @@ export class WaitingsService {
         peopleCnt,
         user,
       });
-      await job.finished();
-      return 'success';
+      const finished = await job.finished();
+      return finished;
     } catch (err) {
       throw new InternalServerErrorException('대기열 추가에 실패했습니다');
     }
@@ -172,58 +175,6 @@ export class WaitingsService {
       } catch (err) {
         throw new InternalServerErrorException('입장에 실패했습니다');
       }
-
-      // if (peopleCnt == 1 || peopleCnt == 2) {
-      //   if (Number(tablesOfStoreInRedis.availableTableForTwo) == 0) {
-      //     throw new ConflictException('자리가 없습니다');
-      //   }
-      //   availableTableForTwo =
-      //     Number(tablesOfStoreInRedis.availableTableForTwo) - 1;
-      //   availableTableForFour = Number(
-      //     tablesOfStoreInRedis.availableTableForFour,
-      //   );
-      //   try {
-      //     const job = await this.waitingQueue.add(
-      //       'addStoreHashAndPostEntered',
-      //       {
-      //         storeId,
-      //         availableTableForTwo,
-      //         availableTableForFour,
-      //         userId,
-      //         peopleCnt,
-      //       },
-      //     );
-      //     await job.finished();
-      //     return 'success';
-      //   } catch (err) {
-      //     throw new InternalServerErrorException('입장에 실패했습니다');
-      //   }
-      // } else {
-      //   if (Number(tablesOfStoreInRedis.availableTableForFour) == 0) {
-      //     throw new ConflictException('자리가 없습니다');
-      //   }
-      //   availableTableForTwo = Number(
-      //     tablesOfStoreInRedis.availableTableForTwo,
-      //   );
-      //   availableTableForFour =
-      //     Number(tablesOfStoreInRedis.availableTableForFour) - 1;
-      //   try {
-      //     const job = await this.waitingQueue.add(
-      //       'addStoreHashAndPostEntered',
-      //       {
-      //         storeId,
-      //         availableTableForTwo,
-      //         availableTableForFour,
-      //         userId,
-      //         peopleCnt,
-      //       },
-      //     );
-      //     await job.finished();
-      //     return 'success';
-      //   } catch (err) {
-      //     throw new InternalServerErrorException('입장에 실패했습니다');
-      //   }
-      // }
     } else {
       // redis 에 hash 가 없을때
       const average: number = await this.reviewsRepository.getAverageRating(
