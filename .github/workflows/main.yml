@@ -14,9 +14,11 @@ jobs:
 
       - name: Build and deploy
         run: |
-          sudo docker stop final
-          sudo docker rm final
-          sudo docker rmi final
+          if docker container inspect final >/dev/null 2>&1; then
+            sudo docker stop final
+          fi
+          sudo docker rm final || true
+          sudo docker rmi final || true
           sudo docker system prune --force
           sudo docker build . -t final
           sudo docker run --name final -d -p 3300:3300 -it final
