@@ -22,7 +22,7 @@ import { oneStoreDto } from './dto/getOne-store.dto';
 
 @Controller('stores')
 export class StoresController {
-  constructor(private storesService: StoresService) {}
+  constructor(private storesService: StoresService) { }
 
   @Public()
   @Post('/nearby-stores-rough')
@@ -52,7 +52,6 @@ export class StoresController {
 
   //elastic 좌표로
   @Public()
-  @UseInterceptors(CacheInterceptor)
   @Post('/nearby-stores-elastic')
   async searchByCoordinates(
     @Body() coordinatesData: any,

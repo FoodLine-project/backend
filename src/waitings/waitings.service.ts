@@ -25,7 +25,7 @@ export class WaitingsService {
     private waitingsRepository: WaitingsRepository,
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
-  ) {}
+  ) { }
 
   //웨이팅 팀 수 조회
   async getCurrentWaitingsCnt(storeId: number): Promise<number> {
@@ -143,9 +143,9 @@ export class WaitingsService {
 
   //대기열 추가 없이 입장
   async postEntered(
+    peopleCnt: number,
     storeId: number,
     userId: number,
-    peopleCnt: number,
     user: Users,
   ): Promise<string> {
     const existsStore = await this.storesRepository.findStoreById(storeId);
