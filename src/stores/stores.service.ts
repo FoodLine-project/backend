@@ -16,13 +16,13 @@ import { oneStoreDto } from './dto/getOne-store.dto';
 @Injectable()
 export class StoresService {
   constructor(
-    @InjectRedis('store') private readonly client: Redis,
+    // @InjectRedis('store') private readonly client: Redis,
     @InjectRedis('ec2redis') private readonly redisClient: Redis,
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
 
     private readonly elasticsearchService: ElasticsearchService,
-  ) {}
+  ) { }
 
   //주변식당탐색
   async searchRestaurants(
@@ -63,32 +63,40 @@ export class StoresService {
       latitude: southWestLatitude,
       longitude: southWestLongitude,
     };
+    const restaurantsResult: searchRestaurantsDto[] = await Promise.all(
+      restaurantsWithinRadius.map(async (restaurant) => {
+        const distance = calculateDistance(userLocation, {
+          latitude: Number(restaurant.lat),
+          longitude: Number(restaurant.lon),
+        });
 
-    const restaurantsResult: searchRestaurantsDto[] = [];
-    restaurantsWithinRadius.forEach(async (restaurant) => {
-      const distance = calculateDistance(userLocation, {
-        latitude: Number(restaurant.lat),
-        longitude: Number(restaurant.lon),
-      });
+        const storesHashes = await this.redisClient.hgetall(
+          `store:${restaurant.storeId}`,
+        );
 
-      const storesHashes = await this.redisClient.hgetall(
-        `store:${restaurant.storeId}`,
-      );
+        let currentWaitingCnt: string;
+        let rating: string;
 
-      let currentWaitingCnt: string;
-      // let rating : string
+        if (!storesHashes.currentWaitingCnt) {
+          currentWaitingCnt = '0';
+          rating = '0';
+        }
 
-      if (!storesHashes.currentWaitingCnt) {
-        currentWaitingCnt = '0';
-        // rating = '0'
-      }
+        const filteredRestaurant: searchRestaurantsDto = {
+          storeName: restaurant.storeName,
+          rating: Number(rating),
+          category: restaurant.category,
+          newAddress: restaurant.newAddress,
+          oldAddress: restaurant.oldAddress,
+          currentWaitingCnt: Number(currentWaitingCnt),
+          distance: distance,
+          tableForTwo: restaurant.tableForTwo,
+          tableForFour: restaurant.tableForFour,
+        };
 
-      restaurantsResult.push({
-        ...restaurant,
-        distance: distance,
-        currentWaitingCnt: Number(currentWaitingCnt),
-      });
-    });
+        return filteredRestaurant;
+      }),
+    );
 
     //정렬로직모음
     restaurantsResult.sort((a, b) => {
@@ -108,8 +116,7 @@ export class StoresService {
   }
 
   //sorting //쿼리 searching 따로
-
-  //키워드로 검색부분 //sorting 추가 //전국 식당으로 //가장 가까운 순으로?
+  //키워드로 검색부분 //sorting 추가 //전국 식당으로 //가장 가까운 순으로? --- rough
   async searchStores(
     keyword: string,
     sort: 'ASC' | 'DESC',
@@ -155,6 +162,7 @@ export class StoresService {
     }
   }
 
+  //redis사용한 상세조회 --- 최종판
   async getOneStore(storeId: number): Promise<oneStoreDto> {
     const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
     const store = await this.storesRepository.getOneStore(storeId);
@@ -268,8 +276,8 @@ export class StoresService {
     const pageSize = 10000;
     // const from = (page - 1) * pageSize;
     const stores = await this.elasticsearchService.search<any>({
-      index: 'stores_index',
-      size: 10000,
+      index: 'geo4_test',
+      size: 1000,
       //  from: from,
       _source: [
         'storeid',
@@ -279,15 +287,16 @@ export class StoresService {
         'cycletime',
         'tablefortwo',
         'tableforfour',
+        'newaddress'
       ],
       sort: column
         ? [
-            {
-              [column.toLocaleLowerCase()]: {
-                order: sort === 'ASC' ? 'asc' : 'desc',
-              },
+          {
+            [column.toLocaleLowerCase()]: {
+              order: sort === 'ASC' ? 'asc' : 'desc',
             },
-          ]
+          },
+        ]
         : undefined,
       query: {
         bool: {
@@ -335,10 +344,10 @@ export class StoresService {
     sort: 'ASC' | 'DESC' = 'ASC',
     column: string,
   ): Promise<any[]> {
-    const pageSize = 10000;
+    const pageSize = 1000;
     // const from = (page - 1) * pageSize;
     const stores = await this.elasticsearchService.search<any>({
-      index: 'stores_index',
+      index: 'geo4_test',
       size: pageSize,
       //  from: from,
       _source: [
@@ -349,15 +358,16 @@ export class StoresService {
         'cycletime',
         'tablefortwo',
         'tableforfour',
+        'newaddress'
       ],
       sort: column
         ? [
-            {
-              [column.toLocaleLowerCase()]: {
-                order: sort === 'ASC' ? 'asc' : 'desc',
-              },
+          {
+            [column.toLocaleLowerCase()]: {
+              order: sort === 'ASC' ? 'asc' : 'desc',
             },
-          ]
+          },
+        ]
         : undefined,
       query: {
         bool: {
@@ -380,7 +390,6 @@ export class StoresService {
       const storeDatas = hit._source;
       const storeId: number = storeDatas.storeid;
       const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
-      console.log(redisAll);
       if (Object.keys(redisAll).length === 0) {
         const rating: number = await this.getRating(storeId);
         const datas = {
@@ -417,20 +426,20 @@ export class StoresService {
     myLatitude: string,
     myLongitude: string,
   ): Promise<any[]> {
-    const pageSize = 10000;
+    const pageSize = 1000;
     // const from = (page - 1) * pageSize;
     const stores = await this.elasticsearchService.search<string>({
-      index: 'geo_test',
+      index: 'geo4_test',
       size: pageSize,
       //  from: from,
       sort: column
         ? [
-            {
-              [column.toLocaleLowerCase()]: {
-                order: sort === 'ASC' ? 'asc' : 'desc',
-              },
-            }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
-          ]
+          {
+            [column.toLocaleLowerCase()]: {
+              order: sort === 'ASC' ? 'asc' : 'desc',
+            },
+          }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
+        ]
         : undefined,
       query: {
         geo_bounding_box: {
@@ -500,22 +509,21 @@ export class StoresService {
       const distanceB = parseFloat(b.distance);
       return distanceA - distanceB;
     });
-    console.log(result);
     return result;
   }
   //redis 에 storeId 랑 좌표 넣기
-  async addStoresToRedis(): Promise<void> {
-    const stores = await this.storesRepository.findAll();
-    for (let i = 0; i < stores.length; i++) {
-      await this.client.geoadd(
-        'stores',
-        stores[i].lon,
-        stores[i].lat,
-        String(stores[i].storeId),
-      );
-      console.log(`${i + 1}번째 음식점 좌표 redis 저장 완료`);
-    }
-  }
+  // async addStoresToRedis(): Promise<void> {
+  //   const stores = await this.storesRepository.findAll();
+  //   for (let i = 0; i < stores.length; i++) {
+  //     await this.client.geoadd(
+  //       'stores',
+  //       stores[i].lon,
+  //       stores[i].lat,
+  //       String(stores[i].storeId),
+  //     );
+  //     console.log(`${i + 1}번째 음식점 좌표 redis 저장 완료`);
+  //   }
+  // }
 
   //두 좌표 사이의 거리
   getDistanceWithCoordinates(
@@ -533,95 +541,95 @@ export class StoresService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRadians(lat1)) *
-        Math.cos(toRadians(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
   }
 
   //box 내의 음식점 조회
-  async getNearbyStoresByBox(
-    coordinates: {
-      swLatlng: { La: number; Ma: number };
-      neLatlng: { La: number; Ma: number };
-    },
-    sortBy?: string,
-  ): Promise<Stores[]> {
-    const { swLatlng, neLatlng } = coordinates;
+  // async getNearbyStoresByBox(
+  //   coordinates: {
+  //     swLatlng: { La: number; Ma: number };
+  //     neLatlng: { La: number; Ma: number };
+  //   },
+  //   sortBy?: string,
+  // ): Promise<Stores[]> {
+  //   const { swLatlng, neLatlng } = coordinates;
 
-    const userLatitude: number = (swLatlng.La + neLatlng.La) / 2;
-    const userLongitude: number = (swLatlng.Ma + neLatlng.Ma) / 2;
+  //   const userLatitude: number = (swLatlng.La + neLatlng.La) / 2;
+  //   const userLongitude: number = (swLatlng.Ma + neLatlng.Ma) / 2;
 
-    const width = this.getDistanceWithCoordinates(
-      swLatlng.La,
-      swLatlng.Ma,
-      swLatlng.La,
-      neLatlng.Ma,
-    );
-    const height = this.getDistanceWithCoordinates(
-      swLatlng.La,
-      swLatlng.Ma,
-      neLatlng.La,
-      swLatlng.Ma,
-    );
+  //   const width = this.getDistanceWithCoordinates(
+  //     swLatlng.La,
+  //     swLatlng.Ma,
+  //     swLatlng.La,
+  //     neLatlng.Ma,
+  //   );
+  //   const height = this.getDistanceWithCoordinates(
+  //     swLatlng.La,
+  //     swLatlng.Ma,
+  //     neLatlng.La,
+  //     swLatlng.Ma,
+  //   );
 
-    const nearbyStores = await this.client.geosearch(
-      'stores',
-      'FROMLONLAT',
-      userLongitude,
-      userLatitude,
-      'BYBOX',
-      width,
-      height,
-      'km',
-      'withdist',
-    );
+  //   const nearbyStores = await this.client.geosearch(
+  //     'stores',
+  //     'FROMLONLAT',
+  //     userLongitude,
+  //     userLatitude,
+  //     'BYBOX',
+  //     width,
+  //     height,
+  //     'km',
+  //     'withdist',
+  //   );
 
-    const nearbyStoresIds = nearbyStores.map((store) => store[0]);
-    const nearbyStoresDistances = nearbyStores.map((store) => Number(store[1]));
+  //   const nearbyStoresIds = nearbyStores.map((store) => store[0]);
+  //   const nearbyStoresDistances = nearbyStores.map((store) => Number(store[1]));
 
-    const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
+  //   const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
 
-    const result = [];
+  //   const result = [];
 
-    stores.forEach(async (store) => {
-      const distance = Math.ceil(
-        nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-          1000,
-      );
+  //   stores.forEach(async (store) => {
+  //     const distance = Math.ceil(
+  //       nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
+  //         1000,
+  //     );
 
-      const storesHashes = await this.redisClient.hgetall(
-        `store:${store.storeId}`,
-      );
+  //     const storesHashes = await this.redisClient.hgetall(
+  //       `store:${store.storeId}`,
+  //     );
 
-      let currentWaitingCnt: string;
+  //     let currentWaitingCnt: string;
 
-      if (!storesHashes.currentWaitingCnt) {
-        currentWaitingCnt = '0';
-      }
+  //     if (!storesHashes.currentWaitingCnt) {
+  //       currentWaitingCnt = '0';
+  //     }
 
-      result.push({
-        ...store,
-        distance,
-        currentWaitingCnt: Number(currentWaitingCnt),
-      });
-    });
+  //     result.push({
+  //       ...store,
+  //       distance,
+  //       currentWaitingCnt: Number(currentWaitingCnt),
+  //     });
+  //   });
 
-    return result.sort((a, b) => {
-      if (sortBy === 'name') {
-        return a.storeName.toUpperCase() < b.storeName.toUpperCase() ? -1 : 1;
-      } else if (sortBy === 'waitingCnt') {
-        return a.currentWaitingCnt - b.currentWaitingCnt;
-      } else if (sortBy === 'waitingCnt2') {
-        return b.currentWaitingCnt - a.currentWaitingCnt;
-      } else if (sortBy === 'rating') {
-        return b.rating - a.rating;
-      }
-      return a.distance - b.distance;
-    });
-  }
+  //   return result.sort((a, b) => {
+  //     if (sortBy === 'name') {
+  //       return a.storeName.toUpperCase() < b.storeName.toUpperCase() ? -1 : 1;
+  //     } else if (sortBy === 'waitingCnt') {
+  //       return a.currentWaitingCnt - b.currentWaitingCnt;
+  //     } else if (sortBy === 'waitingCnt2') {
+  //       return b.currentWaitingCnt - a.currentWaitingCnt;
+  //     } else if (sortBy === 'rating') {
+  //       return b.rating - a.rating;
+  //     }
+  //     return a.distance - b.distance;
+  //   });
+  // }
 
   //postGis
   //postgres 좌표 업데이트

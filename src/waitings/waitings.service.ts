@@ -25,7 +25,7 @@ export class WaitingsService {
     private waitingsRepository: WaitingsRepository,
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
-  ) {}
+  ) { }
 
   //웨이팅 팀 수 조회
   async getCurrentWaitingsCnt(storeId: number): Promise<number> {
@@ -50,7 +50,10 @@ export class WaitingsService {
   }
 
   //웨이팅 리스트 조회 ( for admin )
-  async getWaitingList(storeId: number, user: Users): Promise<Waitings[]> {
+  async getWaitingList(
+    storeId: number,
+    user: Users,
+  ): Promise<{ WAITING: Waitings[]; ENTERED: Waitings[] }> {
     if (user.StoreId !== storeId) {
       throw new UnauthorizedException('권한이 없습니다.');
     }
@@ -58,7 +61,16 @@ export class WaitingsService {
     if (!existsStore) {
       throw new NotFoundException('음식점 존재하지 않습니다');
     }
-    return await this.waitingsRepository.getWaitingListById(storeId);
+    const list = await this.waitingsRepository.getWaitingListById(storeId);
+    const ENTERED = list.filter((e) => e.status == WaitingStatus.ENTERED);
+    console.log(ENTERED);
+    const WAITING = list.filter(
+      (e) =>
+        e.status == WaitingStatus.WAITING ||
+        e.status == WaitingStatus.CALLED ||
+        e.status == WaitingStatus.DELAYED,
+    );
+    return { WAITING, ENTERED };
   }
 
   //대기열 추가
@@ -74,20 +86,37 @@ export class WaitingsService {
     if (!existsStore) {
       throw new NotFoundException('음식점이 존재하지 않습니다');
     }
-    const storeHash = await this.redisClient.hgetall(`store:${storeId}`);
+    let storeHash = await this.redisClient.hgetall(`store:${storeId}`);
+
+    if (Object.keys(storeHash).length === 0) {
+      const rating = await this.reviewsRepository.getAverageRating(storeId);
+      storeHash = {
+        maxWaitingCnt: `${existsStore.maxWaitingCnt}`,
+        currentWaitingCnt: '0',
+        cycleTime: `${existsStore.cycleTime}`,
+        tableForTwo: `${existsStore.tableForTwo}`,
+        tableForFour: `${existsStore.tableForFour}`,
+        availableTableForTwo: `${existsStore.tableForTwo}`,
+        availableTableForFour: `${existsStore.tableForFour}`,
+        rating: `${rating}`,
+      };
+      await this.redisClient.hset(`store:${storeId}`, storeHash);
+    }
 
     const peopleCntForTables =
       peopleCnt <= 2
         ? Number(storeHash.availableTableForTwo)
         : Number(storeHash.availableTableForFour);
 
-    if (
-      Number(peopleCntForTables) !== 0 &&
-      !Number(storeHash.currentWaitingCnt)
-    ) {
-      throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
-    }
+    // if (
+    //   Number(peopleCntForTables) !== 0 &&
+    //   !Number(storeHash.currentWaitingCnt)
+    // ) {
+    //   throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
+    // }
 
+    console.log('storeHash.maxWaitingCnt:', storeHash.maxWaitingCnt);
+    console.log('storeHash.currentWaitingCnt:', storeHash.currentWaitingCnt);
     if (
       Number(storeHash.maxWaitingCnt) <= Number(storeHash.currentWaitingCnt)
     ) {
@@ -114,9 +143,9 @@ export class WaitingsService {
 
   //대기열 추가 없이 입장
   async postEntered(
+    peopleCnt: number,
     storeId: number,
     userId: number,
-    peopleCnt: number,
     user: Users,
   ): Promise<string> {
     const existsStore = await this.storesRepository.findStoreById(storeId);
@@ -268,7 +297,11 @@ export class WaitingsService {
 
     // 연기
     if (status === 'DELAYED') {
-      if (waiting.status !== WaitingStatus.CALLED) {
+      if (
+        waiting.status == WaitingStatus.CALLED ||
+        waiting.status == WaitingStatus.WAITING
+      ) {
+      } else {
         throw new BadRequestException('적절하지 않은 status 입니다');
       }
       try {
@@ -441,6 +474,9 @@ export class WaitingsService {
     if (!existsWaiting) {
       throw new ConflictException('웨이팅이 존재하지 않습니다');
     }
+    if (existsWaiting.StoreId !== storeId) {
+      throw new ConflictException('다른 가게에 웨이팅이 걸려있습니다');
+    }
     if (
       existsWaiting.status === WaitingStatus.ENTERED ||
       existsWaiting.status === WaitingStatus.CANCELED ||
@@ -470,10 +506,23 @@ export class WaitingsService {
       );
 
     const waitingPeople = people.Waiting;
-    console.log('waitingPeople:', waitingPeople);
     const enteredPeople = people.Entered;
-    console.log('enteredPeople:', enteredPeople);
     const waitingIdsArr = waitingPeople.map((error) => error.waitingId);
+
+    // for (let i = 0; enteredPeople.length == tableCnt; i++) {
+    //   const considerAsEntered = waitingPeople.shift();
+    //   enteredPeople.push(considerAsEntered);
+    //   console.log(i);
+    // }
+
+    while (enteredPeople.length !== tableCnt) {
+      const considerAsEntered = waitingPeople.shift();
+      enteredPeople.push(considerAsEntered);
+    }
+
+    console.log('waitingPeople:', waitingPeople);
+    console.log('enteredPeople:', enteredPeople);
+
     const myTurn = waitingIdsArr.indexOf(Number(existsWaiting.waitingId)) + 1;
     console.log('myTurn:', myTurn);
 

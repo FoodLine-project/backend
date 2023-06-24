@@ -22,7 +22,7 @@ import { oneStoreDto } from './dto/getOne-store.dto';
 
 @Controller('stores')
 export class StoresController {
-  constructor(private storesService: StoresService) {}
+  constructor(private storesService: StoresService) { }
 
   @Public()
   @Post('/nearby-stores-rough')
@@ -100,26 +100,26 @@ export class StoresController {
   }
 
   // 좌하단 우상단 좌표 내의 음식점 조회
-  @Public()
-  @Post('/nearby-stores-redis')
-  async getNearbyStoresByBox(
-    @Body()
-    coordinates: {
-      swLatlng: { La: number; Ma: number };
-      neLatlng: { La: number; Ma: number };
-    },
-    @Query('sort')
-    sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
-  ) {
-    const stores = await this.storesService.getNearbyStoresByBox(
-      coordinates,
-      sortBy,
-    );
-    return stores;
-  }
+  // @Public()
+  // @Post('/nearby-stores-redis')
+  // async getNearbyStoresByBox(
+  //   @Body()
+  //   coordinates: {
+  //     swLatlng: { La: number; Ma: number };
+  //     neLatlng: { La: number; Ma: number };
+  //   },
+  //   @Query('sort')
+  //   sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
+  // ) {
+  //   const stores = await this.storesService.getNearbyStoresByBox(
+  //     coordinates,
+  //     sortBy,
+  //   );
+  //   return stores;
+  // }
 
   //상세조회 (정보+댓글)
-  // @UseInterceptors(CacheInterceptor)
+  @UseInterceptors(CacheInterceptor)
   @Public()
   @Get('/:storeId')
   getOneStore(
@@ -137,11 +137,11 @@ export class StoresController {
   }
 
   // postgres 의 storeId 와 LA,MA 를 redis 에 저장
-  @Public()
-  @Post('/to-redis')
-  async addStoresToRedis(): Promise<void> {
-    return await this.storesService.addStoresToRedis();
-  }
+  // @Public()
+  // @Post('/to-redis')
+  // async addStoresToRedis(): Promise<void> {
+  //   return await this.storesService.addStoresToRedis();
+  // }
 
   //CSV파일 postgres 업로드
   @Public()
