@@ -63,32 +63,40 @@ export class StoresService {
       latitude: southWestLatitude,
       longitude: southWestLongitude,
     };
+    const restaurantsResult: searchRestaurantsDto[] = await Promise.all(
+      restaurantsWithinRadius.map(async (restaurant) => {
+        const distance = calculateDistance(userLocation, {
+          latitude: Number(restaurant.lat),
+          longitude: Number(restaurant.lon),
+        });
 
-    const restaurantsResult: searchRestaurantsDto[] = [];
-    restaurantsWithinRadius.forEach(async (restaurant) => {
-      const distance = calculateDistance(userLocation, {
-        latitude: Number(restaurant.lat),
-        longitude: Number(restaurant.lon),
-      });
+        const storesHashes = await this.redisClient.hgetall(
+          `store:${restaurant.storeId}`,
+        );
 
-      const storesHashes = await this.redisClient.hgetall(
-        `store:${restaurant.storeId}`,
-      );
+        let currentWaitingCnt: string;
+        let rating: string;
 
-      let currentWaitingCnt: string;
-      // let rating : string
+        if (!storesHashes.currentWaitingCnt) {
+          currentWaitingCnt = '0';
+          rating = '0';
+        }
 
-      if (!storesHashes.currentWaitingCnt) {
-        currentWaitingCnt = '0';
-        // rating = '0'
-      }
+        const filteredRestaurant: searchRestaurantsDto = {
+          storeName: restaurant.storeName,
+          rating: Number(rating),
+          category: restaurant.category,
+          newAddress: restaurant.newAddress,
+          oldAddress: restaurant.oldAddress,
+          currentWaitingCnt: Number(currentWaitingCnt),
+          distance: distance,
+          tableForTwo: restaurant.tableForTwo,
+          tableForFour: restaurant.tableForFour,
+        };
 
-      restaurantsResult.push({
-        ...restaurant,
-        distance: distance,
-        currentWaitingCnt: Number(currentWaitingCnt),
-      });
-    });
+        return filteredRestaurant;
+      }),
+    );
 
     //정렬로직모음
     restaurantsResult.sort((a, b) => {

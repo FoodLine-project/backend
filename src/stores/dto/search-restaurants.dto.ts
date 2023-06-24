@@ -6,6 +6,7 @@ export class searchRestaurantsDto {
   rating: number;
   category: string;
   newAddress: string;
+  oldAddress: string;
   currentWaitingCnt: number;
   distance: number;
   tableForTwo: number;
