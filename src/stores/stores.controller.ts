@@ -119,7 +119,7 @@ export class StoresController {
   }
 
   //상세조회 (정보+댓글)
-  // @UseInterceptors(CacheInterceptor)
+  @UseInterceptors(CacheInterceptor)
   @Public()
   @Get('/:storeId')
   getOneStore(
