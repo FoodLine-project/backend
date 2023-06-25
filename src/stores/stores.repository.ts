@@ -8,7 +8,7 @@ import { StoresSearchDto } from './dto/search-stores.dto';
 
 @Injectable()
 export class StoresRepository {
-  constructor(@InjectRepository(Stores) private stores: Repository<Stores>) {}
+  constructor(@InjectRepository(Stores) private stores: Repository<Stores>) { }
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
@@ -214,4 +214,20 @@ export class StoresRepository {
   async updateCoord(lat: number, lon: number, storeId: number): Promise<any> {
     await this.stores.update(storeId, { lat, lon });
   }
+
+  async hotPlaces(): Promise<any[]> {
+    return this.stores
+      .createQueryBuilder('stores')
+      .leftJoin('stores.waitings', 'waitings')
+      .select('stores.storeId', 'storeId')
+      .addSelect('stores.newAddress', 'newAddress')
+      .addSelect('stores.storeName', 'storeName')
+      .addSelect('COUNT(waitings.waitingId)', 'count')
+      .groupBy('stores.storeId')
+      .orderBy('count', 'DESC')
+      .limit(5)
+      .getRawMany();
+  }
+
+
 }
