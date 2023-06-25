@@ -718,4 +718,8 @@ export class StoresService {
       console.error('Error occurred during database operation:', error);
     }
   }
+
+  async hotPlaces(): Promise<any[]> {
+    return this.storesRepository.hotPlaces()
+  }
 }
