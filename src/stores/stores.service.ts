@@ -12,6 +12,7 @@ import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
 import { searchRestaurantsDto } from './dto/search-restaurants.dto';
 import { oneStoreDto } from './dto/getOne-store.dto';
+import { float } from '@elastic/elasticsearch/lib/api/types';
 
 @Injectable()
 export class StoresService {
@@ -229,6 +230,8 @@ export class StoresService {
     keyword: string,
     sort: 'ASC' | 'DESC',
     column: string,
+    myLatitude: float,
+    myLongitude :float
   ): Promise<StoresSearchDto[]> {
     const category = [
       '한식',
@@ -264,7 +267,12 @@ export class StoresService {
       return searchByCategory;
     } else {
       //console.log("키워드")
-      const searchStores = await this.searchByKeyword(keyword, sort, column);
+      const searchStores = await this.searchByKeyword(
+        keyword,
+         sort,
+          column, 
+          myLatitude,
+          myLongitude);
       return searchStores;
     }
   }
@@ -343,6 +351,8 @@ export class StoresService {
     keyword: string,
     sort: 'ASC' | 'DESC' = 'ASC',
     column: string,
+    myLatitude:float,
+    myLongitude:float
   ): Promise<any[]> {
     const pageSize = 1000;
     // const from = (page - 1) * pageSize;
@@ -358,7 +368,8 @@ export class StoresService {
         'cycletime',
         'tablefortwo',
         'tableforfour',
-        'newaddress'
+        'newaddress',
+ 'location'
       ],
       sort: column
         ? [
@@ -404,13 +415,29 @@ export class StoresService {
         };
         await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
         const currentWaitingCnt = 0;
-        return { ...storeDatas, rating, currentWaitingCnt };
+        const latitude: number = storeDatas.location.lat;
+        const longitude: number = storeDatas.location.lon;
+        const start = { latitude: myLatitude, longitude: myLongitude };
+        const end = { latitude: latitude, longitude: longitude };
+        const distance = geolib.getDistance(start, end);
+        return { ...storeDatas, distance: distance+ "m", rating, currentWaitingCnt };
       }
+      const latitude: number = storeDatas.location.lat;
+      const longitude: number = storeDatas.location.lon;
+      const start = { latitude: myLatitude, longitude: myLongitude };
+      const end = { latitude: latitude, longitude: longitude };
+      const distance = geolib.getDistance(start, end);
       const currentWaitingCnt = redisAll.currentWaitingCnt;
       const rating = redisAll.rating;
-      return { ...storeDatas, rating, currentWaitingCnt };
+      return { ...storeDatas, distance : distance +"m", rating, currentWaitingCnt };
     });
     const resolvedStoredDatas = await Promise.all(storesData);
+
+    resolvedStoredDatas.sort((a, b) => {
+      const distanceA = parseFloat(a.distance);
+      const distanceB = parseFloat(b.distance);
+      return distanceA - distanceB;
+    });
     return resolvedStoredDatas;
   }
   //elastic 좌표로 주변 음식점 검색 (거리순)
