@@ -188,7 +188,7 @@ export class StoresService {
     myLatitude: string,
     myLongitude: string,
   ): Promise<any[]> {
-    const pageSize = 1000;
+    const pageSize = 100;
     // const from = (page - 1) * pageSize;
     const stores = await this.elasticsearchService.search<string>({
       index: 'geo4_test',

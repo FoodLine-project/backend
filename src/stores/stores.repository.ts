@@ -36,6 +36,7 @@ export class StoresRepository {
         { newAddress: ILike(`%${keyword}%`) },
       ],
       order: column && sort ? { [column]: sort } : {},
+      take: 100,
     });
 
     return searchStores;
@@ -57,7 +58,7 @@ export class StoresRepository {
       ],
       where: [{ category: ILike(`${keyword}%`) }],
       order: column && sort ? { [column]: sort } : {},
-      take: 10000,
+      take: 100,
     });
     return query;
   }
