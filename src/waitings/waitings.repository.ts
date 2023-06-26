@@ -118,16 +118,16 @@ export class WaitingsRepository {
       where: { waitingId },
     });
 
-    await this.waitings
-      .createQueryBuilder('waitings')
-      .update(Waitings)
-      .set({
-        status: WaitingStatus.EXITED_AND_READY,
-        updatedAt: () => 'updatedAt',
-      })
-      .where('waitingId = :waitingId', { waitingId })
-      .setParameter('updatedAt', exited.updatedAt)
-      .execute();
+    // await this.waitings
+    //   .createQueryBuilder('waitings')
+    //   .update(Waitings)
+    //   .set({
+    //     status: WaitingStatus.EXITED_AND_READY,
+    //     updatedAt: () => 'updatedAt',
+    //   })
+    //   .where('waitingId = :waitingId', { waitingId })
+    //   .setParameter('updatedAt', exited.updatedAt)
+    //   .execute();
 
     const peopleCntForTables = exited.peopleCnt <= 2 ? [1, 2] : [3, 4];
     const called = await this.waitings.findOne({
@@ -179,22 +179,6 @@ export class WaitingsRepository {
     });
     entered.status = status;
     await this.waitings.save(entered);
-
-    const peopleCntForTables = entered.peopleCnt <= 2 ? [1, 2] : [3, 4];
-
-    const notFilled = await this.waitings.findOne({
-      where: {
-        StoreId: storeId,
-        status: WaitingStatus.EXITED_AND_READY,
-        peopleCnt: In(peopleCntForTables),
-      },
-      order: {
-        updatedAt: 'ASC',
-      },
-    });
-    if (!notFilled) return;
-    notFilled.status = WaitingStatus.EXITED;
-    await this.waitings.save(notFilled);
     return;
   }
 
@@ -252,7 +236,7 @@ export class WaitingsRepository {
     return await this.waitings.find({
       where: {
         StoreId: storeId,
-        status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
+        status: In([WaitingStatus.ENTERED]),
         peopleCnt: In(peopleCntForTables),
       },
       order: {
@@ -283,7 +267,7 @@ export class WaitingsRepository {
     const Entered = await this.waitings.find({
       where: {
         StoreId: storeId,
-        status: In([WaitingStatus.ENTERED, WaitingStatus.EXITED_AND_READY]),
+        status: In([WaitingStatus.ENTERED]),
         peopleCnt: In(peopleCntForTables),
       },
       order: {

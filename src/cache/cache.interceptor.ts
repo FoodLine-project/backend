@@ -56,10 +56,8 @@ export class CacheInterceptor implements NestInterceptor {
       //     ? await ttlValueOrFactory(context)
       //     : ttlValueOrFactory;
       const ttl = 20;
-      //console.log('ttl:', ttl);
       return next.handle().pipe(
         tap((response) => {
-          //console.log('response:', response);
           const args =
             ttl === undefined ? [key, response] : [key, response, ttl];
           this.cacheManager.set(...args);
@@ -71,22 +69,29 @@ export class CacheInterceptor implements NestInterceptor {
   }
 
   protected trackBy(context: ExecutionContext): string | undefined {
-    const httpAdapter = this.httpAdapterHost.httpAdapter;
-    const isHttpApp = httpAdapter && !!httpAdapter.getRequestMethod;
-    const cacheMetadata = this.reflector.get(
-      CACHE_KEY_METADATA,
-      context.getHandler(),
-    );
+    // const httpAdapter = this.httpAdapterHost.httpAdapter;
+    // const isHttpApp = httpAdapter && !!httpAdapter.getRequestMethod;
+    // const cacheMetadata = this.reflector.get(
+    //   CACHE_KEY_METADATA,
+    //   context.getHandler(),
+    // );
 
-    if (!isHttpApp || cacheMetadata) {
-      return cacheMetadata;
-    }
+    // if (!isHttpApp || cacheMetadata) {
+    //   return cacheMetadata;
+    // }
 
-    const request = context.getArgByIndex(0);
-    if (!this.isRequestCacheable(context)) {
-      return undefined;
-    }
-    return httpAdapter.getRequestUrl(request);
+    // const request = context.getArgByIndex(0);
+    // if (!this.isRequestCacheable(context)) {
+    //   return undefined;
+    // }
+    // return httpAdapter.getRequestUrl(request);
+    const request = context.switchToHttp().getRequest();
+    const method = request.method;
+    const url = request.url;
+    const body = JSON.stringify(request.body);
+    const key = `${method}:${url}:${body}`;
+
+    return key;
   }
 
   protected isRequestCacheable(context: ExecutionContext): boolean {

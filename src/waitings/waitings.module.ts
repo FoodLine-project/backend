@@ -33,13 +33,6 @@ const redisOptions2: RedisOptions = {
   port: 6379,
 };
 
-const redisOptions3: RedisOptions = {
-  host: process.env.CLOSE_REDIS_HOST,
-  port: Number(process.env.CLOSE_REDIS_PORT),
-  username: process.env.CLOSE_REDIS_USERNAME,
-  password: process.env.CLOSE_REDIS_PASSWORD,
-};
-
 const redisOptions4: RedisOptions = {
   host: process.env.EC2_REDIS_HOST,
   port: Number(process.env.EC2_REDIS_PORT),

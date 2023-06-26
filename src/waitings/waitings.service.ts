@@ -541,13 +541,6 @@ export class WaitingsService {
       throw new BadRequestException('비교할 대상이 존재하지 않습니다');
     }
     const updatedTime = enteredPeople[leftCnt - 1].updatedAt;
-    if (
-      bigCycle == 1 &&
-      enteredPeople[leftCnt - 1].status == 'EXITED_AND_READY'
-    ) {
-      return 0;
-    }
-
     const prePersonEatingTime = Math.floor(
       (currentTime.getTime() - updatedTime.getTime()) / 1000 / 60,
     );
