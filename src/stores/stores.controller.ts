@@ -23,12 +23,12 @@ import { MyLocation } from './dto/search-loc';
 
 @Controller('stores')
 export class StoresController {
-  constructor(private storesService: StoresService) { }
+  constructor(private storesService: StoresService) {}
 
   @Public()
   @Get('hot')
   async hotPlaces(): Promise<any[]> {
-    return await this.storesService.hotPlaces()
+    return await this.storesService.hotPlaces();
   }
 
   @Public()
@@ -91,13 +91,19 @@ export class StoresController {
   @Public()
   @Post('/search')
   searchStores(
-    @Body() myLocation : MyLocation,
+    @Body() myLocation: MyLocation,
     @Query('keyword') keyword: string,
     @Query('b') sort: 'ASC' | 'DESC' = 'ASC',
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
-    const { myLatitude ,myLongitude} = myLocation
-    return this.storesService.searchStores2(keyword, sort, column, myLatitude ,myLongitude);
+    const { myLatitude, myLongitude } = myLocation;
+    return this.storesService.searchStores2(
+      keyword,
+      sort,
+      column,
+      myLatitude,
+      myLongitude,
+    );
     // return this.storesService.searchByKeyword(keyword, sort, column);
   }
 
@@ -169,10 +175,6 @@ export class StoresController {
   }
 
   //postgis를 활용하여 좌표 범위 내의 식당을 쿼리
-
-
-
-
 }
 
 //카카오맵api 연동

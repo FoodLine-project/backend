@@ -23,7 +23,7 @@ export class StoresService {
     private reviewsRepository: ReviewsRepository,
 
     private readonly elasticsearchService: ElasticsearchService,
-  ) { }
+  ) {}
 
   //주변식당탐색
   async searchRestaurants(
@@ -231,12 +231,14 @@ export class StoresService {
     sort: 'ASC' | 'DESC',
     column: string,
     myLatitude: float,
-    myLongitude: float
+    myLongitude: float,
   ): Promise<StoresSearchDto[]> {
     const category = [
       '한식',
       '양식',
+      '경양식',
       '중식',
+      '중국식',
       '일식',
       '양식',
       '기타',
@@ -258,11 +260,13 @@ export class StoresService {
       } else if (keyword === '양식') {
         keyword = '경양식';
       }
-      //console.log("카테고리")
+      // console.log('카테고리');
       const searchByCategory = await this.searchByCategory(
         keyword,
         sort,
         column,
+        myLatitude,
+        myLongitude,
       );
       return searchByCategory;
     } else {
@@ -272,7 +276,8 @@ export class StoresService {
         sort,
         column,
         myLatitude,
-        myLongitude);
+        myLongitude,
+      );
       return searchStores;
     }
   }
@@ -280,6 +285,8 @@ export class StoresService {
     keyword: string,
     sort: 'ASC' | 'DESC' = 'ASC',
     column: string,
+    myLatitude: float,
+    myLongitude: float,
   ): Promise<any[]> {
     const pageSize = 10000;
     // const from = (page - 1) * pageSize;
@@ -296,15 +303,16 @@ export class StoresService {
         'tablefortwo',
         'tableforfour',
         'newaddress',
+        'location',
       ],
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
             },
-          },
-        ]
+          ]
         : undefined,
       query: {
         bool: {
@@ -337,11 +345,31 @@ export class StoresService {
 
         await this.redisClient.hset(`store:${storeId}`, datas);
         const currentWaitingCnt = 0;
-        return { ...storeDatas, rating, currentWaitingCnt };
+        const latitude: number = storeDatas.location.lat;
+        const longitude: number = storeDatas.location.lon;
+        const start = { latitude: myLatitude, longitude: myLongitude };
+        const end = { latitude: latitude, longitude: longitude };
+        const distance = geolib.getDistance(start, end);
+        return {
+          ...storeDatas,
+          distance: distance + 'm',
+          rating,
+          currentWaitingCnt,
+        };
       }
       const currentWaitingCnt = redisAll.currentWaitingCnt;
+      const latitude: number = storeDatas.location.lat;
+      const longitude: number = storeDatas.location.lon;
+      const start = { latitude: myLatitude, longitude: myLongitude };
+      const end = { latitude: latitude, longitude: longitude };
+      const distance = geolib.getDistance(start, end);
       const rating = redisAll.rating;
-      return { ...storeDatas, rating, currentWaitingCnt };
+      return {
+        ...storeDatas,
+        distance: distance + 'm',
+        rating,
+        currentWaitingCnt,
+      };
     });
     const resolvedStoredDatas = await Promise.all(storesData);
     return resolvedStoredDatas;
@@ -352,7 +380,7 @@ export class StoresService {
     sort: 'ASC' | 'DESC' = 'ASC',
     column: string,
     myLatitude: float,
-    myLongitude: float
+    myLongitude: float,
   ): Promise<any[]> {
     const pageSize = 1000;
     // const from = (page - 1) * pageSize;
@@ -369,15 +397,16 @@ export class StoresService {
         'tablefortwo',
         'tableforfour',
         'newaddress',
+        'location',
       ],
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
             },
-          },
-        ]
+          ]
         : undefined,
       query: {
         bool: {
@@ -419,7 +448,12 @@ export class StoresService {
         const start = { latitude: myLatitude, longitude: myLongitude };
         const end = { latitude: latitude, longitude: longitude };
         const distance = geolib.getDistance(start, end);
-        return { ...storeDatas, distance: distance + "m", rating, currentWaitingCnt };
+        return {
+          ...storeDatas,
+          distance: distance + 'm',
+          rating,
+          currentWaitingCnt,
+        };
       }
       const latitude: number = storeDatas.location.lat;
       const longitude: number = storeDatas.location.lon;
@@ -428,7 +462,12 @@ export class StoresService {
       const distance = geolib.getDistance(start, end);
       const currentWaitingCnt = redisAll.currentWaitingCnt;
       const rating = redisAll.rating;
-      return { ...storeDatas, distance: distance + "m", rating, currentWaitingCnt };
+      return {
+        ...storeDatas,
+        distance: distance + 'm',
+        rating,
+        currentWaitingCnt,
+      };
     });
     const resolvedStoredDatas = await Promise.all(storesData);
 
@@ -460,12 +499,12 @@ export class StoresService {
       //  from: from,
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
-            },
-          }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
-        ]
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
+            }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
+          ]
         : undefined,
       query: {
         geo_bounding_box: {
@@ -567,9 +606,9 @@ export class StoresService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
@@ -746,6 +785,6 @@ export class StoresService {
   }
 
   async hotPlaces(): Promise<any[]> {
-    return this.storesRepository.hotPlaces()
+    return this.storesRepository.hotPlaces();
   }
 }
