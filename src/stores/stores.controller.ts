@@ -67,12 +67,10 @@ export class StoresController {
     @Query('c') page: number,
   ): Promise<any[]> {
     const { swLatlng, neLatlng, myLatitude, myLongitude } = coordinatesData;
-    const southWestLatitude = swLatlng.Ma;
-    const southWestLongitude = swLatlng.La;
-    const northEastLatitude = neLatlng.Ma;
-    const northEastLongitude = neLatlng.La;
-    myLatitude;
-    myLongitude;
+    const southWestLatitude = swLatlng.La;
+    const southWestLongitude = swLatlng.Ma;
+    const northEastLatitude = neLatlng.La;
+    const northEastLongitude = neLatlng.Ma;
     const restaurants = await this.storesService.searchByCoord(
       sort,
       column,
