@@ -23,7 +23,7 @@ export class StoresService {
     private reviewsRepository: ReviewsRepository,
 
     private readonly elasticsearchService: ElasticsearchService,
-  ) { }
+  ) {}
 
   //주변식당탐색
   async searchRestaurants(
@@ -197,12 +197,12 @@ export class StoresService {
       //  from: from,
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
-            },
-          }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
-        ]
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
+            }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
+          ]
         : undefined,
       query: {
         geo_bounding_box: {
@@ -311,59 +311,61 @@ export class StoresService {
         keyword = '경양식';
       }
       console.log('카테고리');
-      const query = await this.storesRepository.searchByCategory(
+      const query = await this.searchByCategory(
         keyword,
         sort,
         column,
         myLatitude,
         myLongitude,
       );
-      const storeData = query.map(async (items) => {
-        const redisAll = await this.redisClient.hgetall(`store:${items.storeId}`);
-        if (Object.keys(redisAll).length === 0) {
-          const rating: number = await this.getRating(items.storeId);
-          const datas = {
-            maxWaitingCnt: items.maxWaitingCnt,
-            currentWaitingCnt: 0,
-            cycleTime: items.cycleTime,
-            tableForTwo: items.tableForTwo,
-            tableForFour: items.tableForFour,
-            availableTableForTwo: items.tableForTwo,
-            availableTableForFour: items.tableForFour,
-            rating,
-          };
-          await this.redisClient.hset(`store:${items.storeId}`, datas); //perfomance test needed
-          const currentWaitingCnt = 0;
-          const latitude: number = items.lat;
-          const longitude: number = items.lon;
-          const start = { latitude: myLatitude, longitude: myLongitude };
-          const end = { latitude: latitude, longitude: longitude };
-          const distance = geolib.getDistance(start, end);
-          return {
-            ...storeData,
-            distance: distance + 'm',
-            rating,
-            currentWaitingCnt,
-          };
-        } const currentWaitingCnt = redisAll.currentWaitingCnt;
-        const latitude: number = items.lat;
-        const longitude: number = items.lon;
-        const start = { latitude: myLatitude, longitude: myLongitude };
-        const end = { latitude: latitude, longitude: longitude };
-        const distance = geolib.getDistance(start, end);
-        const rating = redisAll.rating;
-        return {
-          ...storeData,
-          distance: distance + 'm',
-          rating,
-          currentWaitingCnt,
-        };
-      });
-      const resolvedStoredDatas = await Promise.all(storeData);
+      // const storeData = query.map(async (items) => {
+      //   const redisAll = await this.redisClient.hgetall(
+      //     `store:${items.storeId}`,
+      //   );
+      //   if (Object.keys(redisAll).length === 0) {
+      //     const rating: number = await this.getRating(items.storeId);
+      //     const datas = {
+      //       maxWaitingCnt: items.maxWaitingCnt,
+      //       currentWaitingCnt: 0,
+      //       cycleTime: items.cycleTime,
+      //       tableForTwo: items.tableForTwo,
+      //       tableForFour: items.tableForFour,
+      //       availableTableForTwo: items.tableForTwo,
+      //       availableTableForFour: items.tableForFour,
+      //       rating,
+      //     };
+      //     await this.redisClient.hset(`store:${items.storeId}`, datas); //perfomance test needed
+      //     const currentWaitingCnt = 0;
+      //     const latitude: number = items.lat;
+      //     const longitude: number = items.lon;
+      //     const start = { latitude: myLatitude, longitude: myLongitude };
+      //     const end = { latitude: latitude, longitude: longitude };
+      //     const distance = geolib.getDistance(start, end);
+      //     return {
+      //       ...items,
+      //       distance: distance + 'm',
+      //       rating,
+      //       currentWaitingCnt,
+      //     };
+      //   }
+      //   const currentWaitingCnt = redisAll.currentWaitingCnt;
+      //   const latitude: number = items.lat;
+      //   const longitude: number = items.lon;
+      //   const start = { latitude: myLatitude, longitude: myLongitude };
+      //   const end = { latitude: latitude, longitude: longitude };
+      //   const distance = geolib.getDistance(start, end);
+      //   const rating = redisAll.rating;
+      //   return {
+      //     ...items,
+      //     distance: distance + 'm',
+      //     rating,
+      //     currentWaitingCnt,
+      //   };
+      // });
+      // const resolvedStoredDatas = await Promise.all(storeData);
 
-
-
-      return resolvedStoredDatas;
+      // return resolvedStoredDatas;
+      return query;
     } else {
       //console.log("키워드")
       const searchStores = await this.searchByKeyword(
@@ -376,6 +378,7 @@ export class StoresService {
       return searchStores;
     }
   }
+
   async searchByCategory(
     keyword: string,
     sort: 'ASC' | 'DESC' = 'ASC',
@@ -383,7 +386,7 @@ export class StoresService {
     myLatitude: float,
     myLongitude: float,
   ): Promise<any[]> {
-    const pageSize = 10000;
+    const pageSize = 100;
     // const from = (page - 1) * pageSize;
     const stores = await this.elasticsearchService.search<any>({
       index: 'geo4_test',
@@ -402,12 +405,12 @@ export class StoresService {
       ],
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
             },
-          },
-        ]
+          ]
         : undefined,
       query: {
         bool: {
@@ -467,7 +470,7 @@ export class StoresService {
       };
     });
     const resolvedStoredDatas = await Promise.all(storesData);
-    console.log(storesData.length)
+    console.log(storesData.length);
     return resolvedStoredDatas;
   }
   //Elastic - 키워드로 검색하기
@@ -497,12 +500,12 @@ export class StoresService {
       ],
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
             },
-          },
-        ]
+          ]
         : undefined,
       query: {
         bool: {
