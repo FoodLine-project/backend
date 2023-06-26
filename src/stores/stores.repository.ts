@@ -5,7 +5,11 @@ import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateStoresDto } from './dto/create-stores.dto';
 import { StoresSearchDto } from './dto/search-stores.dto';
-
+import { float } from '@elastic/elasticsearch/lib/api/types';
+import { InjectRedis } from '@liaoliaots/nestjs-redis';
+import { Redis } from 'ioredis';
+import * as geolib from 'geolib';
+import { ReviewsRepository } from 'src/reviews/reviews.repository';
 @Injectable()
 export class StoresRepository {
   constructor(@InjectRepository(Stores) private stores: Repository<Stores>) {}
@@ -36,6 +40,7 @@ export class StoresRepository {
         { newAddress: ILike(`%${keyword}%`) },
       ],
       order: column && sort ? { [column]: sort } : {},
+      take: 100,
     });
 
     return searchStores;
@@ -46,6 +51,8 @@ export class StoresRepository {
     keyword: string,
     sort: 'ASC' | 'DESC',
     column: string,
+    myLatitude: float,
+    myLongitude: float,
   ): Promise<StoresSearchDto[]> {
     const query = await this.stores.find({
       select: [
@@ -54,11 +61,15 @@ export class StoresRepository {
         'category',
         'maxWaitingCnt',
         'newAddress',
+        'lat',
+        'lon',
+        'cycleTime'
       ],
       where: [{ category: ILike(`${keyword}%`) }],
       order: column && sort ? { [column]: sort } : {},
-      take: 10000,
+      take: 100,
     });
+
     return query;
   }
 

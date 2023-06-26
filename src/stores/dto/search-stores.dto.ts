@@ -2,6 +2,7 @@ import { IsNotEmpty } from 'class-validator';
 
 export class StoresSearchDto {
   @IsNotEmpty()
+  storeId: number;
   storeName: string;
   category: string;
   maxWaitingCnt: number;
@@ -11,4 +12,5 @@ export class StoresSearchDto {
   oldAddress: string;
   tableForTwo: number;
   tableForFour: number;
+  cycleTime: number;
 }

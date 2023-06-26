@@ -23,8 +23,9 @@ import { MyLocation } from './dto/search-loc';
 
 @Controller('stores')
 export class StoresController {
-  constructor(private storesService: StoresService) {}
+  constructor(private storesService: StoresService) { }
 
+  @UseInterceptors(CacheInterceptor)
   @Public()
   @Get('hot')
   async hotPlaces(): Promise<any[]> {
