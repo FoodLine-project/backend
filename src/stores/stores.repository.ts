@@ -63,7 +63,7 @@ export class StoresRepository {
         'newAddress',
         'lat',
         'lon',
-        'cycleTime'
+        'cycleTime',
       ],
       where: [{ category: ILike(`${keyword}%`) }],
       order: column && sort ? { [column]: sort } : {},

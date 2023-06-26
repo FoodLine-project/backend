@@ -23,7 +23,7 @@ import { MyLocation } from './dto/search-loc';
 
 @Controller('stores')
 export class StoresController {
-  constructor(private storesService: StoresService) { }
+  constructor(private storesService: StoresService) {}
 
   @UseInterceptors(CacheInterceptor)
   @Public()
@@ -91,14 +91,14 @@ export class StoresController {
   @Public()
   @UseInterceptors(CacheInterceptor)
   @Post('/search')
-  searchStores(
+  async searchStores(
     @Body() myLocation: MyLocation,
     @Query('keyword') keyword: string,
     @Query('b') sort: 'ASC' | 'DESC' = 'ASC',
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
     const { myLatitude, myLongitude } = myLocation;
-    return this.storesService.searchStores2(
+    return await this.storesService.searchStores2(
       keyword,
       sort,
       column,
