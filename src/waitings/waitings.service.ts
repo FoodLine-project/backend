@@ -137,6 +137,7 @@ export class WaitingsService {
       const finished = await job.finished();
       return finished;
     } catch (err) {
+      console.error(err);
       throw new InternalServerErrorException('대기열 추가에 실패했습니다');
     }
   }

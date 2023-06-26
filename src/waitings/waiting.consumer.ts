@@ -84,8 +84,8 @@ export class WaitingConsumer {
   async postWaitingWithRedis(job: Job): Promise<void> {
     const { storeId, peopleCnt, user } = job.data;
     const lockKey = `lock:${storeId}`;
-    const maxRetryAttempts = 3;
-    const retryDelay = 50;
+    const maxRetryAttempts = 10;
+    const retryDelay = 100;
     const storeHashes = await this.redisClient.hgetall(`store:${storeId}`);
     if (
       Number(storeHashes.maxWaitingCnt) <= Number(storeHashes.currentWaitingCnt)
