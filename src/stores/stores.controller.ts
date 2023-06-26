@@ -57,7 +57,7 @@ export class StoresController {
     return restaurants;
   }
 
-  //elastic 좌표로
+  //elastic 주식탐
   @Public()
   @Post('/nearby-stores-elastic')
   async searchByCoordinates(
@@ -85,7 +85,7 @@ export class StoresController {
     return restaurants;
   }
 
-  ///api/stores/search?keyword=햄버거 간단한 검색기능 elastic으로 검색
+  //elastic, api/stores/search?keyword=햄버거 간단한 검색기능
   @Public()
   @Post('/search')
   searchStores(
@@ -105,14 +105,14 @@ export class StoresController {
     // return this.storesService.searchByKeyword(keyword, sort, column);
   }
 
-  //postgres 의 coordinate 값을 채우는 api
-  //@Public()
-  //@Post('/fill-coordinates')
-  //async fillCoordinates() {
-  //  await this.storesService.fillCoordinates();
-  //}
+  // // Redis로 postgres 의 storeId 와 LA,MA 를 redis 에 저장
+  // @Public()
+  // @Post('/to-redis')
+  // async addStoresToRedis(): Promise<void> {
+  //   return await this.storesService.addStoresToRedis();
+  // }
 
-  // 좌하단 우상단 좌표 내의 음식점 조회
+  // // Redis로 주식탐, 좌하단 우상단 좌표 내의 음식점 조회
   // @Public()
   // @Post('/nearby-stores-redis')
   // async getNearbyStoresByBox(
@@ -131,7 +131,7 @@ export class StoresController {
   //   return stores;
   // }
 
-  //상세조회 (정보+댓글)
+  //Redis로 상세조회 (정보+댓글)
   @UseInterceptors(CacheInterceptor)
   @Public()
   @Get('/:storeId')
@@ -149,13 +149,6 @@ export class StoresController {
     return this.storesService.createStore(createStoreDto);
   }
 
-  // postgres 의 storeId 와 LA,MA 를 redis 에 저장
-  // @Public()
-  // @Post('/to-redis')
-  // async addStoresToRedis(): Promise<void> {
-  //   return await this.storesService.addStoresToRedis();
-  // }
-
   //CSV파일 postgres 업로드
   @Public()
   @Post('/process')
@@ -171,8 +164,6 @@ export class StoresController {
     await this.storesService.updateCoordinates();
     return 'Coordinates updated successfully';
   }
-
-  //postgis를 활용하여 좌표 범위 내의 식당을 쿼리
 }
 
 //카카오맵api 연동
@@ -182,3 +173,10 @@ export class StoresController {
 
 //     return await this.storesService.searchPlaces(query, userLocation);
 //   }
+
+// //postgres 의 coordinate 값을 채우는 api
+// @Public()
+// @Post('/fill-coordinates')
+// async fillCoordinates() {
+//   await this.storesService.fillCoordinates();
+// }
