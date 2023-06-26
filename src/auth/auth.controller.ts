@@ -50,7 +50,6 @@ export class AuthController {
     @GetUser() user: Users,
     @GetUser('refreshToken') refreshToken: string,
   ): Promise<{ accessToken: string }> {
-    console.log(refreshToken);
     try {
       const accessToken = await this.authService.refreshAccessToken(
         user,

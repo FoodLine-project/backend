@@ -103,10 +103,10 @@ export class WaitingsService {
       await this.redisClient.hset(`store:${storeId}`, storeHash);
     }
 
-    const peopleCntForTables =
-      peopleCnt <= 2
-        ? Number(storeHash.availableTableForTwo)
-        : Number(storeHash.availableTableForFour);
+    // const peopleCntForTables =
+    //   peopleCnt <= 2
+    //     ? Number(storeHash.availableTableForTwo)
+    //     : Number(storeHash.availableTableForFour);
 
     // if (
     //   Number(peopleCntForTables) !== 0 &&
@@ -115,8 +115,6 @@ export class WaitingsService {
     //   throw new ConflictException('해당 인원수는 바로 입장하실 수 있습니다');
     // }
 
-    console.log('storeHash.maxWaitingCnt:', storeHash.maxWaitingCnt);
-    console.log('storeHash.currentWaitingCnt:', storeHash.currentWaitingCnt);
     if (
       Number(storeHash.maxWaitingCnt) <= Number(storeHash.currentWaitingCnt)
     ) {
@@ -137,7 +135,6 @@ export class WaitingsService {
       const finished = await job.finished();
       return finished;
     } catch (err) {
-      console.error(err);
       throw new InternalServerErrorException('대기열 추가에 실패했습니다');
     }
   }
