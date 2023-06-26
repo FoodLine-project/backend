@@ -25,6 +25,12 @@ export class StoresController {
   constructor(private storesService: StoresService) { }
 
   @Public()
+  @Get('hot')
+  async hotPlaces(): Promise<any[]> {
+    return await this.storesService.hotPlaces()
+  }
+
+  @Public()
   @Post('/nearby-stores-rough')
   async searchRestaurants(
     @Body() coordinatesData: any,
@@ -160,6 +166,10 @@ export class StoresController {
   }
 
   //postgis를 활용하여 좌표 범위 내의 식당을 쿼리
+
+
+
+
 }
 
 //카카오맵api 연동
