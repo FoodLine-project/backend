@@ -11,12 +11,11 @@ import { RefreshTokenStrategy } from './strategies';
 import { Stores } from '../stores/stores.entity';
 import { StoresRepository } from 'src/stores/stores.repository';
 
-
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({}),
-    TypeOrmModule.forFeature([Users, Stores,]),
+    TypeOrmModule.forFeature([Users, Stores]),
   ],
   controllers: [AuthController],
   providers: [
@@ -28,4 +27,4 @@ import { StoresRepository } from 'src/stores/stores.repository';
   ],
   exports: [PassportModule],
 })
-export class AuthModule { }
+export class AuthModule {}

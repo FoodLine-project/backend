@@ -22,7 +22,7 @@ export class StoresService {
     private reviewsRepository: ReviewsRepository,
 
     private readonly elasticsearchService: ElasticsearchService,
-  ) { }
+  ) {}
 
   //주변식당탐색
   async searchRestaurants(
@@ -287,16 +287,16 @@ export class StoresService {
         'cycletime',
         'tablefortwo',
         'tableforfour',
-        'newaddress'
+        'newaddress',
       ],
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
             },
-          },
-        ]
+          ]
         : undefined,
       query: {
         bool: {
@@ -358,16 +358,16 @@ export class StoresService {
         'cycletime',
         'tablefortwo',
         'tableforfour',
-        'newaddress'
+        'newaddress',
       ],
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
             },
-          },
-        ]
+          ]
         : undefined,
       query: {
         bool: {
@@ -434,12 +434,12 @@ export class StoresService {
       //  from: from,
       sort: column
         ? [
-          {
-            [column.toLocaleLowerCase()]: {
-              order: sort === 'ASC' ? 'asc' : 'desc',
-            },
-          }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
-        ]
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
+            }, //다시 인덱싱 하면, 필요한 값만 넣어줄 예정 toLowerCase 안할것!
+          ]
         : undefined,
       query: {
         geo_bounding_box: {
@@ -541,9 +541,9 @@ export class StoresService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const distance = R * c;
     return distance;
@@ -575,7 +575,7 @@ export class StoresService {
   //     swLatlng.Ma,
   //   );
 
-  //   const nearbyStores = await this.client.geosearch(
+  //   const nearbyStores = await this.redisClient.geosearch(
   //     'stores',
   //     'FROMLONLAT',
   //     userLongitude,
@@ -633,17 +633,17 @@ export class StoresService {
 
   //postGis
   //postgres 좌표 업데이트
-  async fillCoordinates() {
-    const stores = await this.storesRepository.findAll();
-    for (let i = 0; i < stores.length; i++) {
-      await this.storesRepository.fillCoordinates(
-        stores[i],
-        stores[i].lon,
-        stores[i].lat,
-      );
-      console.log(`updated coordinates of ${stores[i].storeId}`);
-    }
-  }
+  // async fillCoordinates() {
+  //   const stores = await this.storesRepository.findAll();
+  //   for (let i = 0; i < stores.length; i++) {
+  //     await this.storesRepository.fillCoordinates(
+  //       stores[i],
+  //       stores[i].lon,
+  //       stores[i].lat,
+  //     );
+  //     console.log(`updated coordinates of ${stores[i].storeId}`);
+  //   }
+  // }
 
   //CSV 부분
   async processCSVFile(inputFile: string): Promise<void> {
