@@ -8,7 +8,7 @@ import { StoresSearchDto } from './dto/search-stores.dto';
 
 @Injectable()
 export class StoresRepository {
-  constructor(@InjectRepository(Stores) private stores: Repository<Stores>) { }
+  constructor(@InjectRepository(Stores) private stores: Repository<Stores>) {}
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
@@ -228,6 +228,4 @@ export class StoresRepository {
       .limit(5)
       .getRawMany();
   }
-
-
 }

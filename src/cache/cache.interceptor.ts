@@ -55,7 +55,7 @@ export class CacheInterceptor implements NestInterceptor {
       //   typeof ttlValueOrFactory === 'function'
       //     ? await ttlValueOrFactory(context)
       //     : ttlValueOrFactory;
-      const ttl = 20;
+      const ttl = 300;
       return next.handle().pipe(
         tap((response) => {
           const args =
@@ -91,6 +91,7 @@ export class CacheInterceptor implements NestInterceptor {
     const body = JSON.stringify(request.body);
     const key = `${method}:${url}:${body}`;
 
+    console.log('body:', body);
     return key;
   }
 

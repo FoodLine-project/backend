@@ -59,6 +59,7 @@ export class StoresController {
 
   //elastic 주식탐
   @Public()
+  @UseInterceptors(CacheInterceptor)
   @Post('/nearby-stores-elastic')
   async searchByCoordinates(
     @Body() coordinatesData: any,
@@ -87,6 +88,7 @@ export class StoresController {
 
   //elastic, api/stores/search?keyword=햄버거 간단한 검색기능
   @Public()
+  @UseInterceptors(CacheInterceptor)
   @Post('/search')
   searchStores(
     @Body() myLocation: MyLocation,
