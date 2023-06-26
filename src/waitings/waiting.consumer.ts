@@ -109,6 +109,7 @@ export class WaitingConsumer {
 
       const acquireLock = await tryAcquireLock();
       if (!acquireLock) {
+        await lockService.releaseLock(lockKey);
         throw new Error('락을 확보하지 못했습니다.');
       }
 
@@ -117,6 +118,7 @@ export class WaitingConsumer {
         Number(storeHashes.maxWaitingCnt) <=
         Number(storeHashes.currentWaitingCnt)
       ) {
+        await lockService.releaseLock(lockKey);
         throw new ConflictException('최대 웨이팅 수를 초과했습니다');
       }
       await this.waitingsRepository.postWaitings(storeId, peopleCnt, user);
