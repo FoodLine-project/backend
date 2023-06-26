@@ -19,6 +19,7 @@ import { Public } from '../auth/common/decorators';
 import { CacheInterceptor } from 'src/cache/cache.interceptor';
 import { searchRestaurantsDto } from './dto/search-restaurants.dto';
 import { oneStoreDto } from './dto/getOne-store.dto';
+import { MyLocation } from './dto/search-loc';
 
 @Controller('stores')
 export class StoresController {
@@ -88,13 +89,15 @@ export class StoresController {
 
   ///api/stores/search?keyword=햄버거 간단한 검색기능 elastic으로 검색
   @Public()
-  @Get('/search')
+  @Post('/search')
   searchStores(
+    @Body() myLocation : MyLocation,
     @Query('keyword') keyword: string,
     @Query('b') sort: 'ASC' | 'DESC' = 'ASC',
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
-    return this.storesService.searchStores2(keyword, sort, column);
+    const { myLatitude ,myLongitude} = myLocation
+    return this.storesService.searchStores2(keyword, sort, column, myLatitude ,myLongitude);
     // return this.storesService.searchByKeyword(keyword, sort, column);
   }
 
