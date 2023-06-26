@@ -112,8 +112,9 @@ export class StoresService {
       }
       return 0;
     });
+    const only20result = restaurantsResult.slice(0, 20);
 
-    return { 근처식당목록: restaurantsResult };
+    return { 근처식당목록: only20result };
   }
 
   //키워드로 검색부분 //sorting 추가 //전국 식당으로 //가장 가까운 순으로? --- rough
