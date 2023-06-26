@@ -38,6 +38,7 @@ export class CacheInterceptor implements NestInterceptor {
     next: CallHandler,
   ): Promise<Observable<any>> {
     const key = this.trackBy(context);
+    //ttl을 redis에 set하는 과정
     const ttlValueOrFactory =
       this.reflector.get(CACHE_TTL_METADATA, context.getHandler()) ?? null;
 
@@ -69,29 +70,13 @@ export class CacheInterceptor implements NestInterceptor {
   }
 
   protected trackBy(context: ExecutionContext): string | undefined {
-    // const httpAdapter = this.httpAdapterHost.httpAdapter;
-    // const isHttpApp = httpAdapter && !!httpAdapter.getRequestMethod;
-    // const cacheMetadata = this.reflector.get(
-    //   CACHE_KEY_METADATA,
-    //   context.getHandler(),
-    // );
-
-    // if (!isHttpApp || cacheMetadata) {
-    //   return cacheMetadata;
-    // }
-
-    // const request = context.getArgByIndex(0);
-    // if (!this.isRequestCacheable(context)) {
-    //   return undefined;
-    // }
-    // return httpAdapter.getRequestUrl(request);
     const request = context.switchToHttp().getRequest();
     const method = request.method;
     const url = request.url;
     const body = JSON.stringify(request.body);
     const key = `${method}:${url}:${body}`;
 
-    console.log('body:', body);
+    console.log(key, body);
     return key;
   }
 

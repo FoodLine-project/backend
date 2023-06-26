@@ -32,6 +32,7 @@ export class StoresController {
   }
 
   @Public()
+  @UseInterceptors(CacheInterceptor)
   @Post('/nearby-stores-rough')
   async searchRestaurants(
     @Body() coordinatesData: any,
