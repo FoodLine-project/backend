@@ -12,11 +12,12 @@ import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
 import { searchRestaurantsDto } from './dto/search-restaurants.dto';
 import { oneStoreDto } from './dto/getOne-store.dto';
+import { float } from '@elastic/elasticsearch/lib/api/types';
 
 @Injectable()
 export class StoresService {
   constructor(
-    @InjectRedis('store') private readonly client: Redis,
+    // @InjectRedis('store') private readonly client: Redis,
     @InjectRedis('ec2redis') private readonly redisClient: Redis,
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
@@ -24,7 +25,6 @@ export class StoresService {
     private readonly elasticsearchService: ElasticsearchService,
   ) {}
 
-  //fullscan
   //주변식당탐색
   async searchRestaurants(
     southWestLatitude: number,
@@ -64,7 +64,6 @@ export class StoresService {
       latitude: southWestLatitude,
       longitude: southWestLongitude,
     };
-
     const restaurantsResult: searchRestaurantsDto[] = await Promise.all(
       restaurantsWithinRadius.map(async (restaurant) => {
         const distance = calculateDistance(userLocation, {
@@ -76,23 +75,26 @@ export class StoresService {
           `store:${restaurant.storeId}`,
         );
 
-        let currentWaitingCnt = Number(storesHashes.currentWaitingCnt);
-        let rating = Number(storesHashes.rating);
+        let currentWaitingCnt: string;
+        let rating: string;
 
-        if (!currentWaitingCnt && !rating) {
-          (currentWaitingCnt = 0), (rating = 0);
+        if (!storesHashes.currentWaitingCnt) {
+          currentWaitingCnt = '0';
+          rating = '0';
         }
 
         const filteredRestaurant: searchRestaurantsDto = {
           storeName: restaurant.storeName,
-          rating: rating,
+          rating: Number(rating),
           category: restaurant.category,
           newAddress: restaurant.newAddress,
-          currentWaitingCnt: currentWaitingCnt,
-          distance,
+          oldAddress: restaurant.oldAddress,
+          currentWaitingCnt: Number(currentWaitingCnt),
+          distance: distance,
           tableForTwo: restaurant.tableForTwo,
           tableForFour: restaurant.tableForFour,
         };
+
         return filteredRestaurant;
       }),
     );
@@ -161,6 +163,61 @@ export class StoresService {
     }
   }
 
+  //redis사용한 상세조회 --- 최종판
+  async getOneStore(storeId: number): Promise<oneStoreDto> {
+    const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
+    const store = await this.storesRepository.getOneStore(storeId);
+
+    //캐싱 예외. currenWaitingCnt/Ratings APi 분리
+    if (Object.keys(redisAll).length === 0) {
+      const rating: number = await this.getRating(storeId);
+      const storeName = store.storeName;
+      const category = store.category;
+      const lon = store.lon;
+      const lat = store.lat;
+      const data = {
+        maxWaitingCnt: store.maxWaitingCnt,
+        currentWaitingCnt: 0,
+        cycleTime: store.cycleTime,
+        tableForTwo: store.tableForTwo,
+        tableForFour: store.tableForFour,
+        availableTableForTwo: store.tableForTwo,
+        availableTableForFour: store.tableForFour,
+        rating: rating,
+      };
+      await this.redisClient.hset(`store:${storeId}`, data);
+      delete data.availableTableForTwo;
+      delete data.availableTableForFour;
+      delete data.cycleTime;
+      return {
+        storeName,
+        category,
+        lat,
+        lon,
+        newAddress: store.newAddress,
+        ...data,
+      };
+    }
+    return {
+      storeName: store.storeName,
+      category: store.category,
+      lon: store.lon,
+      lat: store.lat,
+      newAddress: store.newAddress,
+      maxWaitingCnt: store.maxWaitingCnt,
+      currentWaitingCnt: parseInt(redisAll.currentWaitingCnt),
+      tableForFour: store.tableForFour,
+      tableForTwo: store.tableForTwo,
+      rating: Number(redisAll.rating),
+    };
+  }
+
+  //상점 추가
+  async createStore(createUserDto: CreateStoresDto): Promise<Stores> {
+    const store = await this.storesRepository.createStore(createUserDto);
+    return store;
+  }
+
   //rating 가져오기
   async getRating(storeId: number): Promise<number> {
     const averageRating = await this.reviewsRepository.getAverageRating(
@@ -169,7 +226,260 @@ export class StoresService {
     return averageRating;
   }
 
+  async searchStores2(
+    keyword: string,
+    sort: 'ASC' | 'DESC',
+    column: string,
+    myLatitude: float,
+    myLongitude: float,
+  ): Promise<StoresSearchDto[]> {
+    const category = [
+      '한식',
+      '양식',
+      '경양식',
+      '중식',
+      '중국식',
+      '일식',
+      '양식',
+      '기타',
+      '분식',
+      '까페',
+      '통닭',
+      '식육',
+      '횟집',
+      '인도',
+      '패스트푸드',
+      '패밀리레스트랑',
+      '김밥(도시락)',
+      '소주방',
+    ];
+    //console.log('Check')
+    if (category.includes(keyword)) {
+      if (keyword === '중식') {
+        keyword = '중국식';
+      } else if (keyword === '양식') {
+        keyword = '경양식';
+      }
+      // console.log('카테고리');
+      const searchByCategory = await this.searchByCategory(
+        keyword,
+        sort,
+        column,
+        myLatitude,
+        myLongitude,
+      );
+      return searchByCategory;
+    } else {
+      //console.log("키워드")
+      const searchStores = await this.searchByKeyword(
+        keyword,
+        sort,
+        column,
+        myLatitude,
+        myLongitude,
+      );
+      return searchStores;
+    }
+  }
+  async searchByCategory(
+    keyword: string,
+    sort: 'ASC' | 'DESC' = 'ASC',
+    column: string,
+    myLatitude: float,
+    myLongitude: float,
+  ): Promise<any[]> {
+    const pageSize = 10000;
+    // const from = (page - 1) * pageSize;
+    const stores = await this.elasticsearchService.search<any>({
+      index: 'geo4_test',
+      size: 1000,
+      //  from: from,
+      _source: [
+        'storeid',
+        'storename',
+        'category',
+        'maxwaitingcnt',
+        'cycletime',
+        'tablefortwo',
+        'tableforfour',
+        'newaddress',
+        'location',
+      ],
+      sort: column
+        ? [
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
+            },
+          ]
+        : undefined,
+      query: {
+        bool: {
+          should: [
+            {
+              wildcard: {
+                category: `*${keyword}*`,
+              },
+            },
+          ],
+        },
+      },
+    });
+    const storesData = stores.hits.hits.map(async (hit) => {
+      const storeDatas = hit._source;
+      const storeId: number = storeDatas.storeid;
+      const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
+      if (Object.keys(redisAll).length === 0) {
+        const rating: number = await this.getRating(storeId);
+        const datas = {
+          maxWaitingCnt: storeDatas.maxwaitingcnt,
+          currentWaitingCnt: 0,
+          cycleTime: storeDatas.cycletime,
+          tableForTwo: storeDatas.tablefortwo,
+          tableForFour: storeDatas.tableforfour,
+          availableTableForTwo: storeDatas.tablefortwo,
+          availableTableForFour: storeDatas.tableforfour,
+          rating,
+        };
+
+        await this.redisClient.hset(`store:${storeId}`, datas);
+        const currentWaitingCnt = 0;
+        const latitude: number = storeDatas.location.lat;
+        const longitude: number = storeDatas.location.lon;
+        const start = { latitude: myLatitude, longitude: myLongitude };
+        const end = { latitude: latitude, longitude: longitude };
+        const distance = geolib.getDistance(start, end);
+        return {
+          ...storeDatas,
+          distance: distance + 'm',
+          rating,
+          currentWaitingCnt,
+        };
+      }
+      const currentWaitingCnt = redisAll.currentWaitingCnt;
+      const latitude: number = storeDatas.location.lat;
+      const longitude: number = storeDatas.location.lon;
+      const start = { latitude: myLatitude, longitude: myLongitude };
+      const end = { latitude: latitude, longitude: longitude };
+      const distance = geolib.getDistance(start, end);
+      const rating = redisAll.rating;
+      return {
+        ...storeDatas,
+        distance: distance + 'm',
+        rating,
+        currentWaitingCnt,
+      };
+    });
+    const resolvedStoredDatas = await Promise.all(storesData);
+    return resolvedStoredDatas;
+  }
+  //햄버거로 찾기
+  async searchByKeyword(
+    keyword: string,
+    sort: 'ASC' | 'DESC' = 'ASC',
+    column: string,
+    myLatitude: float,
+    myLongitude: float,
+  ): Promise<any[]> {
+    const pageSize = 1000;
+    // const from = (page - 1) * pageSize;
+    const stores = await this.elasticsearchService.search<any>({
+      index: 'geo4_test',
+      size: pageSize,
+      //  from: from,
+      _source: [
+        'storeid',
+        'storename',
+        'category',
+        'maxwaitingcnt',
+        'cycletime',
+        'tablefortwo',
+        'tableforfour',
+        'newaddress',
+        'location',
+      ],
+      sort: column
+        ? [
+            {
+              [column.toLocaleLowerCase()]: {
+                order: sort === 'ASC' ? 'asc' : 'desc',
+              },
+            },
+          ]
+        : undefined,
+      query: {
+        bool: {
+          should: [
+            {
+              wildcard: {
+                storename: `*${keyword}*`,
+              },
+            },
+            {
+              wildcard: {
+                address: `*${keyword}*`,
+              },
+            },
+          ],
+        },
+      },
+    });
+    const storesData = stores.hits.hits.map(async (hit) => {
+      const storeDatas = hit._source;
+      const storeId: number = storeDatas.storeid;
+      const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
+      if (Object.keys(redisAll).length === 0) {
+        const rating: number = await this.getRating(storeId);
+        const datas = {
+          maxWaitingCnt: storeDatas.maxwaitingcnt,
+          currentWaitingCnt: 0,
+          cycleTime: storeDatas.cycletime,
+          tableForTwo: storeDatas.tablefortwo,
+          tableForFour: storeDatas.tableforfour,
+          availableTableForTwo: storeDatas.tablefortwo,
+          availableTableForFour: storeDatas.tableforfour,
+          rating,
+        };
+        await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
+        const currentWaitingCnt = 0;
+        const latitude: number = storeDatas.location.lat;
+        const longitude: number = storeDatas.location.lon;
+        const start = { latitude: myLatitude, longitude: myLongitude };
+        const end = { latitude: latitude, longitude: longitude };
+        const distance = geolib.getDistance(start, end);
+        return {
+          ...storeDatas,
+          distance: distance + 'm',
+          rating,
+          currentWaitingCnt,
+        };
+      }
+      const latitude: number = storeDatas.location.lat;
+      const longitude: number = storeDatas.location.lon;
+      const start = { latitude: myLatitude, longitude: myLongitude };
+      const end = { latitude: latitude, longitude: longitude };
+      const distance = geolib.getDistance(start, end);
+      const currentWaitingCnt = redisAll.currentWaitingCnt;
+      const rating = redisAll.rating;
+      return {
+        ...storeDatas,
+        distance: distance + 'm',
+        rating,
+        currentWaitingCnt,
+      };
+    });
+    const resolvedStoredDatas = await Promise.all(storesData);
+
+    resolvedStoredDatas.sort((a, b) => {
+      const distanceA = parseFloat(a.distance);
+      const distanceB = parseFloat(b.distance);
+      return distanceA - distanceB;
+    });
+    return resolvedStoredDatas;
+  }
   //elastic 좌표로 주변 음식점 검색 (거리순)
+
   async searchByCoord(
     sort: 'ASC' | 'DESC' = 'ASC',
     column: string,
@@ -181,10 +491,10 @@ export class StoresService {
     myLatitude: string,
     myLongitude: string,
   ): Promise<any[]> {
-    const pageSize = 10000;
+    const pageSize = 1000;
     // const from = (page - 1) * pageSize;
     const stores = await this.elasticsearchService.search<string>({
-      index: 'geo_test',
+      index: 'geo4_test',
       size: pageSize,
       //  from: from,
       sort: column
@@ -264,344 +574,21 @@ export class StoresService {
       const distanceB = parseFloat(b.distance);
       return distanceA - distanceB;
     });
-    console.log(result);
     return result;
   }
   //redis 에 storeId 랑 좌표 넣기
-  async addStoresToRedis(): Promise<void> {
-    const stores = await this.storesRepository.findAll();
-    for (let i = 0; i < stores.length; i++) {
-      await this.client.geoadd(
-        'stores',
-        stores[i].lon,
-        stores[i].lat,
-        String(stores[i].storeId),
-      );
-      console.log(`${i + 1}번째 음식점 좌표 redis 저장 완료`);
-    }
-  }
-
-  //elastic으로 키워드로 검색
-  async searchByKeyword(
-    keyword: string,
-    sort: 'ASC' | 'DESC' = 'ASC',
-    column: string,
-  ): Promise<any[]> {
-    const pageSize = 10000;
-    // const from = (page - 1) * pageSize;
-    const stores = await this.elasticsearchService.search<any>({
-      index: 'stores_index',
-      size: pageSize,
-      //  from: from,
-      _source: [
-        'storeid',
-        'storename',
-        'category',
-        'maxwaitingcnt',
-        'cycletime',
-        'tablefortwo',
-        'tableforfour',
-      ],
-      sort: column
-        ? [
-            {
-              [column.toLocaleLowerCase()]: {
-                order: sort === 'ASC' ? 'asc' : 'desc',
-              },
-            },
-          ]
-        : undefined,
-      query: {
-        bool: {
-          should: [
-            {
-              wildcard: {
-                storename: `*${keyword}*`,
-              },
-            },
-            {
-              wildcard: {
-                address: `*${keyword}*`,
-              },
-            },
-          ],
-        },
-      },
-    });
-    const storesData = stores.hits.hits.map(async (hit) => {
-      const storeDatas = hit._source;
-      const storeId: number = storeDatas.storeid;
-      const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
-      console.log(redisAll);
-      if (Object.keys(redisAll).length === 0) {
-        const rating: number = await this.getRating(storeId);
-        const datas = {
-          maxWaitingCnt: storeDatas.maxwaitingcnt,
-          currentWaitingCnt: 0,
-          cycleTime: storeDatas.cycletime,
-          tableForTwo: storeDatas.tablefortwo,
-          tableForFour: storeDatas.tableforfour,
-          availableTableForTwo: storeDatas.tablefortwo,
-          availableTableForFour: storeDatas.tableforfour,
-          rating,
-        };
-        await this.redisClient.hset(`store:${storeId}`, datas); //perfomance test needed
-        const currentWaitingCnt = 0;
-        return { ...storeDatas, rating, currentWaitingCnt };
-      }
-      const currentWaitingCnt = redisAll.currentWaitingCnt;
-      const rating = redisAll.rating;
-      return { ...storeDatas, rating, currentWaitingCnt };
-    });
-    const resolvedStoredDatas = await Promise.all(storesData);
-    return resolvedStoredDatas;
-  }
-
-  //elastic으로 카테고리 검색
-  async searchStores2(
-    keyword: string,
-    sort: 'ASC' | 'DESC',
-    column: string,
-  ): Promise<StoresSearchDto[]> {
-    const category = [
-      '한식',
-      '양식',
-      '중식',
-      '일식',
-      '양식',
-      '기타',
-      '분식',
-      '까페',
-      '통닭',
-      '식육',
-      '횟집',
-      '인도',
-      '패스트푸드',
-      '패밀리레스트랑',
-      '김밥(도시락)',
-      '소주방',
-    ];
-    //console.log('Check')
-    if (category.includes(keyword)) {
-      if (keyword === '중식') {
-        keyword = '중국식';
-      } else if (keyword === '양식') {
-        keyword = '경양식';
-      }
-      //console.log("카테고리")
-      const searchByCategory = await this.searchByCategory(
-        keyword,
-        sort,
-        column,
-      );
-      return searchByCategory;
-    } else {
-      //console.log("키워드")
-      const searchStores = await this.searchByKeyword(keyword, sort, column);
-      return searchStores;
-    }
-  }
-  async searchByCategory(
-    keyword: string,
-    sort: 'ASC' | 'DESC' = 'ASC',
-    column: string,
-  ): Promise<any[]> {
-    const pageSize = 10000;
-    // const from = (page - 1) * pageSize;
-    const stores = await this.elasticsearchService.search<any>({
-      index: 'stores_index',
-      size: 10000,
-      //  from: from,
-      _source: [
-        'storeid',
-        'storename',
-        'category',
-        'maxwaitingcnt',
-        'cycletime',
-        'tablefortwo',
-        'tableforfour',
-      ],
-      sort: column
-        ? [
-            {
-              [column.toLocaleLowerCase()]: {
-                order: sort === 'ASC' ? 'asc' : 'desc',
-              },
-            },
-          ]
-        : undefined,
-      query: {
-        bool: {
-          should: [
-            {
-              wildcard: {
-                category: `*${keyword}*`,
-              },
-            },
-          ],
-        },
-      },
-    });
-    const storesData = stores.hits.hits.map(async (hit) => {
-      const storeDatas = hit._source;
-      const storeId: number = storeDatas.storeid;
-      const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
-      if (Object.keys(redisAll).length === 0) {
-        const rating: number = await this.getRating(storeId);
-        const datas = {
-          maxWaitingCnt: storeDatas.maxwaitingcnt,
-          currentWaitingCnt: 0,
-          cycleTime: storeDatas.cycletime,
-          tableForTwo: storeDatas.tablefortwo,
-          tableForFour: storeDatas.tableforfour,
-          availableTableForTwo: storeDatas.tablefortwo,
-          availableTableForFour: storeDatas.tableforfour,
-          rating,
-        };
-
-        await this.redisClient.hset(`store:${storeId}`, datas);
-        const currentWaitingCnt = 0;
-        return { ...storeDatas, rating, currentWaitingCnt };
-      }
-      const currentWaitingCnt = redisAll.currentWaitingCnt;
-      const rating = redisAll.rating;
-      return { ...storeDatas, rating, currentWaitingCnt };
-    });
-    const resolvedStoredDatas = await Promise.all(storesData);
-    return resolvedStoredDatas;
-  }
-
-  //redis사용한 상세조회 --- 최종판
-  async getOneStore(storeId: number): Promise<oneStoreDto> {
-    const redisAll = await this.redisClient.hgetall(`store:${storeId}`);
-    const store = await this.storesRepository.getOneStore(storeId);
-
-    //캐싱 예외. currenWaitingCnt/Ratings APi 분리
-    if (Object.keys(redisAll).length === 0) {
-      const rating: number = await this.getRating(storeId);
-      const storeName = store.storeName;
-      const category = store.category;
-      const lon = store.lon;
-      const lat = store.lat;
-      const data = {
-        maxWaitingCnt: store.maxWaitingCnt,
-        currentWaitingCnt: 0,
-        cycleTime: store.cycleTime,
-        tableForTwo: store.tableForTwo,
-        tableForFour: store.tableForFour,
-        availableTableForTwo: store.tableForTwo,
-        availableTableForFour: store.tableForFour,
-        rating: rating,
-      };
-      await this.redisClient.hset(`store:${storeId}`, data);
-      delete data.availableTableForTwo;
-      delete data.availableTableForFour;
-      delete data.cycleTime;
-      return {
-        storeName,
-        category,
-        lat,
-        lon,
-        newAddress: store.newAddress,
-        ...data,
-      };
-    }
-    return {
-      storeName: store.storeName,
-      category: store.category,
-      lon: store.lon,
-      lat: store.lat,
-      newAddress: store.newAddress,
-      maxWaitingCnt: store.maxWaitingCnt,
-      currentWaitingCnt: parseInt(redisAll.currentWaitingCnt),
-      tableForFour: store.tableForFour,
-      tableForTwo: store.tableForTwo,
-      rating: Number(redisAll.rating),
-    };
-  }
-
-  //Redis
-  //redis로 주식탐, box내 범위의 결과 구하기
-  async getNearbyStoresByBox(
-    coordinates: {
-      swLatlng: { La: number; Ma: number };
-      neLatlng: { La: number; Ma: number };
-    },
-    sortBy?: string,
-  ): Promise<Stores[]> {
-    const { swLatlng, neLatlng } = coordinates;
-
-    const userLatitude: number = (swLatlng.La + neLatlng.La) / 2;
-    const userLongitude: number = (swLatlng.Ma + neLatlng.Ma) / 2;
-
-    const width = this.getDistanceWithCoordinates(
-      swLatlng.La,
-      swLatlng.Ma,
-      swLatlng.La,
-      neLatlng.Ma,
-    );
-    const height = this.getDistanceWithCoordinates(
-      swLatlng.La,
-      swLatlng.Ma,
-      neLatlng.La,
-      swLatlng.Ma,
-    );
-
-    const nearbyStores = await this.client.geosearch(
-      'stores',
-      'FROMLONLAT',
-      userLongitude,
-      userLatitude,
-      'BYBOX',
-      width,
-      height,
-      'km',
-      'withdist',
-    );
-
-    const nearbyStoresIds = nearbyStores.map((store) => store[0]);
-    const nearbyStoresDistances = nearbyStores.map((store) => Number(store[1]));
-
-    const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
-
-    const result = [];
-
-    stores.forEach(async (store) => {
-      const distance = Math.ceil(
-        nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
-          1000,
-      );
-
-      const storesHashes = await this.redisClient.hgetall(
-        `store:${store.storeId}`,
-      );
-
-      let currentWaitingCnt: string;
-
-      if (!storesHashes.currentWaitingCnt) {
-        currentWaitingCnt = '0';
-      }
-
-      result.push({
-        ...store,
-        distance,
-        currentWaitingCnt: Number(currentWaitingCnt),
-      });
-    });
-
-    return result.sort((a, b) => {
-      if (sortBy === 'name') {
-        return a.storeName.toUpperCase() < b.storeName.toUpperCase() ? -1 : 1;
-      } else if (sortBy === 'waitingCnt') {
-        return a.currentWaitingCnt - b.currentWaitingCnt;
-      } else if (sortBy === 'waitingCnt2') {
-        return b.currentWaitingCnt - a.currentWaitingCnt;
-      } else if (sortBy === 'rating') {
-        return b.rating - a.rating;
-      }
-      return a.distance - b.distance;
-    });
-  }
+  // async addStoresToRedis(): Promise<void> {
+  //   const stores = await this.storesRepository.findAll();
+  //   for (let i = 0; i < stores.length; i++) {
+  //     await this.client.geoadd(
+  //       'stores',
+  //       stores[i].lon,
+  //       stores[i].lat,
+  //       String(stores[i].storeId),
+  //     );
+  //     console.log(`${i + 1}번째 음식점 좌표 redis 저장 완료`);
+  //   }
+  // }
 
   //두 좌표 사이의 거리
   getDistanceWithCoordinates(
@@ -627,25 +614,101 @@ export class StoresService {
     return distance;
   }
 
+  //box 내의 음식점 조회
+  // async getNearbyStoresByBox(
+  //   coordinates: {
+  //     swLatlng: { La: number; Ma: number };
+  //     neLatlng: { La: number; Ma: number };
+  //   },
+  //   sortBy?: string,
+  // ): Promise<Stores[]> {
+  //   const { swLatlng, neLatlng } = coordinates;
+
+  //   const userLatitude: number = (swLatlng.La + neLatlng.La) / 2;
+  //   const userLongitude: number = (swLatlng.Ma + neLatlng.Ma) / 2;
+
+  //   const width = this.getDistanceWithCoordinates(
+  //     swLatlng.La,
+  //     swLatlng.Ma,
+  //     swLatlng.La,
+  //     neLatlng.Ma,
+  //   );
+  //   const height = this.getDistanceWithCoordinates(
+  //     swLatlng.La,
+  //     swLatlng.Ma,
+  //     neLatlng.La,
+  //     swLatlng.Ma,
+  //   );
+
+  //   const nearbyStores = await this.redisClient.geosearch(
+  //     'stores',
+  //     'FROMLONLAT',
+  //     userLongitude,
+  //     userLatitude,
+  //     'BYBOX',
+  //     width,
+  //     height,
+  //     'km',
+  //     'withdist',
+  //   );
+
+  //   const nearbyStoresIds = nearbyStores.map((store) => store[0]);
+  //   const nearbyStoresDistances = nearbyStores.map((store) => Number(store[1]));
+
+  //   const stores = await this.storesRepository.findStoresByIds(nearbyStoresIds);
+
+  //   const result = [];
+
+  //   stores.forEach(async (store) => {
+  //     const distance = Math.ceil(
+  //       nearbyStoresDistances[nearbyStoresIds.indexOf(String(store.storeId))] *
+  //         1000,
+  //     );
+
+  //     const storesHashes = await this.redisClient.hgetall(
+  //       `store:${store.storeId}`,
+  //     );
+
+  //     let currentWaitingCnt: string;
+
+  //     if (!storesHashes.currentWaitingCnt) {
+  //       currentWaitingCnt = '0';
+  //     }
+
+  //     result.push({
+  //       ...store,
+  //       distance,
+  //       currentWaitingCnt: Number(currentWaitingCnt),
+  //     });
+  //   });
+
+  //   return result.sort((a, b) => {
+  //     if (sortBy === 'name') {
+  //       return a.storeName.toUpperCase() < b.storeName.toUpperCase() ? -1 : 1;
+  //     } else if (sortBy === 'waitingCnt') {
+  //       return a.currentWaitingCnt - b.currentWaitingCnt;
+  //     } else if (sortBy === 'waitingCnt2') {
+  //       return b.currentWaitingCnt - a.currentWaitingCnt;
+  //     } else if (sortBy === 'rating') {
+  //       return b.rating - a.rating;
+  //     }
+  //     return a.distance - b.distance;
+  //   });
+  // }
+
   //postGis
   //postgres 좌표 업데이트
-  async fillCoordinates() {
-    const stores = await this.storesRepository.findAll();
-    for (let i = 0; i < stores.length; i++) {
-      await this.storesRepository.fillCoordinates(
-        stores[i],
-        stores[i].lon,
-        stores[i].lat,
-      );
-      console.log(`updated coordinates of ${stores[i].storeId}`);
-    }
-  }
-
-  //상점 추가
-  async createStore(createUserDto: CreateStoresDto): Promise<Stores> {
-    const store = await this.storesRepository.createStore(createUserDto);
-    return store;
-  }
+  // async fillCoordinates() {
+  //   const stores = await this.storesRepository.findAll();
+  //   for (let i = 0; i < stores.length; i++) {
+  //     await this.storesRepository.fillCoordinates(
+  //       stores[i],
+  //       stores[i].lon,
+  //       stores[i].lat,
+  //     );
+  //     console.log(`updated coordinates of ${stores[i].storeId}`);
+  //   }
+  // }
 
   //CSV 부분
   async processCSVFile(inputFile: string): Promise<void> {
@@ -719,5 +782,9 @@ export class StoresService {
     } catch (error) {
       console.error('Error occurred during database operation:', error);
     }
+  }
+
+  async hotPlaces(): Promise<any[]> {
+    return this.storesRepository.hotPlaces();
   }
 }

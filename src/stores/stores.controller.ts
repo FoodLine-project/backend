@@ -19,12 +19,18 @@ import { Public } from '../auth/common/decorators';
 import { CacheInterceptor } from 'src/cache/cache.interceptor';
 import { searchRestaurantsDto } from './dto/search-restaurants.dto';
 import { oneStoreDto } from './dto/getOne-store.dto';
+import { MyLocation } from './dto/search-loc';
 
 @Controller('stores')
 export class StoresController {
   constructor(private storesService: StoresService) {}
 
-  //fullscan
+  @Public()
+  @Get('hot')
+  async hotPlaces(): Promise<any[]> {
+    return await this.storesService.hotPlaces();
+  }
+
   @Public()
   @Post('/nearby-stores-rough')
   async searchRestaurants(
@@ -61,12 +67,10 @@ export class StoresController {
     @Query('c') page: number,
   ): Promise<any[]> {
     const { swLatlng, neLatlng, myLatitude, myLongitude } = coordinatesData;
-    const southWestLatitude = swLatlng.Ma;
-    const southWestLongitude = swLatlng.La;
-    const northEastLatitude = neLatlng.Ma;
-    const northEastLongitude = neLatlng.La;
-    myLatitude;
-    myLongitude;
+    const southWestLatitude = swLatlng.La;
+    const southWestLongitude = swLatlng.Ma;
+    const northEastLatitude = neLatlng.La;
+    const northEastLongitude = neLatlng.Ma;
     const restaurants = await this.storesService.searchByCoord(
       sort,
       column,
@@ -83,13 +87,21 @@ export class StoresController {
 
   //elastic, api/stores/search?keyword=햄버거 간단한 검색기능 elastic으로 검색
   @Public()
-  @Get('/search')
+  @Post('/search')
   searchStores(
+    @Body() myLocation: MyLocation,
     @Query('keyword') keyword: string,
     @Query('b') sort: 'ASC' | 'DESC' = 'ASC',
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
-    return this.storesService.searchStores2(keyword, sort, column);
+    const { myLatitude, myLongitude } = myLocation;
+    return this.storesService.searchStores2(
+      keyword,
+      sort,
+      column,
+      myLatitude,
+      myLongitude,
+    );
     // return this.storesService.searchByKeyword(keyword, sort, column);
   }
 

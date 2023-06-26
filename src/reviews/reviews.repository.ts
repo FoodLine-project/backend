@@ -6,7 +6,7 @@ import { ReviewDto } from './dto';
 export class ReviewsRepository {
   constructor(
     @InjectRepository(Reviews) private reviews: Repository<Reviews>,
-  ) {}
+  ) { }
 
   async findReviewById(reviewId: number): Promise<Reviews> {
     return await this.reviews.findOne({ where: { reviewId } });
@@ -17,8 +17,8 @@ export class ReviewsRepository {
       where: { StoreId },
       order: {
         // reviewId: 'ASC',
-        createdAt: 'ASC',
-        updatedAt: 'ASC',
+        createdAt: 'DESC',
+        updatedAt: 'DESC',
       },
     });
   }

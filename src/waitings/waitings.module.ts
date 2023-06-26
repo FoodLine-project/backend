@@ -61,8 +61,9 @@ const redisOptions4: RedisOptions = {
       name: 'waitingQueue',
       defaultJobOptions: {
         removeOnComplete: true,
+        removeOnFail: true,
       },
-      limiter: { max: 10, duration: 200 },
+      limiter: { max: 10, duration: 300 },
     }),
     CustomCacheModule,
   ],

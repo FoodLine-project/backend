@@ -124,7 +124,6 @@
 //       user.password = await bcrypt.hash(loginDto.password, 10);
 //       user.isAdmin = false;
 //       user.StoreId = null;
-//       user.refreshToken = await bcrypt.hash(tokens.refreshToken, 10);
 
 //       jest.spyOn(bcrypt, 'compare').mockResolvedValue(true);
 //       jest.spyOn(usersRepository, 'findUserByEmail').mockResolvedValue(user);
@@ -156,13 +155,6 @@
 //       expect(authService.hash).toHaveBeenCalled();
 //       expect(authService.hash).toHaveBeenCalledTimes(1);
 //       expect(authService.hash).toHaveBeenCalledWith(tokens.refreshToken);
-
-//       // expect(usersRepository.updateRefreshToken).toHaveBeenCalled();
-//       // expect(usersRepository.updateRefreshToken).toHaveBeenCalledTimes(1);
-//       // expect(usersRepository.updateRefreshToken).toHaveBeenCalledWith(
-//         user.userId,
-//         expect.any(String),
-//       );
 
 //       expect(result).toEqual(tokens);
 //     });
@@ -201,7 +193,6 @@
 //       user.password = await bcrypt.hash('password', 10);
 //       user.isAdmin = false;
 //       user.StoreId = null;
-//       user.refreshToken = 'refreshToken';
 
 //       jest.spyOn(usersRepository, 'findUserByEmail').mockResolvedValue(user);
 //       jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
@@ -217,7 +208,6 @@
 //       );
 
 //       expect(bcrypt.compare).toHaveBeenCalled();
-//       // TODO: WHY???
 //       expect(bcrypt.compare).toHaveBeenCalledTimes(2);
 //       expect(bcrypt.compare).toHaveBeenCalledWith(
 //         loginDto.password,
@@ -225,8 +215,4 @@
 //       );
 //     });
 //   });
-
-//   // TODO: continue with login error (catch error)
-
-//   // Write tests for other methods
 // });

@@ -15,10 +15,12 @@ import { GetUser, Public } from '../auth/common/decorators';
 import { WaitingStatusValidationPipe } from './pipes/waiting-status-validation.pipe';
 import { Cron } from '@nestjs/schedule';
 import { Waitings } from './waitings.entity';
+import { DirectEnterDto } from './dto/enter-admin';
+
 
 @Controller('stores/:storeId/waitings')
 export class WaitingsController {
-  constructor(private waitingsService: WaitingsService) {}
+  constructor(private waitingsService: WaitingsService) { }
 
   // 웨이팅 팀 수 조회 ( for user )
   @Public()
@@ -37,7 +39,7 @@ export class WaitingsController {
   async getWaitingList(
     @Param('storeId', ParseIntPipe) storeId: number,
     @GetUser() user: Users,
-  ): Promise<Waitings[]> {
+  ): Promise<{ WAITING: Waitings[]; ENTERED: Waitings[] }> {
     return await this.waitingsService.getWaitingList(storeId, user);
   }
 
@@ -56,15 +58,15 @@ export class WaitingsController {
   }
 
   // 웨이팅을 등록하지 않고 바로 입장 ( for admin )
-  @Post('/:userId/entered')
+  @Post('/entered')
   async postEntered(
     @Param('storeId', ParseIntPipe) storeId: number,
-    @Param('userId', ParseIntPipe) userId: number,
-    @Body('peopleCnt', ParseIntPipe) peopleCnt: number,
+    @Body() dto: DirectEnterDto,
     @GetUser() user: Users,
   ): Promise<string> {
+    const { userId, peopleCnt } = dto;
     return this.waitingsService
-      .postEntered(storeId, userId, peopleCnt, user)
+      .postEntered(peopleCnt, storeId, userId, user)
       .then(() => `${peopleCnt}명이 입장하셨습니다`);
   }
 
