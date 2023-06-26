@@ -17,10 +17,9 @@ import { Cron } from '@nestjs/schedule';
 import { Waitings } from './waitings.entity';
 import { DirectEnterDto } from './dto/enter-admin';
 
-
 @Controller('stores/:storeId/waitings')
 export class WaitingsController {
-  constructor(private waitingsService: WaitingsService) { }
+  constructor(private waitingsService: WaitingsService) {}
 
   // 웨이팅 팀 수 조회 ( for user )
   @Public()

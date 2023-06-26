@@ -25,7 +25,7 @@ export class WaitingsService {
     private waitingsRepository: WaitingsRepository,
     private storesRepository: StoresRepository,
     private reviewsRepository: ReviewsRepository,
-  ) { }
+  ) {}
 
   //웨이팅 팀 수 조회
   async getCurrentWaitingsCnt(storeId: number): Promise<number> {
