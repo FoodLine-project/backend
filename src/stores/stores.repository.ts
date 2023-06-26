@@ -12,10 +12,7 @@ import * as geolib from 'geolib';
 import { ReviewsRepository } from 'src/reviews/reviews.repository';
 @Injectable()
 export class StoresRepository {
-  constructor(@InjectRepository(Stores) private stores: Repository<Stores>,
-    @InjectRedis('ec2redis') private readonly redisClient: Redis,
-
-  ) { }
+  constructor(@InjectRepository(Stores) private stores: Repository<Stores>) {}
 
   //사용자 위치 기반 반경 1km내의 식당 조회를 위해 전체 데이터 조회
   async findAll(): Promise<Stores[]> {
@@ -43,6 +40,7 @@ export class StoresRepository {
         { newAddress: ILike(`%${keyword}%`) },
       ],
       order: column && sort ? { [column]: sort } : {},
+      take: 100,
     });
 
     return searchStores;
@@ -241,6 +239,4 @@ export class StoresRepository {
       .limit(5)
       .getRawMany();
   }
-
-
 }
