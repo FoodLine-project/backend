@@ -231,7 +231,7 @@ export class StoresService {
     sort: 'ASC' | 'DESC',
     column: string,
     myLatitude: float,
-    myLongitude :float
+    myLongitude: float
   ): Promise<StoresSearchDto[]> {
     const category = [
       '한식',
@@ -269,10 +269,10 @@ export class StoresService {
       //console.log("키워드")
       const searchStores = await this.searchByKeyword(
         keyword,
-         sort,
-          column, 
-          myLatitude,
-          myLongitude);
+        sort,
+        column,
+        myLatitude,
+        myLongitude);
       return searchStores;
     }
   }
@@ -295,7 +295,7 @@ export class StoresService {
         'cycletime',
         'tablefortwo',
         'tableforfour',
-        'newaddress'
+        'newaddress',
       ],
       sort: column
         ? [
@@ -351,8 +351,8 @@ export class StoresService {
     keyword: string,
     sort: 'ASC' | 'DESC' = 'ASC',
     column: string,
-    myLatitude:float,
-    myLongitude:float
+    myLatitude: float,
+    myLongitude: float
   ): Promise<any[]> {
     const pageSize = 1000;
     // const from = (page - 1) * pageSize;
@@ -369,7 +369,6 @@ export class StoresService {
         'tablefortwo',
         'tableforfour',
         'newaddress',
- 'location'
       ],
       sort: column
         ? [
@@ -420,7 +419,7 @@ export class StoresService {
         const start = { latitude: myLatitude, longitude: myLongitude };
         const end = { latitude: latitude, longitude: longitude };
         const distance = geolib.getDistance(start, end);
-        return { ...storeDatas, distance: distance+ "m", rating, currentWaitingCnt };
+        return { ...storeDatas, distance: distance + "m", rating, currentWaitingCnt };
       }
       const latitude: number = storeDatas.location.lat;
       const longitude: number = storeDatas.location.lon;
@@ -429,7 +428,7 @@ export class StoresService {
       const distance = geolib.getDistance(start, end);
       const currentWaitingCnt = redisAll.currentWaitingCnt;
       const rating = redisAll.rating;
-      return { ...storeDatas, distance : distance +"m", rating, currentWaitingCnt };
+      return { ...storeDatas, distance: distance + "m", rating, currentWaitingCnt };
     });
     const resolvedStoredDatas = await Promise.all(storesData);
 
@@ -602,7 +601,7 @@ export class StoresService {
   //     swLatlng.Ma,
   //   );
 
-  //   const nearbyStores = await this.client.geosearch(
+  //   const nearbyStores = await this.redisClient.geosearch(
   //     'stores',
   //     'FROMLONLAT',
   //     userLongitude,
@@ -660,17 +659,17 @@ export class StoresService {
 
   //postGis
   //postgres 좌표 업데이트
-  async fillCoordinates() {
-    const stores = await this.storesRepository.findAll();
-    for (let i = 0; i < stores.length; i++) {
-      await this.storesRepository.fillCoordinates(
-        stores[i],
-        stores[i].lon,
-        stores[i].lat,
-      );
-      console.log(`updated coordinates of ${stores[i].storeId}`);
-    }
-  }
+  // async fillCoordinates() {
+  //   const stores = await this.storesRepository.findAll();
+  //   for (let i = 0; i < stores.length; i++) {
+  //     await this.storesRepository.fillCoordinates(
+  //       stores[i],
+  //       stores[i].lon,
+  //       stores[i].lat,
+  //     );
+  //     console.log(`updated coordinates of ${stores[i].storeId}`);
+  //   }
+  // }
 
   //CSV 부분
   async processCSVFile(inputFile: string): Promise<void> {
