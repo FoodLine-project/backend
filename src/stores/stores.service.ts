@@ -369,6 +369,7 @@ export class StoresService {
         'tablefortwo',
         'tableforfour',
         'newaddress',
+        'location',
       ],
       sort: column
         ? [
