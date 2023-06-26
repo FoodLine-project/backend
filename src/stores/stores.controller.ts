@@ -99,11 +99,11 @@ export class StoresController {
   }
 
   //postgres 의 coordinate 값을 채우는 api
-  @Public()
-  @Post('/fill-coordinates')
-  async fillCoordinates() {
-    await this.storesService.fillCoordinates();
-  }
+  //@Public()
+  //@Post('/fill-coordinates')
+  //async fillCoordinates() {
+  //  await this.storesService.fillCoordinates();
+  //}
 
   // 좌하단 우상단 좌표 내의 음식점 조회
   // @Public()
