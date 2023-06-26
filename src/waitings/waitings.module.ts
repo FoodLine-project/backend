@@ -56,7 +56,7 @@ const redisOptions4: RedisOptions = {
         removeOnComplete: true,
         removeOnFail: true,
       },
-      limiter: { max: 10, duration: 300 },
+      limiter: { max: 10, duration: 400 },
     }),
     CustomCacheModule,
   ],
