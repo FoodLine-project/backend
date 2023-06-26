@@ -5,7 +5,10 @@ import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { EventEmitter } from 'events';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
+import { LockService } from './lock/lock.service';
+
 EventEmitter.defaultMaxListeners = 100;
+
 @Processor('waitingQueue')
 export class WaitingConsumer {
   constructor(
@@ -53,10 +56,62 @@ export class WaitingConsumer {
 
   // one add at one api
 
+  // @Process('postWaitingWithRedis')
+  // async postWaitingWithRedis(job: Job): Promise<void> {
+  //   const { storeId, peopleCnt, user } = job.data;
+  //   try {
+  //     const storeHashes = await this.redisClient.hgetall(`store:${storeId}`);
+  //     if (
+  //       Number(storeHashes.maxWaitingCnt) <=
+  //       Number(storeHashes.currentWaitingCnt)
+  //     ) {
+  //       throw new ConflictException('최대 웨이팅 수를 초과했습니다');
+  //     }
+  //     await this.waitingsRepository.postWaitings(storeId, peopleCnt, user);
+  //     await this.redisClient.hincrby(
+  //       `store:${storeId}`,
+  //       'currentWaitingCnt',
+  //       1,
+  //     );
+  //     console.log(`${job.id}의 작업을 수행하였습니다`);
+  //     return;
+  //   } catch (err) {
+  //     throw new Error('Redis 연결에 실패했습니다');
+  //   }
+  // }
+
   @Process('postWaitingWithRedis')
   async postWaitingWithRedis(job: Job): Promise<void> {
     const { storeId, peopleCnt, user } = job.data;
+    const lockKey = `lock:${storeId}`;
+    const maxRetryAttempts = 3;
+    const retryDelay = 50;
+    const storeHashes = await this.redisClient.hgetall(`store:${storeId}`);
+    if (
+      Number(storeHashes.maxWaitingCnt) <= Number(storeHashes.currentWaitingCnt)
+    ) {
+      throw new ConflictException('최대 웨이팅 수를 초과했습니다');
+    }
     try {
+      const lockService = new LockService(this.redisClient);
+
+      const tryAcquireLock = async (attempt = 1): Promise<boolean> => {
+        const acquireLock = await lockService.acquireLock(lockKey);
+        if (acquireLock) {
+          return true;
+        }
+        if (attempt < maxRetryAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          return tryAcquireLock(attempt + 1);
+        }
+        return false;
+      };
+
+      const acquireLock = await tryAcquireLock();
+      if (!acquireLock) {
+        throw new Error('락을 확보하지 못했습니다.');
+      }
+
       const storeHashes = await this.redisClient.hgetall(`store:${storeId}`);
       if (
         Number(storeHashes.maxWaitingCnt) <=
@@ -70,6 +125,7 @@ export class WaitingConsumer {
         'currentWaitingCnt',
         1,
       );
+      await lockService.releaseLock(lockKey);
       console.log(`${job.id}의 작업을 수행하였습니다`);
       return;
     } catch (err) {

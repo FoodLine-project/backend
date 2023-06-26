@@ -15,6 +15,7 @@ import { config } from 'dotenv';
 import { CustomCacheModule } from '../cache/cache.module';
 import { ReviewsRepository } from '../reviews/reviews.repository';
 import { Reviews } from '../reviews/reviews.entity';
+import { LockService } from './lock/lock.service';
 
 const result = config();
 if (result.error) {
@@ -56,7 +57,7 @@ const redisOptions4: RedisOptions = {
         removeOnComplete: true,
         removeOnFail: true,
       },
-      limiter: { max: 10, duration: 300 },
+      // limiter: { max: 10, duration: 300 },
     }),
     CustomCacheModule,
   ],
@@ -67,6 +68,7 @@ const redisOptions4: RedisOptions = {
     StoresRepository,
     WaitingConsumer,
     ReviewsRepository,
+    LockService,
   ],
 })
 export class WaitingsModule {}
