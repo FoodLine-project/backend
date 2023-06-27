@@ -46,7 +46,7 @@ export class StoresController {
     const northEastLatitude = neLatlng.Ma;
     const northEastLongitude = neLatlng.La;
 
-    console.log(swLatlng.La, swLatlng.Ma, neLatlng.La, neLatlng.Ma);
+    //console.log(swLatlng.La, swLatlng.Ma, neLatlng.La, neLatlng.Ma);
     //geolocation 받고 그 가운데에 user위치;
 
     const restaurants = await this.storesService.searchRestaurants(

@@ -310,7 +310,7 @@ export class StoresService {
       } else if (keyword === '양식') {
         keyword = '경양식';
       }
-      console.log('카테고리');
+      //console.log('카테고리');
       const query = await this.searchByCategory(
         keyword,
         sort,

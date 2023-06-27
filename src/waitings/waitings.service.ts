@@ -63,7 +63,7 @@ export class WaitingsService {
     }
     const list = await this.waitingsRepository.getWaitingListById(storeId);
     const ENTERED = list.filter((e) => e.status == WaitingStatus.ENTERED);
-    console.log(ENTERED);
+    //console.log(ENTERED);
     const WAITING = list.filter(
       (e) =>
         e.status == WaitingStatus.WAITING ||
@@ -518,19 +518,19 @@ export class WaitingsService {
       enteredPeople.push(considerAsEntered);
     }
 
-    console.log('waitingPeople:', waitingPeople);
-    console.log('enteredPeople:', enteredPeople);
+    //console.log('waitingPeople:', waitingPeople);
+    //console.log('enteredPeople:', enteredPeople);
 
     const myTurn = waitingIdsArr.indexOf(Number(existsWaiting.waitingId)) + 1;
-    console.log('myTurn:', myTurn);
+    //console.log('myTurn:', myTurn);
 
     if (tableCnt > enteredPeople.length || enteredPeople.length === 0) {
       if (waitingIdsArr.length === 0) return 0;
     }
     const bigCycle = Math.ceil(myTurn / tableCnt); // 기다리는 사람들을 매장에 있는 사람들로 나눈 몫
-    console.log('bigCycle:', bigCycle);
+    //console.log('bigCycle:', bigCycle);
     const left = myTurn % tableCnt; // 그 나머지
-    console.log('left:', left);
+    //console.log('left:', left);
 
     const leftCnt: number = left === 0 ? tableCnt : left;
 
