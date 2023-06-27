@@ -65,7 +65,12 @@ export class StoresService {
           rating = await this.getRating(storeId);
 
           const data = {
-            ...storesFound,
+            maxWaitingCnt: storesFound.maxWaitingCnt,
+            cycleTime: storesFound.cycleTime,
+            tableForTwo: storesFound.tableForTwo,
+            tableForFour: storesFound.tableForFour,
+            availableTableForTwo: storesFound.tableForTwo,
+            availableTableForFour: storesFound.tableForFour,
             currentWaitingCnt,
             rating,
           };
@@ -302,7 +307,7 @@ export class StoresService {
     northEastLongitude: number,
     myLatitude: float,
     myLongitude: float,
-  ): Promise<any[]> {
+  ): Promise<storeDto[]> {
     const stores = await this.elasticsearchService.search<string>({
       index: 'geo4_test',
       size: 100,
@@ -435,14 +440,14 @@ export class StoresService {
   }
 
   //추천식당 띄우기
-  async getHotPlaces(): Promise<any[]> {
+  async getHotPlaces(): Promise<storeDto[]> {
     return this.storesRepository.getHotPlaces();
   }
 
   //CSV 부분
   async processCSVFile(inputFile: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      const rows: any[] = [];
+      const rows: string[] = [];
 
       createReadStream(inputFile, { encoding: 'utf-8' })
         .pipe(csvParser())
@@ -450,7 +455,7 @@ export class StoresService {
           console.error('Error reading CSV file:', error);
           reject(error);
         })
-        .on('data', (row: any) => {
+        .on('data', (row: string) => {
           rows.push(row);
         })
         .on('end', async () => {

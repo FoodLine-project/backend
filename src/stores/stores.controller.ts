@@ -24,7 +24,7 @@ export class StoresController {
   @UseInterceptors(CacheInterceptor)
   @Public()
   @Get('/hot')
-  async hotPlaces(): Promise<any[]> {
+  async hotPlaces(): Promise<storeDto[]> {
     try {
       return await this.storesService.getHotPlaces();
     } catch (err) {
@@ -68,7 +68,7 @@ export class StoresController {
     @Query('a') sort: 'ASC' | 'DESC' = 'ASC',
     @Query('b') column: string,
     @Query('c') page: number,
-  ): Promise<any[]> {
+  ): Promise<storeDto[]> {
     try {
       const { swLatlng, neLatlng, myLatitude, myLongitude } = coordinates;
       const stores = await this.storesService.getNearbyStoresWithElastic(
