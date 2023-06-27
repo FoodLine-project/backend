@@ -3,7 +3,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, UpdateResult } from 'typeorm';
 import { Stores } from './stores.entity';
 import { StoresRepository } from './stores.repository';
-import axios from 'axios';
 jest.mock('axios');
 
 describe('StoresRepository', () => {
@@ -92,7 +91,6 @@ describe('StoresRepository', () => {
       store.updatedAt = new Date();
       store.waitings = [];
       store.reviews = [];
-      store.tables = null;
       store.user = null;
 
       jest.spyOn(storesMockRepository, 'findOne').mockResolvedValue(store);
@@ -127,7 +125,6 @@ describe('StoresRepository', () => {
       store.updatedAt = new Date();
       store.waitings = [];
       store.reviews = [];
-      store.tables = null;
       store.user = null;
 
       jest.spyOn(storesMockRepository, 'findOne').mockResolvedValue(store);

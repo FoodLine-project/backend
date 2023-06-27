@@ -1,11 +1,18 @@
 import { Controller, Get } from '@nestjs/common';
 import { Public } from 'src/auth/common/decorators';
+import { AppService } from './app.service';
 
-@Controller('')
+@Controller('/')
 export class AppController {
+  constructor(private appService: AppService) {}
+
   @Public()
-  @Get('')
+  @Get('/')
   async healthcheck() {
-    return;
+    try {
+      return this.appService.healthCheck();
+    } catch (err) {
+      throw err;
+    }
   }
 }

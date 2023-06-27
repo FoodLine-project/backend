@@ -28,18 +28,18 @@ export class UsersRepository {
       });
 
       await this.users.save(user);
-    } catch (error) {
-      if (error.code === '23505') {
-        if (error.detail.includes('nickname')) {
+    } catch (err) {
+      if (err.code === '23505') {
+        if (err.detail.includes('nickname')) {
           throw new ConflictException('중복된 닉네임입니다.');
-        } else if (error.detail.includes('email')) {
+        } else if (err.detail.includes('email')) {
           throw new ConflictException('중복된 이메일입니다.');
-        } else if (error.detail.includes('StoreId')) {
-          throw new ConflictException(`중복된 음식점 ID 입니다.`);
+        } else if (err.detail.includes('StoreId')) {
+          throw new ConflictException('중복된 음식점 ID 입니다.');
         }
       }
 
-      console.error(error);
+      console.error(err);
       throw new InternalServerErrorException();
     }
   }
@@ -75,8 +75,8 @@ export class UsersRepository {
 
       try {
         await this.users.save(dummyUser);
-      } catch (error) {
-        throw error;
+      } catch (err) {
+        throw err;
       }
     }
   }
@@ -104,8 +104,8 @@ export class UsersRepository {
 
       try {
         await this.users.save(dummyUser);
-      } catch (error) {
-        throw error;
+      } catch (err) {
+        throw err;
       }
     }
   }

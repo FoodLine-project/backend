@@ -23,18 +23,6 @@ if (result.error) {
 }
 
 const redisOptions: RedisOptions = {
-  host: process.env.BULL_REDIS_HOST,
-  port: Number(process.env.BULL_REDIS_PORT),
-  username: process.env.BULL_REDIS_USERNAME,
-  password: process.env.BULL_REDIS_PASSWORD,
-};
-
-const redisOptions2: RedisOptions = {
-  host: 'localhost',
-  port: 6379,
-};
-
-const redisOptions4: RedisOptions = {
   host: process.env.EC2_REDIS_HOST,
   port: Number(process.env.EC2_REDIS_PORT),
   password: process.env.EC2_REDIS_PASSWORD,
@@ -49,7 +37,7 @@ const redisOptions4: RedisOptions = {
     AuthModule,
     ScheduleModule.forRoot(),
     BullModule.forRoot({
-      redis: redisOptions4,
+      redis: redisOptions,
     }),
     BullModule.registerQueue({
       name: 'waitingQueue',

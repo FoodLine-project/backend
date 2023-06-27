@@ -16,14 +16,14 @@ export class SignupDto {
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(4, { message: `닉네임의 최소 길이는 4자입니다.` })
-  @MaxLength(16, { message: `닉네임의 최대 길이는 16자입니다.` })
+  @MinLength(4, { message: '닉네임의 최소 길이는 4자입니다.' })
+  @MaxLength(16, { message: '닉네임의 최대 길이는 16자입니다.' })
   nickname: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(8, { message: `비밀번호의 최소 길이는 8자입니다.` })
-  @MaxLength(20, { message: `비밀번호의 최대 길이는 20자입니다.` })
+  @MinLength(8, { message: '비밀번호의 최소 길이는 8자입니다.' })
+  @MaxLength(20, { message: '비밀번호의 최대 길이는 20자입니다.' })
   password: string;
 
   @IsNotEmpty()

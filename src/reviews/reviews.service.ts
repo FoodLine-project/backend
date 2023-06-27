@@ -27,12 +27,12 @@ export class ReviewsService {
   ): Promise<Reviews> {
     const store = await this.storesRepository.findStoreById(storeId);
     if (!store) {
-      throw new NotFoundException(`존재하지 않는 음식점입니다.`);
+      throw new NotFoundException('존재하지 않는 음식점입니다.');
     }
 
     if (user.isAdmin && user.StoreId === store.storeId) {
       throw new ForbiddenException(
-        `관리자는 자신의 음식점에 리뷰를 남길 수 없습니다.`,
+        '관리자는 자신의 음식점에 리뷰를 남길 수 없습니다.',
       );
     }
 
@@ -53,16 +53,16 @@ export class ReviewsService {
   ): Promise<void> {
     const store = await this.storesRepository.findStoreById(storeId);
     if (!store) {
-      throw new NotFoundException(`존재하지 않는 음식점입니다.`);
+      throw new NotFoundException('존재하지 않는 음식점입니다.');
     }
 
     const review = await this.reviewsRepository.findReviewById(reviewId);
     if (!review) {
-      throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
+      throw new NotFoundException('존재하지 않는 리뷰입니다.');
     }
 
     if (review.UserId !== user.userId) {
-      throw new ForbiddenException(`리뷰 수정 권한이 존재하지 않습니다.`);
+      throw new ForbiddenException('리뷰 수정 권한이 존재하지 않습니다.');
     }
 
     await this.reviewsRepository.updateReview(review, reviewDto);
@@ -75,16 +75,16 @@ export class ReviewsService {
   ): Promise<void> {
     const store = await this.storesRepository.findStoreById(storeId);
     if (!store) {
-      throw new NotFoundException(`존재하지 않는 음식점입니다.`);
+      throw new NotFoundException('존재하지 않는 음식점입니다.');
     }
 
     const review = await this.reviewsRepository.findReviewById(reviewId);
     if (!review) {
-      throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
+      throw new NotFoundException('존재하지 않는 리뷰입니다.');
     }
 
     if (review.UserId !== user.userId) {
-      throw new ForbiddenException(`리뷰 삭제 권한이 존재하지 않습니다.`);
+      throw new ForbiddenException('리뷰 삭제 권한이 존재하지 않습니다.');
     }
 
     const result = await this.reviewsRepository.deleteReview(
@@ -94,7 +94,7 @@ export class ReviewsService {
     );
 
     if (!result.affected) {
-      throw new NotFoundException(`존재하지 않는 리뷰입니다.`);
+      throw new NotFoundException('존재하지 않는 리뷰입니다.');
     }
   }
 

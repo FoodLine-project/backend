@@ -12,12 +12,6 @@ if (result.error) {
     RedisModule.forRoot({
       readyLog: true,
       config: [
-        // {
-        //   namespace: 'store',
-        //   host: process.env.STORE_REDIS_HOST,
-        //   port: Number(process.env.STORE_REDIS_PORT),
-        //   password: process.env.STORE_REDIS_PASSWORD,
-        // },
         {
           namespace: 'ec2redis',
           host: process.env.EC2_REDIS_HOST,
