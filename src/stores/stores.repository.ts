@@ -193,11 +193,11 @@ export class StoresRepository {
     }
   }
   //저장
-  async updateCoord(lat: number, lon: number, storeId: number): Promise<any> {
+  async updateCoord(lat: number, lon: number, storeId: number): Promise<void> {
     await this.stores.update(storeId, { lat, lon });
   }
 
-  async getHotPlaces(): Promise<any[]> {
+  async getHotPlaces(): Promise<storeDto[]> {
     return this.stores
       .createQueryBuilder('stores')
       .leftJoin('stores.waitings', 'waitings')

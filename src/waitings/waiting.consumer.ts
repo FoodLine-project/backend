@@ -45,7 +45,7 @@ export class WaitingConsumer {
     }
   }
   @Process('getStoreHashesFromRedis')
-  async getStoreHashesFromRedis(job: Job): Promise<any> {
+  async getStoreHashesFromRedis(job: Job): Promise<Record<string, string>> {
     const storeId = job.data;
     try {
       return await this.redisClient.hgetall(`store:${storeId}`);
