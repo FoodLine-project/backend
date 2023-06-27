@@ -1,5 +1,7 @@
 FROM node:18.16.0
 
+ENV TZ="Asia/Seoul"
+
 RUN mkdir -p /app
 WORKDIR /app
 

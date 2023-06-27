@@ -9,11 +9,13 @@ import { Users } from '../auth/users.entity';
 import { UsersRepository } from '../auth/users.repository';
 import { StoresRepository } from '../stores/stores.repository';
 import { Stores } from 'src/stores/stores.entity';
+import { CustomCacheModule } from 'src/cache/cache.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Reviews, Users, Stores]),
     AuthModule,
+    CustomCacheModule,
   ],
   controllers: [ReviewsController],
   providers: [
@@ -21,7 +23,6 @@ import { Stores } from 'src/stores/stores.entity';
     ReviewsRepository,
     UsersRepository,
     StoresRepository,
-
   ],
 })
 export class ReviewsModule { }
