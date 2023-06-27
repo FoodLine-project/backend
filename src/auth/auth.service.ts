@@ -105,14 +105,6 @@ export class AuthService {
 
     const tokens = await this.getTokens(user);
 
-    /* Refresh token을 redis에 저장/관리 */
-    const refreshTokenFromRedis = await this.client.get(
-      `user:${user.userId}:refresh_token`,
-    );
-    if (refreshTokenFromRedis) {
-      throw new BadRequestException(`이미 로그인되었습니다.`);
-    }
-
     await this.client.set(
       `user:${user.userId}:refresh_token`,
       tokens.refreshToken,
