@@ -28,8 +28,8 @@ export class ReviewsController {
   ): Promise<Reviews[]> {
     try {
       return await this.reviewsService.getAllReviews(storeId);
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -49,8 +49,8 @@ export class ReviewsController {
         message: '리뷰를 작성했습니다.',
         reviewId: createdReview.reviewId,
       };
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -62,10 +62,15 @@ export class ReviewsController {
     @Body() reviewDto: ReviewDto,
   ): Promise<{ message: string }> {
     try {
-      await this.reviewsService.updateReview(user, storeId, reviewId, reviewDto);
+      await this.reviewsService.updateReview(
+        user,
+        storeId,
+        reviewId,
+        reviewDto,
+      );
       return { message: '리뷰가 수정되었습니다.' };
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -78,8 +83,8 @@ export class ReviewsController {
     try {
       await this.reviewsService.deleteReview(user, storeId, reviewId);
       return { message: '리뷰를 삭제했습니다.' };
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -88,8 +93,8 @@ export class ReviewsController {
   async genRandomReviews() {
     try {
       await this.reviewsService.genRandomReviews();
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 }

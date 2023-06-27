@@ -214,7 +214,7 @@ describe('UsersRepository', () => {
       });
     });
 
-    it('should throw error', async () => {
+    it('should throw err', async () => {
       const userId = 1;
 
       userRepositoryMock.findOne.mockRejectedValueOnce(new Error());

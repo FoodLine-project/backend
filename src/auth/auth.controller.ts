@@ -17,8 +17,8 @@ export class AuthController {
       await this.authService.signUp(signupDto);
 
       return { message: '회원가입에 성공했습니다.' };
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -27,8 +27,8 @@ export class AuthController {
   async login(@Body() loginDto: LoginDto): Promise<Tokens> {
     try {
       return await this.authService.login(loginDto);
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -38,8 +38,8 @@ export class AuthController {
       await this.authService.logout(user);
 
       return { message: '로그아웃 되었습니다.' };
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -57,8 +57,8 @@ export class AuthController {
       );
 
       return { accessToken };
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -66,8 +66,8 @@ export class AuthController {
   async getMyProfile(@GetUser() user: Users): Promise<Users> {
     try {
       return await this.authService.getUserInfo(user.userId);
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -76,8 +76,8 @@ export class AuthController {
   async genRandomAdminUsers() {
     try {
       await this.authService.genRandomAdminUsers();
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -86,8 +86,8 @@ export class AuthController {
   async genRandomUsers() {
     try {
       await this.authService.genRandomUsers(500000);
-    catch (error) {
-      throw error;
+    } catch (err) {
+      throw err;
     }
   }
 }

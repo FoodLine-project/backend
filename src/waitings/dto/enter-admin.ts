@@ -1,8 +1,8 @@
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty } from 'class-validator';
 
 export class DirectEnterDto {
-    @IsNotEmpty()
-    peopleCnt: number;
-    @IsNotEmpty()
-    userId: number
+  @IsNotEmpty()
+  peopleCnt: number;
+  @IsNotEmpty()
+  userId: number;
 }

@@ -62,13 +62,13 @@ export class WaitingsService {
       throw new NotFoundException('음식점 존재하지 않습니다');
     }
     const list = await this.waitingsRepository.getWaitingListById(storeId);
-    const ENTERED = list.filter((e) => e.status == WaitingStatus.ENTERED);
+    const ENTERED = list.filter((e) => e.status === WaitingStatus.ENTERED);
     //console.log(ENTERED);
     const WAITING = list.filter(
       (e) =>
-        e.status == WaitingStatus.WAITING ||
-        e.status == WaitingStatus.CALLED ||
-        e.status == WaitingStatus.DELAYED,
+        e.status === WaitingStatus.WAITING ||
+        e.status === WaitingStatus.CALLED ||
+        e.status === WaitingStatus.DELAYED,
     );
     return { WAITING, ENTERED };
   }
@@ -178,7 +178,7 @@ export class WaitingsService {
           ? availableTableForTwoFromRedis
           : availableTableForFourFromRedis;
 
-      if (Number(peopleCntForTables) == 0) {
+      if (Number(peopleCntForTables) === 0) {
         throw new ConflictException('자리가 없습니다');
       }
       const availableTableForTwo =
@@ -215,7 +215,7 @@ export class WaitingsService {
       const tableForFour = existsStore.tableForFour;
       const currentWaitingCnt = 0;
 
-      if (peopleCnt == 1 || peopleCnt == 2) {
+      if (peopleCnt === 1 || peopleCnt === 2) {
         availableTableForTwo = availableTableForTwo - 1;
       } else {
         availableTableForFour = availableTableForFour - 1;
@@ -280,7 +280,7 @@ export class WaitingsService {
         // without Bullqueue
         await this.waitingsRepository.patchToExited(storeId, waitingId);
         let availableTable: string;
-        if (peopleCnt == 1 || peopleCnt == 2) {
+        if (peopleCnt === 1 || peopleCnt === 2) {
           availableTable = 'availableTableForTwo';
         } else {
           availableTable = 'availableTableForFour';
@@ -296,8 +296,8 @@ export class WaitingsService {
     // 연기
     if (status === 'DELAYED') {
       if (
-        waiting.status == WaitingStatus.CALLED ||
-        waiting.status == WaitingStatus.WAITING
+        waiting.status === WaitingStatus.CALLED ||
+        waiting.status === WaitingStatus.WAITING
       ) {
       } else {
         throw new BadRequestException('적절하지 않은 status 입니다');
@@ -321,19 +321,19 @@ export class WaitingsService {
     // 입장
     if (status === 'ENTERED') {
       if (
-        waiting.status == WaitingStatus.DELAYED ||
-        waiting.status == WaitingStatus.CALLED ||
-        waiting.status == WaitingStatus.WAITING
+        waiting.status === WaitingStatus.DELAYED ||
+        waiting.status === WaitingStatus.CALLED ||
+        waiting.status === WaitingStatus.WAITING
       ) {
         const tablesOfStoreInRedis = await this.redisClient.hgetall(
           `store:${storeId}`,
         );
-        if (peopleCnt == 1 || peopleCnt == 2) {
-          if (Number(tablesOfStoreInRedis.availableTableForTwo) == 0) {
+        if (peopleCnt === 1 || peopleCnt === 2) {
+          if (Number(tablesOfStoreInRedis.availableTableForTwo) === 0) {
             throw new ConflictException('자리가 없습니다');
           }
         } else {
-          if (Number(tablesOfStoreInRedis.availableTableForFour) == 0) {
+          if (Number(tablesOfStoreInRedis.availableTableForFour) === 0) {
             throw new ConflictException('자리가 없습니다');
           }
         }
@@ -354,7 +354,7 @@ export class WaitingsService {
             status,
           );
           let availableTable: string;
-          if (peopleCnt == 1 || peopleCnt == 2) {
+          if (peopleCnt === 1 || peopleCnt === 2) {
             availableTable = 'availableTableForTwo';
           } else {
             availableTable = 'availableTableForFour';
@@ -394,9 +394,9 @@ export class WaitingsService {
       throw new BadRequestException('잘못된 요청입니다');
     }
     if (
-      waiting.status == WaitingStatus.CALLED ||
-      waiting.status == WaitingStatus.DELAYED ||
-      waiting.status == WaitingStatus.WAITING
+      waiting.status === WaitingStatus.CALLED ||
+      waiting.status === WaitingStatus.DELAYED ||
+      waiting.status === WaitingStatus.WAITING
     ) {
       try {
         // with Bullqueue
@@ -491,7 +491,7 @@ export class WaitingsService {
     const storeHash = await this.redisClient.hgetall(`store:${storeId}`);
     let tableCnt: number;
 
-    if (peopleCnt == 1 || peopleCnt == 2)
+    if (peopleCnt === 1 || peopleCnt === 2)
       tableCnt = Number(storeHash.tableForTwo);
     else tableCnt = Number(storeHash.tableForFour);
 
@@ -507,7 +507,7 @@ export class WaitingsService {
     const enteredPeople = people.Entered;
     const waitingIdsArr = waitingPeople.map((error) => error.waitingId);
 
-    // for (let i = 0; enteredPeople.length == tableCnt; i++) {
+    // for (let i = 0; enteredPeople.length === tableCnt; i++) {
     //   const considerAsEntered = waitingPeople.shift();
     //   enteredPeople.push(considerAsEntered);
     //   console.log(i);

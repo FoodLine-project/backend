@@ -3,13 +3,8 @@ import { Repository, ILike, Point } from 'typeorm';
 import { Stores } from './stores.entity';
 import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateStoresDto } from './dto/create-stores.dto';
-import { StoresSearchDto } from './dto/search-stores.dto';
-import { float } from '@elastic/elasticsearch/lib/api/types';
-import { InjectRedis } from '@liaoliaots/nestjs-redis';
-import { Redis } from 'ioredis';
-import * as geolib from 'geolib';
-import { ReviewsRepository } from 'src/reviews/reviews.repository';
+import { CreateStoreDto, storeDto } from './dto';
+
 @Injectable()
 export class StoresRepository {
   constructor(@InjectRepository(Stores) private stores: Repository<Stores>) {}
@@ -21,11 +16,11 @@ export class StoresRepository {
   }
 
   //1차 햄버거 조회
-  async searchStores(
+  async searchStoresRough(
     keyword: string,
     sort: 'ASC' | 'DESC',
     column: string,
-  ): Promise<StoresSearchDto[]> {
+  ): Promise<storeDto[]> {
     const searchStores = await this.stores.find({
       select: [
         'storeId',
@@ -51,9 +46,7 @@ export class StoresRepository {
     keyword: string,
     sort: 'ASC' | 'DESC',
     column: string,
-    myLatitude: float,
-    myLongitude: float,
-  ): Promise<StoresSearchDto[]> {
+  ): Promise<storeDto[]> {
     const query = await this.stores.find({
       select: [
         'storeId',
@@ -94,37 +87,17 @@ export class StoresRepository {
       .getMany();
   }
 
-  //리뷰와 함께 상세 조회
-  async getOneStore(storeId: number): Promise<Stores> {
-    const store = await this.stores.findOne({
-      where: { storeId },
-    });
-
-    return store;
-  }
-
   //상점 추가
-  async createStore(createStoreDto: CreateStoresDto): Promise<Stores> {
-    const {
-      storeName,
-      newAddress,
-      category,
-      maxWaitingCnt,
-      lon,
-      lat,
-      tableForTwo,
-      tableForFour,
-    } = createStoreDto;
-
+  async createStore(createStoreDto: CreateStoreDto): Promise<Stores> {
     const store = this.stores.create({
-      storeName,
-      maxWaitingCnt,
-      lat,
-      lon,
-      tableForFour,
-      tableForTwo,
-      category,
-      newAddress,
+      storeName: createStoreDto.storeName,
+      maxWaitingCnt: createStoreDto.maxWaitingCnt,
+      lat: createStoreDto.lat,
+      lon: createStoreDto.lon,
+      tableForFour: createStoreDto.tableForFour,
+      tableForTwo: createStoreDto.tableForTwo,
+      category: createStoreDto.category,
+      newAddress: createStoreDto.newAddress,
     });
 
     await this.stores.save(store);
@@ -171,10 +144,8 @@ export class StoresRepository {
         try {
           await this.stores.save(store);
           console.log(store.storeId, 'saved successfully');
-
-          //console.log('Inserted', result, 'row:', store);
-        } catch (error) {
-          //console.error('Error occurred during insert:', error);
+        } catch (err) {
+          throw err;
         }
       }
     }
@@ -200,7 +171,7 @@ export class StoresRepository {
 
       const url = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodedQuery}`;
       // const restApiKey = '800b8fe2427efbffbef3bc6fe96a5464';
-      const restApiKey = `${process.env.KAKAO_REST_API_KEY}`;
+      const restApiKey = process.env.KAKAO_REST_API_KEY;
       const headers = { Authorization: 'KakaoAK ' + restApiKey };
 
       const response = await axios.get(url, { headers });
@@ -215,9 +186,9 @@ export class StoresRepository {
       } else {
         return null;
       }
-    } catch (error) {
+    } catch (err) {
       throw new Error(
-        'Error fetching coordinates from Kakao API: ' + error.message,
+        'Error fetching coordinates from Kakao API: ' + err.message,
       );
     }
   }
@@ -226,7 +197,7 @@ export class StoresRepository {
     await this.stores.update(storeId, { lat, lon });
   }
 
-  async hotPlaces(): Promise<any[]> {
+  async getHotPlaces(): Promise<any[]> {
     return this.stores
       .createQueryBuilder('stores')
       .leftJoin('stores.waitings', 'waitings')

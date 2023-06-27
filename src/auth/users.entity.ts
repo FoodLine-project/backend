@@ -41,9 +41,9 @@ export class Users extends BaseEntity {
   @BeforeInsert()
   checkStoreId() {
     if (this.isAdmin && !this.StoreId) {
-      throw new UnauthorizedException(`StoreId가 존재하지 않습니다.`);
+      throw new UnauthorizedException('StoreId가 존재하지 않습니다.');
     } else if (!this.isAdmin && this.StoreId) {
-      throw new UnauthorizedException(`admin이 아닙니다.`);
+      throw new UnauthorizedException('admin이 아닙니다.');
     }
   }
 

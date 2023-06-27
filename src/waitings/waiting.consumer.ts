@@ -153,7 +153,7 @@ export class WaitingConsumer {
     try {
       await this.waitingsRepository.patchToExited(storeId, waitingId);
       let availableTable: string;
-      if (peopleCnt == 1 || peopleCnt == 2) {
+      if (peopleCnt === 1 || peopleCnt === 2) {
         availableTable = 'availableTableForTwo';
       } else {
         availableTable = 'availableTableForFour';
@@ -172,7 +172,7 @@ export class WaitingConsumer {
     try {
       await this.waitingsRepository.patchToEntered(storeId, waitingId, status);
       let availableTable: string;
-      if (peopleCnt == 1 || peopleCnt == 2) {
+      if (peopleCnt === 1 || peopleCnt === 2) {
         availableTable = 'availableTableForTwo';
       } else {
         availableTable = 'availableTableForFour';

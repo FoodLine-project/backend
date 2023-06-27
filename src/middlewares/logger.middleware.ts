@@ -11,7 +11,6 @@ export class LoggerMiddleware implements NestMiddleware {
     const userAgent = req.get('user-agent') || '';
 
     res.on('finish', () => {
-      // console.log(res);
       const { statusCode } = res;
       const contentLength = res.get('content-length');
 

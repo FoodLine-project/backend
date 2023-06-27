@@ -25,4 +25,4 @@ import { CustomCacheModule } from 'src/cache/cache.module';
     StoresRepository,
   ],
 })
-export class ReviewsModule { }
+export class ReviewsModule {}
