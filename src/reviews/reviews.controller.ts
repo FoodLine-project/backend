@@ -7,18 +7,21 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { Reviews } from './reviews.entity';
 import { ReviewDto } from './dto';
 import { GetUser, Public } from '../auth/common/decorators';
 import { Users } from '../auth/users.entity';
+import { CacheInterceptor } from 'src/cache/cache.interceptor';
 
 @Controller('stores/:storeId/reviews')
 export class ReviewsController {
   constructor(private reviewsService: ReviewsService) {}
 
   @Public()
+  @UseInterceptors(CacheInterceptors)
   @Get('/')
   async getAllReviews(
     @Param('storeId', ParseIntPipe) storeId: number,

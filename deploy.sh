@@ -17,7 +17,7 @@ git pull
 sudo docker build -t final .
 
 # Recreate the container
-sudo docker run --name final -d -p 3300:3300 -it final
+sudo docker run --name final -d -p 80:3300 -it final
 
 # Wait for the server to start
 sleep 5
