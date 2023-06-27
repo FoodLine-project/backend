@@ -76,6 +76,8 @@ export class CacheInterceptor implements NestInterceptor {
     const body = JSON.stringify(request.body);
     const key = `${method}:${url}:${body}`;
 
+    console.log(key);
+
     return key;
   }
 

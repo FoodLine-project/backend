@@ -41,10 +41,10 @@ export class StoresController {
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
   ): Promise<{ 근처식당목록: searchRestaurantsDto[] }> {
     const { swLatlng, neLatlng } = coordinatesData;
-    const southWestLatitude = swLatlng.La;
-    const southWestLongitude = swLatlng.Ma;
-    const northEastLatitude = neLatlng.La;
-    const northEastLongitude = neLatlng.Ma;
+    const southWestLatitude = swLatlng.Ma;
+    const southWestLongitude = swLatlng.La;
+    const northEastLatitude = neLatlng.Ma;
+    const northEastLongitude = neLatlng.La;
 
     console.log(swLatlng.La, swLatlng.Ma, neLatlng.La, neLatlng.Ma);
     //geolocation 받고 그 가운데에 user위치;
@@ -70,10 +70,10 @@ export class StoresController {
     @Query('c') page: number,
   ): Promise<any[]> {
     const { swLatlng, neLatlng, myLatitude, myLongitude } = coordinatesData;
-    const southWestLatitude = swLatlng.La;
-    const southWestLongitude = swLatlng.Ma;
-    const northEastLatitude = neLatlng.La;
-    const northEastLongitude = neLatlng.Ma;
+    const southWestLatitude = swLatlng.Ma;
+    const southWestLongitude = swLatlng.La;
+    const northEastLatitude = neLatlng.Ma;
+    const northEastLongitude = neLatlng.La;
     const restaurants = await this.storesService.searchByCoord(
       sort,
       column,
