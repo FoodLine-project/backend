@@ -64,18 +64,30 @@ export class AuthController {
 
   @Get('/profile')
   async getMyProfile(@GetUser() user: Users): Promise<Users> {
-    return await this.authService.getUserInfo(user.userId);
+    try {
+      return await this.authService.getUserInfo(user.userId);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Public()
   @Post('/gen-random-admin-users')
   async genRandomAdminUsers() {
-    await this.authService.genRandomAdminUsers();
+    try {
+      await this.authService.genRandomAdminUsers();
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Public()
   @Post('/gen-random-users')
   async genRandomUsers() {
-    await this.authService.genRandomUsers(500000);
+    try {
+      await this.authService.genRandomUsers(500000);
+    catch (error) {
+      throw error;
+    }
   }
 }

@@ -26,7 +26,11 @@ export class ReviewsController {
   async getAllReviews(
     @Param('storeId', ParseIntPipe) storeId: number,
   ): Promise<Reviews[]> {
-    return await this.reviewsService.getAllReviews(storeId);
+    try {
+      return await this.reviewsService.getAllReviews(storeId);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Post('/')
@@ -35,15 +39,19 @@ export class ReviewsController {
     @Param('storeId', ParseIntPipe) storeId: number,
     @Body() reviewDto: ReviewDto,
   ): Promise<{ message: string; reviewId: number }> {
-    const createdReview = await this.reviewsService.createReview(
-      user,
-      storeId,
-      reviewDto,
-    );
-    return {
-      message: '리뷰를 작성했습니다.',
-      reviewId: createdReview.reviewId,
-    };
+    try {
+      const createdReview = await this.reviewsService.createReview(
+        user,
+        storeId,
+        reviewDto,
+      );
+      return {
+        message: '리뷰를 작성했습니다.',
+        reviewId: createdReview.reviewId,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Patch('/:reviewId')
@@ -53,8 +61,12 @@ export class ReviewsController {
     @Param('reviewId', ParseIntPipe) reviewId: number,
     @Body() reviewDto: ReviewDto,
   ): Promise<{ message: string }> {
-    await this.reviewsService.updateReview(user, storeId, reviewId, reviewDto);
-    return { message: '리뷰가 수정되었습니다.' };
+    try {
+      await this.reviewsService.updateReview(user, storeId, reviewId, reviewDto);
+      return { message: '리뷰가 수정되었습니다.' };
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Delete('/:reviewId')
@@ -63,13 +75,21 @@ export class ReviewsController {
     @Param('storeId', ParseIntPipe) storeId: number,
     @Param('reviewId', ParseIntPipe) reviewId: number,
   ): Promise<{ message: string }> {
-    await this.reviewsService.deleteReview(user, storeId, reviewId);
-    return { message: '리뷰를 삭제했습니다.' };
+    try {
+      await this.reviewsService.deleteReview(user, storeId, reviewId);
+      return { message: '리뷰를 삭제했습니다.' };
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Public()
   @Post('/gen-random-reviews')
   async genRandomReviews() {
-    await this.reviewsService.genRandomReviews();
+    try {
+      await this.reviewsService.genRandomReviews();
+    } catch (error) {
+      throw error;
+    }
   }
 }

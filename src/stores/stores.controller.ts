@@ -29,7 +29,11 @@ export class StoresController {
   @Public()
   @Get('hot')
   async hotPlaces(): Promise<any[]> {
-    return await this.storesService.hotPlaces();
+    try {
+      return await this.storesService.hotPlaces();
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Public()
@@ -40,23 +44,27 @@ export class StoresController {
     @Query('sort')
     sortBy?: 'distance' | 'name' | 'waitingCnt' | 'waitingCnt2' | 'rating',
   ): Promise<{ 근처식당목록: searchRestaurantsDto[] }> {
-    const { swLatlng, neLatlng } = coordinatesData;
-    const southWestLatitude = swLatlng.Ma;
-    const southWestLongitude = swLatlng.La;
-    const northEastLatitude = neLatlng.Ma;
-    const northEastLongitude = neLatlng.La;
+    try {
+      const { swLatlng, neLatlng } = coordinatesData;
+      const southWestLatitude = swLatlng.Ma;
+      const southWestLongitude = swLatlng.La;
+      const northEastLatitude = neLatlng.Ma;
+      const northEastLongitude = neLatlng.La;
 
-    //console.log(swLatlng.La, swLatlng.Ma, neLatlng.La, neLatlng.Ma);
-    //geolocation 받고 그 가운데에 user위치;
+      //console.log(swLatlng.La, swLatlng.Ma, neLatlng.La, neLatlng.Ma);
+      //geolocation 받고 그 가운데에 user위치;
 
-    const restaurants = await this.storesService.searchRestaurants(
-      southWestLatitude,
-      southWestLongitude,
-      northEastLatitude,
-      northEastLongitude,
-      sortBy,
-    );
-    return restaurants;
+      const restaurants = await this.storesService.searchRestaurants(
+        southWestLatitude,
+        southWestLongitude,
+        northEastLatitude,
+        northEastLongitude,
+        sortBy,
+      );
+      return restaurants;
+    } catch (error) {
+      throw error;
+    }
   }
 
   //elastic 주식탐
@@ -69,6 +77,7 @@ export class StoresController {
     @Query('b') column: string,
     @Query('c') page: number,
   ): Promise<any[]> {
+try {
     const { swLatlng, neLatlng, myLatitude, myLongitude } = coordinatesData;
     const southWestLatitude = swLatlng.Ma;
     const southWestLongitude = swLatlng.La;
@@ -86,6 +95,9 @@ export class StoresController {
       myLongitude,
     );
     return restaurants;
+} catch (error) {
+throw error;
+}
   }
 
   //elastic, api/stores/search?keyword=햄버거 간단한 검색기능
@@ -98,6 +110,7 @@ export class StoresController {
     @Query('b') sort: 'ASC' | 'DESC' = 'ASC',
     @Query('a') column: string,
   ): Promise<StoresSearchDto[]> {
+try {
     const { myLatitude, myLongitude } = myLocation;
     return await this.storesService.searchStores2(
       keyword,
@@ -107,6 +120,9 @@ export class StoresController {
       myLongitude,
     );
     // return this.storesService.searchByKeyword(keyword, sort, column);
+} catch (error) {
+throw error;
+}
   }
 
   // // Redis로 postgres 의 storeId 와 LA,MA 를 redis 에 저장
@@ -142,7 +158,11 @@ export class StoresController {
   getOneStore(
     @Param('storeId', ParseIntPipe) storeId: number,
   ): Promise<oneStoreDto> {
+try {
     return this.storesService.getOneStore(storeId);
+} catch (error) {
+throw error;
+}
   }
 
   // 상점 추가
@@ -150,23 +170,35 @@ export class StoresController {
   @Post('/')
   @UsePipes(ValidationPipe)
   createStore(@Body() createStoreDto: CreateStoresDto): Promise<Stores> {
+try {
     return this.storesService.createStore(createStoreDto);
+} catch (error) {
+throw error;
+}
   }
 
   //CSV파일 postgres 업로드
   @Public()
   @Post('/process')
   async processCSV(): Promise<void> {
+try {
     const inputFile = path.resolve('src/stores/csv/111.csv');
     await this.storesService.processCSVFile(inputFile);
+} catch (error) {
+throw error;
+}
   }
 
   //주소로 카카오에서 좌표 받아서 postgres업데이트
   @Public()
   @Post('update-coordinates')
   async updateCoordinates(): Promise<string> {
+try {
     await this.storesService.updateCoordinates();
     return 'Coordinates updated successfully';
+} catch (error) {
+throw error;
+}
   }
 }
 

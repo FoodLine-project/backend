@@ -27,10 +27,14 @@ export class WaitingsController {
   async getCurrentWaitingsCnt(
     @Param('storeId', ParseIntPipe) storeId: number,
   ): Promise<{ teams: number; message: string }> {
+try {
     const waitingCnt = await this.waitingsService.getCurrentWaitingsCnt(
       storeId,
     );
     return { teams: waitingCnt, message: `${waitingCnt}팀이 대기중입니다` };
+} catch (error) {
+throw error;
+}
   }
 
   // 웨이팅 리스트 조회 ( for admin )
@@ -39,7 +43,11 @@ export class WaitingsController {
     @Param('storeId', ParseIntPipe) storeId: number,
     @GetUser() user: Users,
   ): Promise<{ WAITING: Waitings[]; ENTERED: Waitings[] }> {
+try {
     return await this.waitingsService.getWaitingList(storeId, user);
+} catch (error) {
+throw error;
+}
   }
 
   // 웨이팅 신청 ( for user )
@@ -49,11 +57,15 @@ export class WaitingsController {
     @Body('peopleCnt', ParseIntPipe) peopleCnt: number,
     @GetUser() user: Users,
   ): Promise<string> {
+try {
     return this.waitingsService
       .postWaitings(storeId, peopleCnt, user)
       .then(() => {
         return `${peopleCnt}명의 웨이팅을 등록하였습니다`;
       });
+} catch (error) {
+throw error;
+}
   }
 
   // 웨이팅을 등록하지 않고 바로 입장 ( for admin )
@@ -63,10 +75,14 @@ export class WaitingsController {
     @Body() dto: DirectEnterDto,
     @GetUser() user: Users,
   ): Promise<string> {
+try {
     const { userId, peopleCnt } = dto;
     return this.waitingsService
       .postEntered(peopleCnt, storeId, userId, user)
       .then(() => `${peopleCnt}명이 입장하셨습니다`);
+} catch (error) {
+throw error;
+}
   }
 
   // 웨이팅 취소 ( for user )
@@ -75,11 +91,15 @@ export class WaitingsController {
     @Param('storeId', ParseIntPipe) storeId: number,
     @GetUser() user: Users,
   ): Promise<{ message: string }> {
+try {
     return this.waitingsService
       .patchStatusToCanceled(storeId, user)
       .then(() => {
         return { message: '웨이팅을 취소하였습니다' };
       });
+} catch (error) {
+throw error;
+}
   }
 
   // 손님의 상태를 변경 ( for admin )
@@ -90,6 +110,7 @@ export class WaitingsController {
     @Query('status', WaitingStatusValidationPipe) status: WaitingStatus,
     @GetUser() user: Users,
   ): Promise<{ message: string }> {
+try {
     return this.waitingsService
       .patchStatusOfWaitings(storeId, waitingId, status, user)
       .then(() => {
@@ -98,13 +119,20 @@ export class WaitingsController {
         else if (status === 'DELAYED')
           return { message: '입장을 미루셨습니다' };
       });
+} catch (error) {
+throw error;
+}
   }
 
   // DELAYED 후 10분이 지나면 NOSHOW
   @Cron('0 */10 * * * *')
   async checkAndPatchNoshow(): Promise<void> {
+try {
     this.waitingsService.checkAndPatchNoshow();
     return;
+} catch (error) {
+throw error;
+}
   }
 
   // 나의 입장 예상 시간 조회 ( for user )
@@ -113,10 +141,14 @@ export class WaitingsController {
     @Param('storeId', ParseIntPipe) storeId: number,
     @GetUser() user: Users,
   ): Promise<{ time: number; message: string }> {
+try {
     const time = await this.waitingsService.getWaitingTime(storeId, user);
     if (time > 0)
       return { time: time, message: `${time}뒤에 입장이 가능합니다` };
     else if (time < 0) return { time: time, message: '곧 입장이 가능합니다' };
     else return { time: 0, message: `바로 입장이 가능합니다` };
+} catch (error) {
+throw error;
+}
   }
 }

@@ -23,4 +23,4 @@ sudo docker run --name final -d -p 80:3300 -it final
 sleep 5
 
 # Display the container logs
-sudo docker logs final
+sudo docker logs -f final
