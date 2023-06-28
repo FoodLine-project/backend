@@ -484,10 +484,6 @@ export class WaitingsService {
     }
     const peopleCnt = existsWaiting.peopleCnt;
 
-    // with Bullqueue
-    // const job = await this.waitingQueue.add('getStoreHashesFromRedis', storeId);
-    // const storeHash = await job.finished();
-
     const storeHash = await this.redisClient.hgetall(`store:${storeId}`);
     let tableCnt: number;
 
@@ -505,39 +501,32 @@ export class WaitingsService {
 
     const waitingPeople = people.Waiting;
     const enteredPeople = people.Entered;
-    const waitingIdsArr = waitingPeople.map((error) => error.waitingId);
-
-    // for (let i = 0; enteredPeople.length === tableCnt; i++) {
-    //   const considerAsEntered = waitingPeople.shift();
-    //   enteredPeople.push(considerAsEntered);
-    //   console.log(i);
-    // }
 
     while (enteredPeople.length !== tableCnt) {
       const considerAsEntered = waitingPeople.shift();
       enteredPeople.push(considerAsEntered);
     }
 
-    //console.log('waitingPeople:', waitingPeople);
-    //console.log('enteredPeople:', enteredPeople);
+    // console.log('waitingPeople:', waitingPeople);
+    // console.log('enteredPeople:', enteredPeople);
+    if (waitingPeople.length === 0) {
+      return 0;
+    }
+
+    const waitingIdsArr = waitingPeople.map((error) => error.waitingId);
 
     const myTurn = waitingIdsArr.indexOf(Number(existsWaiting.waitingId)) + 1;
-    //console.log('myTurn:', myTurn);
+    // console.log('myTurn:', myTurn);
 
-    if (tableCnt > enteredPeople.length || enteredPeople.length === 0) {
-      if (waitingIdsArr.length === 0) return 0;
-    }
     const bigCycle = Math.ceil(myTurn / tableCnt); // 기다리는 사람들을 매장에 있는 사람들로 나눈 몫
-    //console.log('bigCycle:', bigCycle);
+    // console.log('bigCycle:', bigCycle);
     const left = myTurn % tableCnt; // 그 나머지
-    //console.log('left:', left);
+    // console.log('left:', left);
 
     const leftCnt: number = left === 0 ? tableCnt : left;
 
     const currentTime = new Date();
-    if (!enteredPeople[leftCnt - 1]) {
-      throw new BadRequestException('비교할 대상이 존재하지 않습니다');
-    }
+
     const updatedTime = enteredPeople[leftCnt - 1].updatedAt;
     const prePersonEatingTime = Math.floor(
       (currentTime.getTime() - updatedTime.getTime()) / 1000 / 60,
