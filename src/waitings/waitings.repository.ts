@@ -6,7 +6,7 @@ import { Users } from '../auth/users.entity';
 export class WaitingsRepository {
   constructor(
     @InjectRepository(Waitings) private waitings: Repository<Waitings>,
-  ) {}
+  ) { }
 
   //웨이팅 팀 수 조회
   async getCurrentWaitingCnt(storeId: number): Promise<number> {
@@ -117,7 +117,8 @@ export class WaitingsRepository {
     const exited = await this.waitings.findOne({
       where: { waitingId },
     });
-
+    exited.status = WaitingStatus.EXITED;
+    await this.waitings.save(exited)
     // await this.waitings
     //   .createQueryBuilder('waitings')
     //   .update(Waitings)
