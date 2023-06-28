@@ -21,7 +21,6 @@ export class ReviewsController {
   constructor(private reviewsService: ReviewsService) {}
 
   @Public()
-  @UseInterceptors(CacheInterceptor)
   @Get('/')
   async getAllReviews(
     @Param('storeId', ParseIntPipe) storeId: number,

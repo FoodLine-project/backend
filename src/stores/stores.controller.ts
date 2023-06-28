@@ -61,7 +61,7 @@ export class StoresController {
 
   //elastic 주식탐
   @Public()
-  @UseInterceptors(CacheInterceptor)
+  //@UseInterceptors(CacheInterceptor)
   @Post('/nearby-stores-elastic')
   async getNearbyStoresWithElastic(
     @Body() coordinates: CoordinatesDto,
@@ -90,7 +90,7 @@ export class StoresController {
 
   //elastic, api/stores/search?keyword=햄버거 간단한 검색기능
   @Public()
-  @UseInterceptors(CacheInterceptor)
+  //@UseInterceptors(CacheInterceptor)
   @Post('/search')
   async searchStoresWithElastic(
     @Body() myLocation: MyLocation,
@@ -112,7 +112,7 @@ export class StoresController {
   }
 
   //Redis로 상세조회 (정보+댓글)
-  @UseInterceptors(CacheInterceptor)
+  //@UseInterceptors(CacheInterceptor)
   @Public()
   @Get('/:storeId')
   async getOneStore(

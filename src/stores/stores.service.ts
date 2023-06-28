@@ -66,12 +66,12 @@ export class StoresService {
 
           const data = {
             maxWaitingCnt: storesFound.maxwaitingcnt,
+            currentWaitingCnt,
             cycleTime: storesFound.cycletime,
             tableForTwo: storesFound.tablefortwo,
             tableForFour: storesFound.tableforfour,
             availableTableForTwo: storesFound.tablefortwo,
             availableTableForFour: storesFound.tableforfour,
-            currentWaitingCnt,
             rating,
           };
 
@@ -416,12 +416,12 @@ export class StoresService {
       rating = await this.getRating(storeId);
       const data = {
         maxWaitingCnt: store.maxWaitingCnt,
+        currentWaitingCnt,
         tableForTwo: store.tableForTwo,
         tableForFour: store.tableForFour,
         availableTableForTwo: store.tableForTwo,
         availableTableForFour: store.tableForFour,
         cycleTime: store.cycleTime,
-        currentWaitingCnt,
         rating,
       };
       await this.redisClient.hset(`store:${storeId}`, data);
