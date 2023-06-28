@@ -117,12 +117,6 @@ export class AuthService {
   }
 
   async logout(user: Users): Promise<void> {
-    const refreshTokenFromRedis = await this.client.get(
-      `user:${user.userId}:refresh_token`,
-    );
-    if (!refreshTokenFromRedis) {
-      throw new BadRequestException('로그인 정보가 없습니다');
-    }
     await this.client.del(`user:${user.userId}:refresh_token`);
   }
 
