@@ -143,10 +143,9 @@ export class WaitingsController {
   ): Promise<{ time: number; message: string }> {
     try {
       const time = await this.waitingsService.getWaitingTime(storeId, user);
-      if (time > 0)
-        return { time: time, message: `${time}분 뒤에 입장이 가능합니다` };
-      else if (time < 0) return { time: time, message: '곧 입장이 가능합니다' };
-      else return { time: 0, message: '바로 입장이 가능합니다' };
+      if (time > 0) return { time: time, message: `${time}분만 기다리세요!` };
+      else if (time < 0) return { time: time, message: '곧 입장 가능합니다!' };
+      else return { time: 0, message: '바로 입장하세요!' };
     } catch (err) {
       throw err;
     }
