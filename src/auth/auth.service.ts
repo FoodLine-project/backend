@@ -28,12 +28,13 @@ export class AuthService {
   }
 
   async getAccessToken(user: Users): Promise<string> {
-    const { userId, email, isAdmin, StoreId } = user;
+    const { userId, email, nickname, isAdmin, StoreId } = user;
 
     return await this.jwtService.signAsync(
       {
         userId,
         email,
+	nickname,
         isAdmin,
         StoreId,
       },
@@ -45,12 +46,13 @@ export class AuthService {
   }
 
   async getRefreshToken(user: Users): Promise<string> {
-    const { userId, email, isAdmin, StoreId } = user;
+    const { userId, email, nickname, isAdmin, StoreId } = user;
 
     return await this.jwtService.signAsync(
       {
         userId,
         email,
+	nickname,
         isAdmin,
         StoreId,
       },
