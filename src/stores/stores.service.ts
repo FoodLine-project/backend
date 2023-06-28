@@ -65,12 +65,12 @@ export class StoresService {
           rating = await this.getRating(storeId);
 
           const data = {
-            maxWaitingCnt: storesFound.maxWaitingCnt,
-            cycleTime: storesFound.cycleTime,
-            tableForTwo: storesFound.tableForTwo,
-            tableForFour: storesFound.tableForFour,
-            availableTableForTwo: storesFound.tableForTwo,
-            availableTableForFour: storesFound.tableForFour,
+            maxWaitingCnt: storesFound.maxwaitingcnt,
+            cycleTime: storesFound.cycletime,
+            tableForTwo: storesFound.tablefortwo,
+            tableForFour: storesFound.tableforfour,
+            availableTableForTwo: storesFound.tablefortwo,
+            availableTableForFour: storesFound.tableforfour,
             currentWaitingCnt,
             rating,
           };
@@ -415,7 +415,9 @@ export class StoresService {
       currentWaitingCnt = 0;
       rating = await this.getRating(storeId);
       const data = {
-        ...store,
+        maxWaitingCnt: store.maxWaitingCnt,
+        tableForTwo: store.tableForTwo,
+        tableForFour: store.tableForFour,
         availableTableForTwo: store.tableForTwo,
         availableTableForFour: store.tableForFour,
         cycleTime: store.cycleTime,
