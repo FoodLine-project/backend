@@ -32,9 +32,13 @@ export class ReviewsService {
     const reviews = await this.reviewsRepository.findAllReviews(storeId);
     const result = reviews.map((review) => ({
       reviewId: review.reviewId,
+      UserId: review.UserId,
       nickname: this.hideNickname(review.user.nickname),
+      StoreId: review.StoreId,
       review: review.review,
       rating: review.rating,
+      createdAt: review.createdAt,
+      updatedAt: review.updatedAt,
     }));
     return result;
   }
