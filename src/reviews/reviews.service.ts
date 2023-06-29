@@ -31,6 +31,7 @@ export class ReviewsService {
   async getAllReviews(storeId: number): Promise<ReviewDto[]> {
     const reviews = await this.reviewsRepository.findAllReviews(storeId);
     const result = reviews.map((review) => ({
+      reviewId: review.reviewId,
       nickname: this.hideNickname(review.user.nickname),
       review: review.review,
       rating: review.rating,
