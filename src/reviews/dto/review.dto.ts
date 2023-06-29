@@ -1,6 +1,8 @@
 import { IsNotEmpty, IsString, IsInt, Min, Max } from 'class-validator';
 
 export class ReviewDto {
+  nickname?: string;
+
   @IsString()
   @IsNotEmpty()
   review: string;
