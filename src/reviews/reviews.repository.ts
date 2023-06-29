@@ -16,10 +16,10 @@ export class ReviewsRepository {
     return await this.reviews.find({
       where: { StoreId },
       order: {
-        // reviewId: 'ASC',
         createdAt: 'DESC',
         updatedAt: 'DESC',
       },
+      relations: ['user'],
     });
   }
 

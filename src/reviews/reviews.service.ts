@@ -16,8 +16,26 @@ export class ReviewsService {
     private storesRepository: StoresRepository,
   ) {}
 
-  async getAllReviews(storeId: number): Promise<Reviews[]> {
-    return await this.reviewsRepository.findAllReviews(storeId);
+  hideNickname(nickname: string): string {
+    if (nickname.length <= 4) {
+      return nickname;
+    }
+
+    const firstTwo = nickname.slice(0, 2);
+    const lastTwo = nickname.slice(-2);
+    const middle = '*'.repeat(4);
+
+    return firstTwo + middle + lastTwo;
+  }
+
+  async getAllReviews(storeId: number): Promise<ReviewDto[]> {
+    const reviews = await this.reviewsRepository.findAllReviews(storeId);
+    const result = reviews.map((review) => ({
+      nickname: this.hideNickname(review.user.nickname),
+      review: review.review,
+      rating: review.rating,
+    }));
+    return result;
   }
 
   async createReview(
