@@ -42,6 +42,7 @@ export class WaitingsRepository {
       order: {
         createdAt: 'ASC',
       },
+      relation: ['user'],
     });
   }
 
